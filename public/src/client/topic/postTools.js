@@ -64,7 +64,7 @@ define('forum/topic/postTools', [
     PostTools.toggle = function (pid, isDeleted) {
         const postEl = components.get('post', 'pid', pid);
 
-        postEl.find('[component="post/quote"], [component="post/bookmark"], [component="post/reply"], [component="post/flag"], [component="user/chat"]')
+        postEl.find('[component="post/quote"], [component="post/bookmark"], [component="post/reply"], [component="post/resolve"], [component="post/flag"], [component="user/chat"]')
             .toggleClass('hidden', isDeleted);
 
         postEl.find('[component="post/delete"]').toggleClass('hidden', isDeleted).parent().attr('hidden', isDeleted ? '' : null);
@@ -96,6 +96,11 @@ define('forum/topic/postTools', [
 
         postContainer.on('click', '[component="post/reply"]', function () {
             onReplyClicked($(this), tid);
+        });
+
+        postContainer.on('click', '[component="post/resolve"]', function () {
+            console.log('here1');
+            onResolveClicked($(this), tid);
         });
 
         $('.topic').on('click', '[component="topic/reply"]', function (e) {
@@ -286,6 +291,10 @@ define('forum/topic/postTools', [
                 });
             }
         });
+    }
+
+    async function onResolveClicked(button, tid) {
+        console.log('here2');
     }
 
     async function onQuoteClicked(button, tid) {
