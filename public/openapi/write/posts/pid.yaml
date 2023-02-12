@@ -64,6 +64,8 @@ get:
                     type: boolean
                   downvoted:
                     type: boolean
+                  isResolved:
+                    type: boolean
 put:
   tags:
     - posts
