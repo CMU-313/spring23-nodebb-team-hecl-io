@@ -33,7 +33,6 @@ module.exports = function (Topics) {
             lastposttime: 0,
             postcount: 0,
             viewcount: 0,
-            isResolved: data.isResolved,
         };
 
         if (Array.isArray(data.tags) && data.tags.length) {
@@ -80,9 +79,6 @@ module.exports = function (Topics) {
     Topics.post = async function (data) {
         data = await plugins.hooks.fire('filter:topic.post', data);
         const { uid } = data;
-        const { isResolved } = data;
-
-        data.isResolved = isResolved;
 
         data.title = String(data.title).trim();
         data.tags = data.tags || [];
@@ -121,7 +117,6 @@ module.exports = function (Topics) {
         postData.tid = tid;
         postData.ip = data.req ? data.req.ip : null;
         postData.isMain = true;
-        postData.isResolved = isResolved;
         postData = await posts.create(postData);
         postData = await onNewPost(postData, data);
 
@@ -164,9 +159,7 @@ module.exports = function (Topics) {
         data = await plugins.hooks.fire('filter:topic.reply', data);
         const { tid } = data;
         const { uid } = data;
-        const { isResolved } = data;
 
-        data.isResolved = isResolved;
         const topicData = await Topics.getTopicData(tid);
 
         await canReply(data, topicData);
