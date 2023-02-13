@@ -100,7 +100,7 @@ define('forum/topic/postTools', [
 
         // when resolve button clicked, print to console and call function
         postContainer.on('click', '[component="post/resolve"]', function () {
-            console.log('here1');
+            console.log('Here - on click function triggered');
             onResolveClicked($(this), tid);
         });
 
