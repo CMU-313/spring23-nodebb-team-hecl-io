@@ -4,11 +4,10 @@ const db = require('../database');
 const plugins = require('../plugins');
 const utils = require('../utils');
 
-// added isResolved field to post data
 const intFields = [
     'uid', 'pid', 'tid', 'deleted', 'timestamp',
     'upvotes', 'downvotes', 'deleterUid', 'edited',
-    'replies', 'bookmarks', 'isResolved',
+    'replies', 'bookmarks',
 ];
 
 module.exports = function (Posts) {
