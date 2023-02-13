@@ -295,9 +295,11 @@ define('forum/topic/postTools', [
     }
 
     async function onResolveClicked(button, tid) {
+        // print acknowledgement that button triggered this function 
         console.log('triggered onResolveClicked() function');
         const selectedNode = await getSelectedNode();
 
+        //get current state and pid of post
         const currState = getData(button, 'data-isResolved');
         const currPid = getData(button, 'data-pid');
 
