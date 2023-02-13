@@ -64,7 +64,7 @@ get:
                     type: boolean
                   downvoted:
                     type: boolean
-                  isResolved:
+                  isResolved: # add boolean flag for isResolved - posts schema
                     type: boolean
 put:
   tags:

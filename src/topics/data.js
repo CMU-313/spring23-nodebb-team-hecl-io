@@ -8,6 +8,7 @@ const utils = require('../utils');
 const translator = require('../translator');
 const plugins = require('../plugins');
 
+// added isResolved variable to post intfields
 const intFields = [
     'tid', 'cid', 'uid', 'mainPid', 'postcount',
     'viewcount', 'postercount', 'deleted', 'locked', 'pinned',

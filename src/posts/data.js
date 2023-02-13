@@ -4,6 +4,7 @@ const db = require('../database');
 const plugins = require('../plugins');
 const utils = require('../utils');
 
+// added isResolved field to post data
 const intFields = [
     'uid', 'pid', 'tid', 'deleted', 'timestamp',
     'upvotes', 'downvotes', 'deleterUid', 'edited',

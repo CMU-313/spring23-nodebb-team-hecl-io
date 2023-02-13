@@ -98,6 +98,7 @@ define('forum/topic/postTools', [
             onReplyClicked($(this), tid);
         });
 
+        // when resolve button clicked, print to console and call function
         postContainer.on('click', '[component="post/resolve"]', function () {
             console.log('here1');
             onResolveClicked($(this), tid);
@@ -294,15 +295,22 @@ define('forum/topic/postTools', [
     }
 
     async function onResolveClicked(button, tid) {
-        console.log('here2');
+        console.log('triggered onResolveClicked() function');
+        const selectedNode = await getSelectedNode();
+
+        const currState = getData(button, 'data-isResolved');
+        const currPid = getData(button, 'data-pid');
+
     }
 
     async function onQuoteClicked(button, tid) {
         const selectedNode = await getSelectedNode();
+        
 
         showStaleWarning(async function () {
             const username = await getUserSlug(button);
             const toPid = getData(button, 'data-pid');
+            
 
             function quote(text) {
                 hooks.fire('action:composer.addQuote', {
