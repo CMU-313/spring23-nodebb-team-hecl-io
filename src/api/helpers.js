@@ -117,7 +117,9 @@ exports.postCommand = async function (caller, command, eventName, notification, 
         filter:post.unvote
         filter:post.bookmark
         filter:post.unbookmark
-     */
+        filter:post.resolve
+        filter:post.unresolve
+    */
     const filteredData = await plugins.hooks.fire(`filter:post.${command}`, {
         data: data,
         uid: caller.uid,
