@@ -64,7 +64,7 @@ define('forum/topic/postTools', [
     PostTools.toggle = function (pid, isDeleted) {
         const postEl = components.get('post', 'pid', pid);
 
-        postEl.find('[component="post/quote"], [component="post/bookmark"], [component="post/reply"], [component="post/flag"], [component="user/chat"]')
+        postEl.find('[component="post/quote"], [component="post/bookmark"], [component="post/reply"], [component="post/resolve"], [component="post/flag"], [component="user/chat"]')
             .toggleClass('hidden', isDeleted);
 
         postEl.find('[component="post/delete"]').toggleClass('hidden', isDeleted).parent().attr('hidden', isDeleted ? '' : null);
@@ -96,6 +96,12 @@ define('forum/topic/postTools', [
 
         postContainer.on('click', '[component="post/reply"]', function () {
             onReplyClicked($(this), tid);
+        });
+
+        // when resolve button clicked, print to console and call function
+        postContainer.on('click', '[component="post/resolve"]', function () {
+            console.log('Here - on click function triggered');
+            onResolveClicked($(this), tid);
         });
 
         $('.topic').on('click', '[component="topic/reply"]', function (e) {
@@ -288,12 +294,32 @@ define('forum/topic/postTools', [
         });
     }
 
+    async function onResolveClicked(button, pid) {
+        // print acknowledgement that button triggered this function
+        console.log('triggered onResolveClicked() function');
+
+        const method = button.attr('data-resolved') === 'false' ? 'put' : 'del';
+
+        api[method](`/posts/${pid}/resolve`, undefined, function (err) {
+            if (err) {
+                return alerts.error(err);
+            }
+            const type = method === 'put' ? 'resolve' : 'unresolve';
+            hooks.fire(`action:post.${type}`, { pid: pid });
+        });
+        return false;
+        // const isResolved = button.attr('data-resolved');
+        // const method = isResolved === 'false' || isResolved === '' ? 'put' : 'del';
+    }
+
     async function onQuoteClicked(button, tid) {
         const selectedNode = await getSelectedNode();
+
 
         showStaleWarning(async function () {
             const username = await getUserSlug(button);
             const toPid = getData(button, 'data-pid');
+
 
             function quote(text) {
                 hooks.fire('action:composer.addQuote', {
