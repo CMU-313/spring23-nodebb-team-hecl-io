@@ -81,7 +81,7 @@
         <span class="post-tools">
             <a component="post/reply" href="#" class="no-select <!-- IF !privileges.topics:reply -->hidden<!-- ENDIF !privileges.topics:reply -->">[[topic:reply]]</a>
             <!-- Added Resolve Button in Post -->
-            <a component="post/resolve" href="#" class="no-select ">Resolve</a>
+            <a component="post/resolve" data-resolved="{posts.resolved}" href="#" class="resolveBtn no-select "><!-- IF !posts.resolved -->Resolve <!-- ELSE --> Unresolve <!-- ENDIF !posts.resolved --> </a>
             <a component="post/quote" href="#" class="no-select <!-- IF !privileges.topics:reply -->hidden<!-- ENDIF !privileges.topics:reply -->">[[topic:quote]]</a>
         </span>
 

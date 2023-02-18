@@ -294,13 +294,23 @@ define('forum/topic/postTools', [
         });
     }
 
-    async function onResolveClicked(button, tid) {
+    async function onResolveClicked(button, pid) {
         // print acknowledgement that button triggered this function 
         console.log('triggered onResolveClicked() function');
 
-        //get current state and pid of post
-        const currState = getData(button, 'data-isResolved');
-        const currPid = getData(button, 'data-pid');
+        const method = button.attr('data-resolved') === 'false' ? 'put' : 'del';
+
+        api[method](`/posts/${pid}/resolve`, undefined, function (err) {
+            if (err) {
+                return alerts.error(err);
+            }
+            const type = method === 'put' ? 'resolve' : 'unresolve';
+            hooks.fire(`action:post.${type}`, { pid: pid });
+        });
+        return false;
+
+        // const isResolved = button.attr('data-resolved');
+        // const method = isResolved === 'false' || isResolved === '' ? 'put' : 'del';
 
     }
 
