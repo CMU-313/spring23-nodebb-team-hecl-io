@@ -295,7 +295,7 @@ define('forum/topic/postTools', [
     }
 
     async function onResolveClicked(button, pid) {
-        // print acknowledgement that button triggered this function 
+        // print acknowledgement that button triggered this function
         console.log('triggered onResolveClicked() function');
 
         const method = button.attr('data-resolved') === 'false' ? 'put' : 'del';
@@ -308,20 +308,18 @@ define('forum/topic/postTools', [
             hooks.fire(`action:post.${type}`, { pid: pid });
         });
         return false;
-
         // const isResolved = button.attr('data-resolved');
         // const method = isResolved === 'false' || isResolved === '' ? 'put' : 'del';
-
     }
 
     async function onQuoteClicked(button, tid) {
         const selectedNode = await getSelectedNode();
-        
+
 
         showStaleWarning(async function () {
             const username = await getUserSlug(button);
             const toPid = getData(button, 'data-pid');
-            
+
 
             function quote(text) {
                 hooks.fire('action:composer.addQuote', {
