@@ -21,6 +21,16 @@
                 <i class="fa fa-fw fa-thumb-tack fa-rotate-90"></i> [[topic:thread_tools.unpin]]
             </a>
         </li>
+        <li>
+            <a component="topic/resolve" href="#">
+                <i class="fa fa-fw fa-check"></i> [[topic:thread_tools.resolve]]
+            </a>
+        </li>
+        <li>
+            <a component="topic/unresolve" href="#" class="hidden">
+                <i class="fa fa-fw fa-times"></i> [[topic:thread_tools.unresolve]]
+            </a>
+        </li>
 
         <li>
             <a component="topic/lock" href="#">

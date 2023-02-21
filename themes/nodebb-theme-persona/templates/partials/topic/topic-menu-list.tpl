@@ -7,6 +7,8 @@
 <li <!-- IF pinned -->hidden<!-- ENDIF pinned -->><a component="topic/pin" href="#" class="<!-- IF pinned -->hidden<!-- ENDIF pinned -->"><i class="fa fa-fw fa-thumb-tack"></i> [[topic:thread_tools.pin]]</a></li>
 <li <!-- IF !pinned -->hidden<!-- ENDIF !pinned -->><a component="topic/unpin" href="#" class="<!-- IF !pinned -->hidden<!-- ENDIF !pinned -->"><i class="fa fa-fw fa-thumb-tack fa-rotate-90"></i> [[topic:thread_tools.unpin]]</a></li>
 <li><a component="topic/move-posts" href="#"><i class="fa fa-fw fa-arrows"></i> [[topic:thread_tools.move-posts]]</a></li>
+<li <!-- IF resolved -->hidden<!-- ENDIF resolved -->><a component="topic/resolve" href="#" class="<!-- IF resolved -->hidden<!-- ENDIF resolved -->"><i class="fa fa-fw fa-check"></i> [[topic:thread_tools.resolve]]</a></li>
+<li <!-- IF !resolved -->hidden<!-- ENDIF !resolved -->><a component="topic/unresolve" href="#" class="<!-- IF !resolved -->hidden<!-- ENDIF !resolved -->"><i class="fa fa-fw fa-times"></i> [[topic:thread_tools.unresolve]]</a></li>
 {{{ end }}}
 <li><a component="topic/mark-unread-for-all" href="#"><i class="fa fa-fw fa-inbox"></i> [[topic:thread_tools.markAsUnreadForAll]]</a></li>
 <li class="divider"></li>
