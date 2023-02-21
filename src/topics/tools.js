@@ -118,6 +118,62 @@ module.exports = function (Topics) {
         return await togglePin(tid, uid, false);
     };
 
+    topicTools.resolve = async function (tid, uid) {
+        console.log('resolve5');
+        return await toggleResolve(tid, uid, true);
+    };
+
+    topicTools.unresolve = async function (tid, uid) {
+        console.log('unresolve5');
+        return await toggleResolve(tid, uid, false);
+    };
+
+    async function toggleResolve(tid, uid, resolve) {
+        console.log('toggleResolve start');
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error('[[error:no-topic]]');
+        }
+
+        if (uid !== 'system' && !await privileges.topics.isAdminOrMod(tid, uid)) {
+            throw new Error('[[error:no-privileges]]');
+        }
+
+        const promises = [
+            Topics.setTopicField(tid, 'resolved', resolve ? 1 : 0),
+            Topics.events.log(tid, { type: resolve ? 'resolve' : 'unresolve', uid }),
+        ];
+        if (resolve) {
+            promises.push(db.sortedSetAdd(`cid:${topicData.cid}:tids:resolved`, Date.now(), tid));
+            promises.push(db.sortedSetsRemove([
+                `cid:${topicData.cid}:tids`,
+                `cid:${topicData.cid}:tids:posts`,
+                `cid:${topicData.cid}:tids:votes`,
+                `cid:${topicData.cid}:tids:views`,
+            ], tid));
+        } else {
+            promises.push(db.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid));
+            promises.push(db.sortedSetAddBulk([
+                [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
+                [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
+                [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
+                [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
+            ]));
+        }
+        console.log('toggleResolve mid');
+
+        const results = await Promise.all(promises);
+
+        topicData.isResolved = resolve; // deprecate in v2.0
+        topicData.resolved = resolve;
+        topicData.events = results[1];
+
+        plugins.hooks.fire('action:topic.resolve', { topic: _.clone(topicData), uid });
+
+        console.log('toggleResolve end');
+        return topicData;
+    }
+
     topicTools.setPinExpiry = async (tid, expiry, uid) => {
         if (isNaN(parseInt(expiry, 10)) || expiry <= Date.now()) {
             throw new Error('[[error:invalid-data]]');

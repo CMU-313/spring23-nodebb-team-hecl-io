@@ -59,6 +59,20 @@ Scheduled.pin = async function (tid, topicData) {
     ]);
 };
 
+Scheduled.resolve = async function (tid, topicData) {
+    console.log('resolve6');
+    return Promise.all([
+        topics.setTopicField(tid, 'resolved', 1),
+        db.sortedSetAdd(`cid:${topicData.cid}:tids:resolved`, Date.now(), tid),
+        db.sortedSetsRemove([
+            `cid:${topicData.cid}:tids`,
+            `cid:${topicData.cid}:tids:posts`,
+            `cid:${topicData.cid}:tids:votes`,
+            `cid:${topicData.cid}:tids:views`,
+        ], tid),
+    ]);
+};
+
 Scheduled.reschedule = async function ({ cid, tid, timestamp, uid }) {
     await Promise.all([
         db.sortedSetsAdd([
@@ -77,6 +91,21 @@ function unpin(tid, topicData) {
         topics.setTopicField(tid, 'pinned', 0),
         topics.deleteTopicField(tid, 'pinExpiry'),
         db.sortedSetRemove(`cid:${topicData.cid}:tids:pinned`, tid),
+        db.sortedSetAddBulk([
+            [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
+            [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
+            [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
+            [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
+        ]),
+    ];
+}
+
+// eslint-disable-next-line
+function unresolve(tid, topicData) {
+    console.log('unresolve6');
+    return [
+        topics.setTopicField(tid, 'resolved', 0),
+        db.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid),
         db.sortedSetAddBulk([
             [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
             [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],

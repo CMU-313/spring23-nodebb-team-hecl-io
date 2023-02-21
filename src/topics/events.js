@@ -31,6 +31,14 @@ Events._types = {
         icon: 'fa-thumb-tack',
         text: '[[topic:unpinned-by]]',
     },
+    resolve: {
+        icon: 'fa-check',
+        text: '[[topic:resolved-by]]',
+    },
+    unresolve: {
+        icon: 'fa-times',
+        text: '[[topic:unresolved-by]]',
+    },
     lock: {
         icon: 'fa-lock',
         text: '[[topic:locked-by]]',
