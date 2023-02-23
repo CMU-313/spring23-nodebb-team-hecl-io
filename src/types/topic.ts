@@ -56,6 +56,7 @@ export type TopicSlimProperties = {
   titleRaw: string;
   locked: string;
   pinned: number;
+  resolved: number;
   timestamp: string;
   timestampISO: number;
   lastposttime: string;
