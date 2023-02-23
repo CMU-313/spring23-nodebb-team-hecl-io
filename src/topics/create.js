@@ -55,6 +55,7 @@ module.exports = function (Topics) {
             timestampedSortedSetKeys.push('topics:scheduled');
         }
 
+        console.log('src/topics/Create');
         await Promise.all([
             db.sortedSetsAdd(timestampedSortedSetKeys, timestamp, topicData.tid),
             db.sortedSetsAdd([

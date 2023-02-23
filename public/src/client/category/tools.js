@@ -43,11 +43,13 @@ define('forum/category/tools', [
         });
 
         components.get('topic/pin').on('click', function () {
+            console.log('pin1');
             categoryCommand('put', '/pin', 'pin', onCommandComplete);
             return false;
         });
 
         components.get('topic/unpin').on('click', function () {
+            console.log('unpin1');
             categoryCommand('del', '/pin', 'unpin', onCommandComplete);
             return false;
         });
@@ -253,11 +255,12 @@ define('forum/category/tools', [
     }
 
     function isTopicPinned(tid) {
+        console.log('isTopicPinned1');
         return getTopicEl(tid).hasClass('pinned');
     }
 
     function isTopicResolved(tid) {
-        console.log('isTopicResolved');
+        console.log('isTopicResolved1');
         return getTopicEl(tid).hasClass('resolved');
     }
 
@@ -276,6 +279,7 @@ define('forum/category/tools', [
     }
 
     function setPinnedState(data) {
+        console.log('setPinnedState1 isPinned = ', data.isPinned);
         const topic = getTopicEl(data.tid);
         topic.toggleClass('pinned', data.isPinned);
         topic.find('[component="topic/pinned"]').toggleClass('hide', !data.isPinned);
@@ -283,6 +287,7 @@ define('forum/category/tools', [
     }
 
     function setResolvedState(data) {
+        console.log('setResolvedState1 isResolved = ', data.isResolved);
         const topic = getTopicEl(data.tid);
         topic.toggleClass('resolved', data.isResolved);
         topic.find('[component="topic/resolved"]').toggleClass('hide', !data.isResolved);

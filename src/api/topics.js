@@ -118,12 +118,14 @@ topicsAPI.purge = async function (caller, data) {
 };
 
 topicsAPI.pin = async function (caller, data) {
+    console.log('pin3');
     await doTopicAction('pin', 'event:topic_pinned', caller, {
         tids: data.tids,
     });
 };
 
 topicsAPI.unpin = async function (caller, data) {
+    console.log('unpin3');
     await doTopicAction('unpin', 'event:topic_unpinned', caller, {
         tids: data.tids,
     });
