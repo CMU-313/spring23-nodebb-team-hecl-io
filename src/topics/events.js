@@ -33,11 +33,11 @@ Events._types = {
     },
     resolve: {
         icon: 'fa-check',
-        text: '[[topic:resolved-by]]',
+        text: 'Resolved by',
     },
     unresolve: {
         icon: 'fa-times',
-        text: '[[topic:unresolved-by]]',
+        text: 'Unresolved by',
     },
     lock: {
         icon: 'fa-lock',

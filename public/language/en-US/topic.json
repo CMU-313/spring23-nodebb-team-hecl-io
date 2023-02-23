@@ -43,8 +43,6 @@
     "unlocked-by": "Unlocked by",
     "pinned-by": "Pinned by",
     "unpinned-by": "Unpinned by",
-    "resolved-by": "Resolved by",
-	"unresolved-by": "Unresolved by",
     "deleted-by": "Deleted by",
     "restored-by": "Restored by",
     "moved-from-by": "Moved from %1 by",
