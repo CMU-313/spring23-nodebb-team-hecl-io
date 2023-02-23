@@ -27,7 +27,7 @@
             </a>
         </li>
         <li>
-            <a component="topic/unresolve" href="#" class="hidden">
+            <a component="topic/unresolve" href="#">
                 <i class="fa fa-fw fa-times"></i> [[topic:thread_tools.unresolve]]
             </a>
         </li>

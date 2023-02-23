@@ -207,7 +207,6 @@ define('forum/category/tools', [
         const isAnyDeleted = isAny(isTopicDeleted, tids);
         const areAllDeleted = areAll(isTopicDeleted, tids);
         const isAnyPinned = isAny(isTopicPinned, tids);
-        const isAnyResolved = isAny(isTopicResolved, tids);
         const isAnyLocked = isAny(isTopicLocked, tids);
         const isAnyScheduled = isAny(isTopicScheduled, tids);
         const areAllScheduled = areAll(isTopicScheduled, tids);
@@ -222,8 +221,8 @@ define('forum/category/tools', [
         components.get('topic/pin').toggleClass('hidden', areAllScheduled || isAnyPinned);
         components.get('topic/unpin').toggleClass('hidden', areAllScheduled || !isAnyPinned);
 
-        components.get('topic/resolve').toggleClass('hidden', areAllScheduled || isAnyResolved);
-        components.get('topic/unresolve').toggleClass('hidden', areAllScheduled || !isAnyResolved);
+        components.get('topic/resolve').toggleClass('hidden', areAllScheduled);
+        components.get('topic/unresolve').toggleClass('hidden', areAllScheduled);
 
         components.get('topic/merge').toggleClass('hidden', isAnyScheduled);
     }
@@ -257,11 +256,6 @@ define('forum/category/tools', [
     function isTopicPinned(tid) {
         console.log('isTopicPinned1');
         return getTopicEl(tid).hasClass('pinned');
-    }
-
-    function isTopicResolved(tid) {
-        console.log('isTopicResolved1');
-        return getTopicEl(tid).hasClass('resolved');
     }
 
     function isTopicScheduled(tid) {
