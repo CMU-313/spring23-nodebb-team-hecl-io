@@ -43,11 +43,13 @@ define('forum/topic/threadTools', [
         });
 
         topicContainer.on('click', '[component="topic/pin"]', function () {
+            console.log('pin2');
             topicCommand('put', '/pin', 'pin');
             return false;
         });
 
         topicContainer.on('click', '[component="topic/unpin"]', function () {
+            console.log('unpin2');
             topicCommand('del', '/pin', 'unpin');
             return false;
         });
@@ -343,6 +345,7 @@ define('forum/topic/threadTools', [
 
 
     ThreadTools.setPinnedState = function (data) {
+        console.log('setPinnedState2 pinned = ', data.pinned);
         const threadEl = components.get('topic');
         if (parseInt(data.tid, 10) !== parseInt(threadEl.attr('data-tid'), 10)) {
             return;
@@ -365,14 +368,14 @@ define('forum/topic/threadTools', [
     };
 
     ThreadTools.setResolvedState = function (data) {
-        console.log('setResolvedState start');
+        console.log('setResolvedState2 resolved = ', data.resolved);
         const threadEl = components.get('topic');
         if (parseInt(data.tid, 10) !== parseInt(threadEl.attr('data-tid'), 10)) {
             return;
         }
 
-        components.get('topic/resolve').toggleClass('hidden', data.resolved).parent().attr('hidden', data.resolved ? 1 : null);
-        components.get('topic/unresolved').toggleClass('hidden', !data.resolved).parent().attr('hidden', !data.resolved ? 0 : null);
+        components.get('topic/resolve').toggleClass('hidden', data.resolved).parent().attr('hidden', data.resolved ? '' : null);
+        components.get('topic/unresolve').toggleClass('hidden', !data.resolved).parent().attr('hidden', !data.resolved ? '' : null);
         const icon = $('[component="topic/labels"] [component="topic/resolved"]');
         icon.toggleClass('hidden', !data.resolved);
 
