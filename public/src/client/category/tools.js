@@ -291,6 +291,7 @@ define('forum/category/tools', [
         const topic = getTopicEl(data.tid);
         topic.toggleClass('resolved', data.isResolved);
         topic.find('[component="topic/resolved"]').toggleClass('hide', !data.isResolved);
+        topic.find('[component="topic/unresolved"]').toggleClass('hide', data.isResolved);
         ajaxify.refresh();
     }
 

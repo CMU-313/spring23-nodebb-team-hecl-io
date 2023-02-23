@@ -376,8 +376,10 @@ define('forum/topic/threadTools', [
 
         components.get('topic/resolve').toggleClass('hidden', data.resolved).parent().attr('hidden', data.resolved ? '' : null);
         components.get('topic/unresolve').toggleClass('hidden', !data.resolved).parent().attr('hidden', !data.resolved ? '' : null);
-        const icon = $('[component="topic/labels"] [component="topic/resolved"]');
-        icon.toggleClass('hidden', !data.resolved);
+        const resolveIcon = $('[component="topic/labels"] [component="topic/resolved"]');
+        resolveIcon.toggleClass('hidden', !data.resolved);
+        const unresolveIcon = $('[component="topic/labels"] [component="topic/unresolved"]');
+        unresolveIcon.toggleClass('hidden', data.resolved);
 
         ajaxify.data.resolved = data.resolved;
 
