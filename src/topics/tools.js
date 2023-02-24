@@ -111,10 +111,12 @@ module.exports = function (Topics) {
     }
 
     topicTools.pin = async function (tid, uid) {
+        console.log('pin5');
         return await togglePin(tid, uid, true);
     };
 
     topicTools.unpin = async function (tid, uid) {
+        console.log('unpin5');
         return await togglePin(tid, uid, false);
     };
 
@@ -129,7 +131,7 @@ module.exports = function (Topics) {
     };
 
     async function toggleResolve(tid, uid, resolve) {
-        console.log('toggleResolve start');
+        console.log('toggleResolve start resolve = ', resolve);
         const topicData = await Topics.getTopicData(tid);
         if (!topicData) {
             throw new Error('[[error:no-topic]]');
@@ -145,20 +147,20 @@ module.exports = function (Topics) {
         ];
         if (resolve) {
             promises.push(db.sortedSetAdd(`cid:${topicData.cid}:tids:resolved`, Date.now(), tid));
-            promises.push(db.sortedSetsRemove([
-                `cid:${topicData.cid}:tids`,
-                `cid:${topicData.cid}:tids:posts`,
-                `cid:${topicData.cid}:tids:votes`,
-                `cid:${topicData.cid}:tids:views`,
-            ], tid));
+            // promises.push(db.sortedSetsRemove([
+            //     `cid:${topicData.cid}:tids`,
+            //     `cid:${topicData.cid}:tids:posts`,
+            //     `cid:${topicData.cid}:tids:votes`,
+            //     `cid:${topicData.cid}:tids:views`,
+            // ], tid));
         } else {
             promises.push(db.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid));
-            promises.push(db.sortedSetAddBulk([
-                [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
-                [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
-                [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
-                [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
-            ]));
+            // promises.push(db.sortedSetAddBulk([
+            //     [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
+            //     [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
+            //     [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
+            //     [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
+            // ]));
         }
         console.log('toggleResolve mid');
 
@@ -206,6 +208,7 @@ module.exports = function (Topics) {
     };
 
     async function togglePin(tid, uid, pin) {
+        console.log('togglePin start pin = ', pin);
         const topicData = await Topics.getTopicData(tid);
         if (!topicData) {
             throw new Error('[[error:no-topic]]');
@@ -251,7 +254,7 @@ module.exports = function (Topics) {
         topicData.events = results[1];
 
         plugins.hooks.fire('action:topic.pin', { topic: _.clone(topicData), uid });
-
+        console.log('togglePin end');
         return topicData;
     }
 

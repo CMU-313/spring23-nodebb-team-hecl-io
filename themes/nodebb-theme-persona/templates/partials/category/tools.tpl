@@ -23,12 +23,12 @@
         </li>
         <li>
             <a component="topic/resolve" href="#">
-                <i class="fa fa-fw fa-check"></i> [[topic:thread_tools.resolve]]
+                <i class="fa fa-fw fa-check"></i> Resolve Topic
             </a>
         </li>
         <li>
-            <a component="topic/unresolve" href="#" class="hidden">
-                <i class="fa fa-fw fa-times"></i> [[topic:thread_tools.unresolve]]
+            <a component="topic/unresolve" href="#">
+                <i class="fa fa-fw fa-times"></i> Unresolve Topic
             </a>
         </li>
 

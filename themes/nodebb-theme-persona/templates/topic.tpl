@@ -11,7 +11,8 @@
                     <span component="topic/labels">
                         <i component="topic/scheduled" class="fa fa-clock-o <!-- IF !scheduled -->hidden<!-- ENDIF !scheduled -->" title="[[topic:scheduled]]"></i>
                         <i component="topic/pinned" class="fa fa-thumb-tack <!-- IF (scheduled || !pinned) -->hidden<!-- ENDIF (scheduled || !pinned) -->" title="{{{ if !pinExpiry }}}[[topic:pinned]]{{{ else }}}[[topic:pinned-with-expiry, {pinExpiryISO}]]{{{ end }}}"></i>
-                        <i component="topic/resolved" class="fa fa-check <!-- IF !resolved -->hidden<!-- ENDIF !resolved -->" title="[[topic:resolved]]"></i>
+                        <i component="topic/resolved" class="fa fa-check <!-- IF !resolved -->hidden<!-- ENDIF !resolved -->" title="Resolved"></i>
+                        <i component="topic/unresolved" class="fa fa-times <!-- IF resolved -->hidden<!-- ENDIF resolved -->" title="Unresolved"></i>
                         <i component="topic/locked" class="fa fa-lock <!-- IF !locked -->hidden<!-- ENDIF !locked -->" title="[[topic:locked]]"></i>
                         <i class="fa fa-arrow-circle-right <!-- IF !oldCid -->hidden<!-- ENDIF !oldCid -->" title="{{{ if privileges.isAdminOrMod }}}[[topic:moved-from, {oldCategory.name}]]{{{ else }}}[[topic:moved]]{{{ end }}}"></i>
                         {{{each icons}}}{@value}{{{end}}}

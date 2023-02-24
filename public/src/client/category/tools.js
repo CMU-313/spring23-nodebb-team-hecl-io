@@ -43,11 +43,13 @@ define('forum/category/tools', [
         });
 
         components.get('topic/pin').on('click', function () {
+            console.log('pin1');
             categoryCommand('put', '/pin', 'pin', onCommandComplete);
             return false;
         });
 
         components.get('topic/unpin').on('click', function () {
+            console.log('unpin1');
             categoryCommand('del', '/pin', 'unpin', onCommandComplete);
             return false;
         });
@@ -205,7 +207,6 @@ define('forum/category/tools', [
         const isAnyDeleted = isAny(isTopicDeleted, tids);
         const areAllDeleted = areAll(isTopicDeleted, tids);
         const isAnyPinned = isAny(isTopicPinned, tids);
-        const isAnyResolved = isAny(isTopicResolved, tids);
         const isAnyLocked = isAny(isTopicLocked, tids);
         const isAnyScheduled = isAny(isTopicScheduled, tids);
         const areAllScheduled = areAll(isTopicScheduled, tids);
@@ -220,8 +221,8 @@ define('forum/category/tools', [
         components.get('topic/pin').toggleClass('hidden', areAllScheduled || isAnyPinned);
         components.get('topic/unpin').toggleClass('hidden', areAllScheduled || !isAnyPinned);
 
-        components.get('topic/resolve').toggleClass('hidden', areAllScheduled || isAnyResolved);
-        components.get('topic/unresolve').toggleClass('hidden', areAllScheduled || !isAnyResolved);
+        components.get('topic/resolve').toggleClass('hidden', areAllScheduled);
+        components.get('topic/unresolve').toggleClass('hidden', areAllScheduled);
 
         components.get('topic/merge').toggleClass('hidden', isAnyScheduled);
     }
@@ -253,12 +254,8 @@ define('forum/category/tools', [
     }
 
     function isTopicPinned(tid) {
+        console.log('isTopicPinned1');
         return getTopicEl(tid).hasClass('pinned');
-    }
-
-    function isTopicResolved(tid) {
-        console.log('isTopicResolved');
-        return getTopicEl(tid).hasClass('resolved');
     }
 
     function isTopicScheduled(tid) {
@@ -276,6 +273,7 @@ define('forum/category/tools', [
     }
 
     function setPinnedState(data) {
+        console.log('setPinnedState1 isPinned = ', data.isPinned);
         const topic = getTopicEl(data.tid);
         topic.toggleClass('pinned', data.isPinned);
         topic.find('[component="topic/pinned"]').toggleClass('hide', !data.isPinned);
@@ -283,9 +281,11 @@ define('forum/category/tools', [
     }
 
     function setResolvedState(data) {
+        console.log('setResolvedState1 isResolved = ', data.isResolved);
         const topic = getTopicEl(data.tid);
         topic.toggleClass('resolved', data.isResolved);
         topic.find('[component="topic/resolved"]').toggleClass('hide', !data.isResolved);
+        topic.find('[component="topic/unresolved"]').toggleClass('hide', data.isResolved);
         ajaxify.refresh();
     }
 

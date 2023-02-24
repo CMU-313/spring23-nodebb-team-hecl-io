@@ -26,6 +26,7 @@ module.exports = function (Posts) {
             deleted: isDeleting ? 1 : 0,
             deleterUid: isDeleting ? uid : 0,
         });
+        console.log('deleteOrRestore');
         const postData = await Posts.getPostFields(pid, ['pid', 'tid', 'uid', 'content', 'timestamp']);
         const topicData = await topics.getTopicFields(postData.tid, ['tid', 'cid', 'pinned', 'resolved']);
         postData.cid = topicData.cid;
@@ -167,6 +168,7 @@ module.exports = function (Posts) {
     async function deleteFromUsersResolves(pids) {
         const arrayOfUids = await db.getSetsMembers(pids.map(pid => `pid:${pid}:users_resolved`));
         const bulkRemove = [];
+        console.log('deleteFromUsersResolves');
         pids.forEach((pid, index) => {
             arrayOfUids[index].forEach((uid) => {
                 bulkRemove.push([`uid:${uid}:resolved`, pid]);
