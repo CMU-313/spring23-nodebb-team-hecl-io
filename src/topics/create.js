@@ -33,7 +33,6 @@ module.exports = function (Topics) {
             lastposttime: 0,
             postcount: 0,
             viewcount: 0,
-            resolved: 0,
         };
 
         if (Array.isArray(data.tags) && data.tags.length) {
@@ -55,7 +54,6 @@ module.exports = function (Topics) {
             timestampedSortedSetKeys.push('topics:scheduled');
         }
 
-        console.log('src/topics/Create');
         await Promise.all([
             db.sortedSetsAdd(timestampedSortedSetKeys, timestamp, topicData.tid),
             db.sortedSetsAdd([
@@ -67,7 +65,6 @@ module.exports = function (Topics) {
             user.addTopicIdToUser(topicData.uid, topicData.tid, timestamp),
             db.incrObjectField(`category:${topicData.cid}`, 'topic_count'),
             db.incrObjectField('global', 'topicCount'),
-            db.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid),
             Topics.createTags(data.tags, topicData.tid, timestamp),
             scheduled ? Promise.resolve() : categories.updateRecentTid(topicData.cid, topicData.tid),
         ]);

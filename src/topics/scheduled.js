@@ -47,24 +47,9 @@ Scheduled.handleExpired = async function () {
 
 // topics/tools.js#pin/unpin would block non-admins/mods, thus the local versions
 Scheduled.pin = async function (tid, topicData) {
-    console.log('Scheduled.pin');
     return Promise.all([
         topics.setTopicField(tid, 'pinned', 1),
         db.sortedSetAdd(`cid:${topicData.cid}:tids:pinned`, Date.now(), tid),
-        db.sortedSetsRemove([
-            `cid:${topicData.cid}:tids`,
-            `cid:${topicData.cid}:tids:posts`,
-            `cid:${topicData.cid}:tids:votes`,
-            `cid:${topicData.cid}:tids:views`,
-        ], tid),
-    ]);
-};
-
-Scheduled.resolve = async function (tid, topicData) {
-    console.log('Scheduled.resolve');
-    return Promise.all([
-        topics.setTopicField(tid, 'resolved', 1),
-        db.sortedSetAdd(`cid:${topicData.cid}:tids:resolved`, Date.now(), tid),
         db.sortedSetsRemove([
             `cid:${topicData.cid}:tids`,
             `cid:${topicData.cid}:tids:posts`,
@@ -88,26 +73,10 @@ Scheduled.reschedule = async function ({ cid, tid, timestamp, uid }) {
 };
 
 function unpin(tid, topicData) {
-    console.log('Scheduled.unpin (function)');
     return [
         topics.setTopicField(tid, 'pinned', 0),
         topics.deleteTopicField(tid, 'pinExpiry'),
         db.sortedSetRemove(`cid:${topicData.cid}:tids:pinned`, tid),
-        db.sortedSetAddBulk([
-            [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
-            [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
-            [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
-            [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
-        ]),
-    ];
-}
-
-// eslint-disable-next-line
-function unresolve(tid, topicData) {
-    console.log('Scheduled.unresolve (function)');
-    return [
-        topics.setTopicField(tid, 'resolved', 0),
-        db.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid),
         db.sortedSetAddBulk([
             [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
             [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
