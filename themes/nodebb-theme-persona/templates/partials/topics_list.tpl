@@ -34,8 +34,8 @@
             <h2 component="topic/header" class="title">
                 <i component="topic/scheduled" class="fa fa-clock-o <!-- IF !topics.scheduled -->hide<!-- ENDIF !topics.scheduled -->" title="[[topic:scheduled]]"></i>
                 <i component="topic/pinned" class="fa fa-thumb-tack <!-- IF (topics.scheduled || !topics.pinned) -->hide<!-- ENDIF (topics.scheduled || !topics.pinned) -->" title="{{{ if !../pinExpiry }}}[[topic:pinned]]{{{ else }}}[[topic:pinned-with-expiry, {../pinExpiryISO}]]{{{ end }}}"></i>
-                <i component="topic/resolved" class="fa fa-check <!-- IF !topics.resolved -->hide<!-- ENDIF !topics.resolved -->" title="Resolved"> (Resolved) </i>
-                <i component="topic/unresolved" class="fa fa-times <!-- IF topics.resolved -->hide<!-- ENDIF topics.resolved -->" title="Unresolved"> (Unresolved) </i>
+                <i component="topic/resolved" class="fa fa-check <!-- IF !topics.resolved -->hide<!-- ENDIF !topics.resolved -->" style="color:green;" title="Resolved"> (Resolved) </i>
+                <i component="topic/unresolved" class="fa fa-times <!-- IF topics.resolved -->hide<!-- ENDIF topics.resolved -->" style="color:red;" title="Unresolved"> (Unresolved) </i>
                 <i component="topic/locked" class="fa fa-lock <!-- IF !topics.locked -->hide<!-- ENDIF !topics.locked -->" title="[[topic:locked]]"></i>
                 <i component="topic/moved" class="fa fa-arrow-circle-right <!-- IF !topics.oldCid -->hide<!-- ENDIF !topics.oldCid -->" title="[[topic:moved]]"></i>
                 {{{each topics.icons}}}{@value}{{{end}}}
