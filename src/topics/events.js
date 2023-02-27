@@ -88,7 +88,6 @@ exports._types = {
 };
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('init');
         // Allow plugins to define additional topic event types
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -96,14 +95,11 @@ function init() {
         // No other way to safely extract types from plugins
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         exports._types = types;
-        console.log('types', types);
-        console.log('_types', exports._types);
     });
 }
 exports.init = init;
 function getCategoryInfo(cids) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('getCategoryInfo');
         const uniqCids = lodash_1.default.uniq(cids);
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line max-len
@@ -114,7 +110,6 @@ function getCategoryInfo(cids) {
 }
 function getUserInfo(uids) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('getUserInfo');
         uids = uids.filter((uid, idx) => !isNaN(parseInt(uid, 10)) && uids.indexOf(uid) === idx);
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line max-len
@@ -130,7 +125,6 @@ function getUserInfo(uids) {
 }
 function modifyEvent({ tid, uid, eventIds, timestamps, events }) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('modifyEvent');
         // Add posts from post queue
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line max-len
@@ -196,7 +190,6 @@ function modifyEvent({ tid, uid, eventIds, timestamps, events }) {
 }
 function get(tid, uid, reverse = false) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('get');
         if (!(yield _1.default.exists(tid))) {
             throw new Error('[[error:no-topic]]');
         }
@@ -221,10 +214,8 @@ function get(tid, uid, reverse = false) {
 exports.get = get;
 function log(tid, payload) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('log');
         const { type } = payload;
         const timestamp = payload.timestamp || Date.now();
-        // console.log('_types = ', _types);
         if (!exports._types.hasOwnProperty(type)) {
             throw new Error(`[[error:topic-event-unrecognized, ${type}]]`);
         }
@@ -259,7 +250,6 @@ function log(tid, payload) {
 exports.log = log;
 function purge(tid, eventIds = []) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log('purge');
         if (eventIds.length) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line max-len

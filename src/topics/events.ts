@@ -100,7 +100,6 @@ interface eventsType {
 }
 
 export async function init() {
-    console.log('init');
     // Allow plugins to define additional topic event types
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -108,12 +107,9 @@ export async function init() {
     // No other way to safely extract types from plugins
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     _types = types;
-    console.log('types', types);
-    console.log('_types', _types);
 }
 
 async function getCategoryInfo(cids: _.List<_.PropertyName>) : Promise<_.Dictionary<_.Dictionary<string | unknown>>> {
-    console.log('getCategoryInfo');
     const uniqCids : _.List<_.PropertyName> = _.uniq(cids);
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line max-len
@@ -123,7 +119,6 @@ async function getCategoryInfo(cids: _.List<_.PropertyName>) : Promise<_.Diction
 }
 
 async function getUserInfo(uids: string[]) {
-    console.log('getUserInfo');
     uids = uids.filter((uid: string, idx: number) => !isNaN(parseInt(uid, 10)) && uids.indexOf(uid) === idx);
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line max-len
@@ -141,7 +136,6 @@ async function getUserInfo(uids: string[]) {
 }
 
 async function modifyEvent({ tid, uid, eventIds, timestamps, events } : eventsType) {
-    console.log('modifyEvent');
     // Add posts from post queue
     // The next line calls a function in a module that has not been updated to TS yet
     // eslint-disable-next-line max-len
@@ -215,7 +209,6 @@ async function modifyEvent({ tid, uid, eventIds, timestamps, events } : eventsTy
 }
 
 export async function get(tid: number, uid: number, reverse = false) {
-    console.log('get');
     if (!await topics.exists(tid)) {
         throw new Error('[[error:no-topic]]');
     }
@@ -242,10 +235,8 @@ export async function get(tid: number, uid: number, reverse = false) {
 }
 
 export async function log(tid: number, payload: eventType) {
-    console.log('log');
     const { type } = payload;
     const timestamp = payload.timestamp || Date.now();
-    // console.log('_types = ', _types);
     if (!_types.hasOwnProperty(type)) {
         throw new Error(`[[error:topic-event-unrecognized, ${type}]]`);
     } else if (!await topics.exists(tid)) {
@@ -280,7 +271,6 @@ export async function log(tid: number, payload: eventType) {
 }
 
 export async function purge(tid: number, eventIds: string[] = []) {
-    console.log('purge');
     if (eventIds.length) {
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line max-len
