@@ -18,7 +18,7 @@ define('forum/topic/events', [
         'event:user_status_change': onUserStatusChange,
         'event:voted': updatePostVotesAndUserReputation,
         'event:bookmarked': updateBookmarkCount,
-        // 'event:resolved': updateResolved,
+        'event:endorsed': updateEndorsed,
 
         'event:topic_deleted': threadTools.setDeleteState,
         'event:topic_restored': threadTools.setDeleteState,
@@ -89,11 +89,11 @@ define('forum/topic/events', [
         }).html(data.post.bookmarks).attr('data-bookmarks', data.post.bookmarks);
     }
 
-    // function updateResolved(data) {
-    //     $('[data-pid="' + data.post.pid + '"] .resolveBtn').filter(function (index, el) {
-    //         return parseInt($(el).closest('[data-pid]').attr('data-pid'), 10) === parseInt(data.post.pid, 10);
-    //     }).html(data.isResolved ? 'Unresolve' : 'Resolve').attr('data-resolved', data.isResolved);
-    // }
+    function updateEndorsed(data) {
+        $('[data-pid="' + data.post.pid + '"] .resolveBtn').filter(function (index, el) {
+            return parseInt($(el).closest('[data-pid]').attr('data-pid'), 10) === parseInt(data.post.pid, 10);
+        }).html(data.isEndorsed ? 'Unendorse' : 'Endorse').attr('data-endorsed', data.isEndorsed);
+    }
 
     function onTopicPurged(data) {
         if (

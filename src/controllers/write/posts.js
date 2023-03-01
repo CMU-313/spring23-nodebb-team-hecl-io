@@ -83,15 +83,15 @@ Posts.unbookmark = async (req, res) => {
     helpers.formatApiResponse(200, res);
 };
 
-Posts.resolve = async (req, res) => {
+Posts.endorse = async (req, res) => {
     const data = await mock(req);
-    await api.posts.resolve(req, data);
+    await api.posts.endorse(req, data);
     helpers.formatApiResponse(200, res);
 };
 
-Posts.unresolve = async (req, res) => {
+Posts.unendorse = async (req, res) => {
     const data = await mock(req);
-    await api.posts.unresolve(req, data);
+    await api.posts.unendorse(req, data);
     helpers.formatApiResponse(200, res);
 };
 

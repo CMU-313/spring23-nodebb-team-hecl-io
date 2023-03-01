@@ -76,6 +76,7 @@ module.exports = function (Posts) {
             deleteFromCategoryRecentPosts(postData),
             deleteFromUsersBookmarks(pids),
             deleteFromUsersVotes(pids),
+            deleteFromUsersEndorses(pids),
             deleteFromReplies(postData),
             deleteFromGroups(pids),
             deleteDiffs(pids),
@@ -162,6 +163,20 @@ module.exports = function (Posts) {
         await db.sortedSetRemoveBulk(bulkRemove);
         await db.deleteAll(pids.map(pid => `pid:${pid}:users_bookmarked`));
     }
+
+
+    async function deleteFromUsersEndorses(pids) {
+        const arrayOfUids = await db.getSetsMembers(pids.map(pid => `pid:${pid}:users_endorseed`));
+        const bulkRemove = [];
+        pids.forEach((pid, index) => {
+            arrayOfUids[index].forEach((uid) => {
+                bulkRemove.push([`uid:${uid}:endorsed`, pid]);
+            });
+        });
+        await db.sortedSetRemoveBulk(bulkRemove);
+        await db.deleteAll(pids.map(pid => `pid:${pid}:users_endorsed`));
+    }
+
 
     async function deleteFromUsersVotes(pids) {
         const [upvoters, downvoters] = await Promise.all([
