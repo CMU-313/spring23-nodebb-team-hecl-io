@@ -70,7 +70,7 @@ export default function (Posts: PostsType) {
 
         return {
             post: postData,
-            isendorsed: isEndorsing,
+            isEndorsed: isEndorsing,
         };
     }
 
