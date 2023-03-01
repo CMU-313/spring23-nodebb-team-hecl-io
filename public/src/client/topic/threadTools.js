@@ -43,25 +43,21 @@ define('forum/topic/threadTools', [
         });
 
         topicContainer.on('click', '[component="topic/pin"]', function () {
-            console.log('pin2');
             topicCommand('put', '/pin', 'pin');
             return false;
         });
 
         topicContainer.on('click', '[component="topic/unpin"]', function () {
-            console.log('unpin2');
             topicCommand('del', '/pin', 'unpin');
             return false;
         });
 
         topicContainer.on('click', '[component="topic/resolve"]', function () {
-            console.log('resolve2');
             topicCommand('put', '/resolve', 'resolve');
             return false;
         });
 
         topicContainer.on('click', '[component="topic/unresolve"]', function () {
-            console.log('unresolve2');
             topicCommand('del', '/resolve', 'unresolve');
             return false;
         });
@@ -345,7 +341,6 @@ define('forum/topic/threadTools', [
 
 
     ThreadTools.setPinnedState = function (data) {
-        console.log('setPinnedState2 pinned = ', data.pinned);
         const threadEl = components.get('topic');
         if (parseInt(data.tid, 10) !== parseInt(threadEl.attr('data-tid'), 10)) {
             return;
@@ -368,7 +363,6 @@ define('forum/topic/threadTools', [
     };
 
     ThreadTools.setResolvedState = function (data) {
-        console.log('setResolvedState2 resolved = ', data.resolved);
         const threadEl = components.get('topic');
         if (parseInt(data.tid, 10) !== parseInt(threadEl.attr('data-tid'), 10)) {
             return;
@@ -384,7 +378,6 @@ define('forum/topic/threadTools', [
         ajaxify.data.resolved = data.resolved;
 
         posts.addTopicEvents(data.events);
-        console.log('setResolvedState end');
     };
 
     function setFollowState(state) {

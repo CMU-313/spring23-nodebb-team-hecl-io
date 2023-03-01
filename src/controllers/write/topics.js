@@ -67,7 +67,6 @@ Topics.purge = async (req, res) => {
 };
 
 Topics.pin = async (req, res) => {
-    console.log('pin4');
     // Pin expiry was not available w/ sockets hence not included in api lib method
     if (req.body.expiry) {
         await topics.tools.setPinExpiry(req.params.tid, req.body.expiry, req.uid);
@@ -78,19 +77,16 @@ Topics.pin = async (req, res) => {
 };
 
 Topics.unpin = async (req, res) => {
-    console.log('unpin4');
     await api.topics.unpin(req, { tids: [req.params.tid] });
     helpers.formatApiResponse(200, res);
 };
 
 Topics.resolve = async (req, res) => {
-    console.log('resolve4');
     await api.topics.resolve(req, { tids: [req.params.tid] });
     helpers.formatApiResponse(200, res);
 };
 
 Topics.unresolve = async (req, res) => {
-    console.log('unresolve4');
     await api.topics.unresolve(req, { tids: [req.params.tid] });
     helpers.formatApiResponse(200, res);
 };

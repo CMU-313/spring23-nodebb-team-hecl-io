@@ -100,7 +100,6 @@ define('forum/topic/postTools', [
 
         // when resolve button clicked, print to console and call function
         postContainer.on('click', '[component="post/resolve"]', function () {
-            console.log('Here - on click function triggered');
             onResolveClicked($(this), tid);
         });
 
@@ -296,7 +295,6 @@ define('forum/topic/postTools', [
 
     async function onResolveClicked(button, pid) {
         // print acknowledgement that button triggered this function
-        console.log('triggered onResolveClicked() function');
 
         const method = button.attr('data-resolved') === 'false' ? 'put' : 'del';
 
