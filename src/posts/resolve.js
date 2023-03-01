@@ -6,68 +6,68 @@ const db = require("../database");
 const plugins = require("../plugins");
 var Action;
 (function (Action) {
-    Action[Action["RESOLVE"] = 0] = "RESOLVE";
-    Action[Action["UNRESOLVE"] = 1] = "UNRESOLVE";
+    Action[Action["ENDORSE"] = 0] = "ENDORSE";
+    Action[Action["UNENDORSE"] = 1] = "UNENDORSE";
 })(Action || (Action = {}));
 function default_1(Posts) {
-    async function toggleResolve(type, pid, uid) {
+    async function toggleEndorse(type, pid, uid) {
         if (parseInt(uid, 10) <= 0) {
             throw new Error('[[error:not-logged-in]]');
         }
-        const isResolving = type === Action.RESOLVE;
-        const [postData, hasResolved] = await Promise.all([
+        const isResolving = type === Action.ENDORSE;
+        const [postData, hasEndorsed] = await Promise.all([
             Posts.getPostFields(pid, ['pid', 'uid']),
-            Posts.hasResolved(pid, uid),
+            Posts.hasEndorsed(pid, uid),
         ]);
-        if (isResolving && hasResolved) {
-            throw new Error('[[error:already-resolved]]');
+        if (isResolving && hasEndorsed) {
+            throw new Error('[[error:already-endorsed]]');
         }
-        if (!isResolving && !hasResolved) {
-            throw new Error('[[error:already-unresolved]]');
+        if (!isResolving && !hasEndorsed) {
+            throw new Error('[[error:already-unendorsed]]');
         }
         if (isResolving) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            await db.sortedSetAdd(`uid:${uid}:resolved`, Date.now(), pid);
+            await db.sortedSetAdd(`uid:${uid}:endorsed`, Date.now(), pid);
         }
         else {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            await db.sortedSetRemove(`uid:${uid}:resolved`, pid);
+            await db.sortedSetRemove(`uid:${uid}:endorsed`, pid);
         }
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        await db[isResolving ? 'setAdd' : 'setRemove'](`pid:${pid}:users_resolved`, uid);
+        await db[isResolving ? 'setAdd' : 'setRemove'](`pid:${pid}:users_endorsed`, uid);
         await plugins.hooks.fire(`action:post.${type}`, {
             pid: pid,
             uid: uid,
             owner: postData.uid,
-            current: hasResolved ? 'resolved' : 'unresolved',
+            current: hasEndorsed ? 'endorsed' : 'unendorsed',
         });
         return {
             post: postData,
-            isResolved: isResolving,
+            isEndorsed: isResolving,
         };
     }
-    Posts.hasResolved = async function (pid, uid) {
+    Posts.hasEndorsed = async function (pid, uid) {
         if (parseInt(uid, 10) <= 0) {
             return Array.isArray(pid) ? pid.map(() => false) : false;
         }
         if (Array.isArray(pid)) {
-            const sets = pid.map(pid => `pid:${pid}:users_resolved`);
+            const sets = pid.map(pid => `pid:${pid}:users_endorsed`);
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             return await db.isMemberOfSets(sets, uid);
         }
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return await db.isSetMember(`pid:${pid}:users_resolved`, uid);
+        return await db.isSetMember(`pid:${pid}:users_endorsed`, uid);
     };
-    Posts.resolve = async function (pid, uid) {
-        return await toggleResolve(Action.RESOLVE, pid, uid);
+    Posts.endorse = async function (pid, uid) {
+        return await toggleEndorse(Action.ENDORSE, pid, uid);
     };
-    Posts.unresolve = async function (pid, uid) {
-        return await toggleResolve(Action.UNRESOLVE, pid, uid);
+    Posts.unendorse = async function (pid, uid) {
+        return await toggleEndorse(Action.UNENDORSE, pid, uid);
     };
 }
 exports.default = default_1;

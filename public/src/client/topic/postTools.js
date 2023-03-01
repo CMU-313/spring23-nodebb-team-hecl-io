@@ -293,16 +293,16 @@ define('forum/topic/postTools', [
         });
     }
 
-    async function onResolveClicked(button, pid) {
+    async function onEndorseClicked(button, pid) {
         // print acknowledgement that button triggered this function
 
-        const method = button.attr('data-resolved') === 'false' ? 'put' : 'del';
+        const method = button.attr('data-endorsed') === 'false' ? 'put' : 'del';
 
-        api[method](`/posts/${pid}/resolve`, undefined, function (err) {
+        api[method](`/posts/${pid}/endorse`, undefined, function (err) {
             if (err) {
                 return alerts.error(err);
             }
-            const type = method === 'put' ? 'resolve' : 'unresolve';
+            const type = method === 'put' ? 'endorse' : 'unendorsed';
             hooks.fire(`action:post.${type}`, { pid: pid });
         });
         return false;
