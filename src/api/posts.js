@@ -273,12 +273,12 @@ postsAPI.unbookmark = async function (caller, data) {
     return await apiHelpers.postCommand(caller, 'unbookmark', 'bookmarked', '', data);
 };
 
-postsAPI.resolve = async function (caller, data) {
-    return await apiHelpers.postCommand(caller, 'resolve', 'resolved', '', data);
+postsAPI.endorse = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, 'endorse', 'endorsed', '', data);
 };
 
-postsAPI.unresolve = async function (caller, data) {
-    return await apiHelpers.postCommand(caller, 'unresolve', 'resolved', '', data);
+postsAPI.unendorse = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, 'unendorse', 'endorsed', '', data);
 };
 
 async function diffsPrivilegeCheck(pid, uid) {
