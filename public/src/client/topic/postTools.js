@@ -98,9 +98,9 @@ define('forum/topic/postTools', [
             onReplyClicked($(this), tid);
         });
 
-        // when resolve button clicked, print to console and call function
-        postContainer.on('click', '[component="post/resolve"]', function () {
-            onResolveClicked($(this), tid);
+        // when Endorse button clicked, print to console and call function
+        postContainer.on('click', '[component="post/endorse"]', function () {
+            onEndorseClicked($(this), tid);
         });
 
         $('.topic').on('click', '[component="topic/reply"]', function (e) {
