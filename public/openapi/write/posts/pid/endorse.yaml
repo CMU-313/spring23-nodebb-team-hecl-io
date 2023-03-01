@@ -1,8 +1,8 @@
 put:
   tags:
     - posts
-  summary: resolve a post
-  description: This operation resolves a post.
+  summary: endorses a post
+  description: This operation endorses a post.
   parameters:
     - in: path
       name: pid
@@ -13,7 +13,7 @@ put:
       example: 2
   responses:
     '200':
-      description: Post successfully resolved
+      description: Post successfully endorsed
       content:
         application/json:
           schema:
@@ -27,8 +27,8 @@ put:
 delete:
   tags:
     - posts
-  summary: unresolve a post
-  description: This operation unresolves a post.
+  summary: unendorse a post
+  description: This operation unendorses a post.
   parameters:
     - in: path
       name: pid
@@ -39,7 +39,7 @@ delete:
       example: 2
   responses:
     '200':
-      description: Post successfully unresolved
+      description: Post successfully unendorsed
       content:
         application/json:
           schema:
