@@ -35,7 +35,7 @@ interface Post {
     bookmarks: unknown;
     votes: unknown;
 }
-g
+
 interface Data {
     tid: string;
     uid: string;
