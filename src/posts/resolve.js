@@ -14,18 +14,18 @@ function default_1(Posts) {
         if (parseInt(uid, 10) <= 0) {
             throw new Error('[[error:not-logged-in]]');
         }
-        const isResolving = type === Action.ENDORSE;
+        const isEndorsing = type === Action.ENDORSE;
         const [postData, hasEndorsed] = await Promise.all([
             Posts.getPostFields(pid, ['pid', 'uid']),
             Posts.hasEndorsed(pid, uid),
         ]);
-        if (isResolving && hasEndorsed) {
+        if (isEndorsing && hasEndorsed) {
             throw new Error('[[error:already-endorsed]]');
         }
-        if (!isResolving && !hasEndorsed) {
+        if (!isEndorsing && !hasEndorsed) {
             throw new Error('[[error:already-unendorsed]]');
         }
-        if (isResolving) {
+        if (isEndorsing) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             await db.sortedSetAdd(`uid:${uid}:endorsed`, Date.now(), pid);
@@ -37,7 +37,7 @@ function default_1(Posts) {
         }
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        await db[isResolving ? 'setAdd' : 'setRemove'](`pid:${pid}:users_endorsed`, uid);
+        await db[isEndorsing ? 'setAdd' : 'setRemove'](`pid:${pid}:users_endorsed`, uid);
         await plugins.hooks.fire(`action:post.${type}`, {
             pid: pid,
             uid: uid,
@@ -46,7 +46,7 @@ function default_1(Posts) {
         });
         return {
             post: postData,
-            isEndorsed: isResolving,
+            isEndorsed: isEndorsing,
         };
     }
     Posts.hasEndorsed = async function (pid, uid) {
