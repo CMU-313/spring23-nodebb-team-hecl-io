@@ -6,6 +6,7 @@
         </a>
     </div>
 
+
     <small class="pull-left">
         <strong>
             <a href="<!-- IF posts.user.userslug -->{config.relative_path}/user/{posts.user.userslug}<!-- ELSE -->#<!-- ENDIF posts.user.userslug -->" itemprop="author" data-username="{posts.user.username}" data-uid="{posts.user.uid}">{posts.user.displayname}</a>
@@ -72,6 +73,7 @@
 
         <i class="fa fa-fw fa-chevron-right" component="post/replies/open"></i>
         <i class="fa fa-fw fa-chevron-down hidden" component="post/replies/close"></i>
+        
         <i class="fa fa-fw fa-spin fa-spinner hidden" component="post/replies/loading"></i>
     </a>
     {{{ end }}}
