@@ -39,7 +39,7 @@ module.exports = function (Posts) {
         await categories.updateRecentTidForCid(postData.cid);
         plugins.hooks.fire(`action:post.${type}`, { post: _.clone(postData), uid: uid });
         if (type === 'delete') {
-            await flags.resolveFlag('post', pid, uid);
+            await flags.endorseFlag('post', pid, uid);
         }
         return postData;
     }
@@ -84,7 +84,7 @@ module.exports = function (Posts) {
             db.sortedSetsRemove(['posts:pid', 'posts:votes', 'posts:flagged'], pids),
         ]);
 
-        await resolveFlags(postData, uid);
+        await endorseFlags(postData, uid);
 
         // deprecated hook
         Promise.all(postData.map(p => plugins.hooks.fire('action:post.purge', { post: p, uid: uid })));
@@ -240,8 +240,8 @@ module.exports = function (Posts) {
         await Promise.all(pids.map(Posts.uploads.dissociateAll));
     }
 
-    async function resolveFlags(postData, uid) {
+    async function endorseFlags(postData, uid) {
         const flaggedPosts = postData.filter(p => parseInt(p.flagId, 10));
-        await Promise.all(flaggedPosts.map(p => flags.update(p.flagId, uid, { state: 'resolved' })));
+        await Promise.all(flaggedPosts.map(p => flags.update(p.flagId, uid, { state: 'endorsed' })));
     }
 };
