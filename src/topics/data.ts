@@ -20,7 +20,7 @@ function escapeTitle(topicData: OptionalTopic) {
         if (topicData.title) {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const validator_escape_result : string = validator.escape(topicData.title) as string;
+            const validator_escape_result = String(validator.escape(topicData.title));
             const trans_escape_result : string = translator.escape(validator_escape_result);
             topicData.title = trans_escape_result;
         }
@@ -82,7 +82,7 @@ function modifyTopic(topic: OptionalTopic, fields: string[]) {
         topic.tags = tags.split(',').filter(Boolean).map((tag: string) => {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            const escaped = validator.escape(String(tag)) as string;
+            const escaped = String(validator.escape(String(tag)));
             return {
                 value: tag,
                 valueEscaped: escaped,
