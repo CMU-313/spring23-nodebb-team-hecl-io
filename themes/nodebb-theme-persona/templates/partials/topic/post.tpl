@@ -59,6 +59,8 @@
     <div component="post/signature" data-uid="{posts.user.uid}" class="post-signature">{posts.user.signature}</div>
     {{{ end }}}
 
+    <!-- IMPORT partials/topic/endorsed-message.tpl -->
+
     <div class="clearfix">
     {{{ if !hideReplies }}}
     <a component="post/reply-count" data-target-component="post/replies/container" href="#" class="threaded-replies no-select pull-left {{{ if !posts.replies.count }}}hidden{{{ end }}}">

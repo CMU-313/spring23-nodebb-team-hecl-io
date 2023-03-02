@@ -1,6 +1,4 @@
 "use strict";
-// import db from '../database';
-// import plugins from '../plugins';
 Object.defineProperty(exports, "__esModule", { value: true });
 const db = require("../database");
 const plugins = require("../plugins");
