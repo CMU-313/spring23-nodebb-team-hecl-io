@@ -46,7 +46,6 @@ module.exports = {
             'node_modules',
             ...activePlugins.map(p => `node_modules/${p}/node_modules`),
         ],
-        extensions: ['.js', '.json', '.wasm', '.mjs'],
         alias: {
             assets: path.resolve(__dirname, 'build/public'),
             forum: path.resolve(__dirname, 'build/public/src/client'),
@@ -59,14 +58,5 @@ module.exports = {
             'jquery-ui/widgets': path.resolve(__dirname, 'node_modules/jquery-ui/ui/widgets'),
             'ace/ace': path.resolve(__dirname, 'build/public/src/modules/ace-editor.js'),
         },
-    },
-    module: {
-        rules: [
-            {
-                test: /\.(ts|tsx)$/,
-                exclude: /node_modules/,
-                loader: 'ignore-loader',
-            },
-        ],
     },
 };
