@@ -25,6 +25,9 @@ export type CategoryObject = {
   subCategoriesPerPage: number;
 };
 
+export type OptionalCategory = CategoryObject | null;
+export type OptionalCategoryList = OptionalCategory[] | null;
+
 export type CategoryOptionalProperties = {
   cid: number;
   backgroundImage: string;
