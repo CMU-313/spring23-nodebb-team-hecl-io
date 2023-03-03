@@ -93,6 +93,7 @@ define('forum/topic/events', [
         $('[data-pid="' + data.post.pid + '"] .endorseBtn').filter(function (index, el) {
             return parseInt($(el).closest('[data-pid]').attr('data-pid'), 10) === parseInt(data.post.pid, 10);
         }).html(data.isEndorsed ? 'Unendorse' : 'Endorse').attr('data-endorsed', data.isEndorsed);
+        ajaxify.refresh();
     }
 
     function onTopicPurged(data) {
