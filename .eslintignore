@@ -28,3 +28,12 @@ test/files
 /public/src/client/account/header.js
 /public/src/client/test.js
 themes/
+
+.babelrc
+.flowconfig
+/lib
+/src/upgrades/1.4.6/delete_sessions.js
+/src/upgrades/1.7.3/key_value_schema_change.js
+/webpack.common.js
+
+
