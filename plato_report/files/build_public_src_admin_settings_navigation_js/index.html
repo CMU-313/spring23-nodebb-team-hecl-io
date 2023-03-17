@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/settings/navigation.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/settings/navigation.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.73</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">157</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">23.38</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.84</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;admin/settings/navigation&#039;, [
+    &#039;translator&#039;,
+    &#039;iconSelect&#039;,
+    &#039;benchpress&#039;,
+    &#039;alerts&#039;,
+    &#039;jquery-ui/widgets/draggable&#039;,
+    &#039;jquery-ui/widgets/droppable&#039;,
+    &#039;jquery-ui/widgets/sortable&#039;,
+], function (translator, iconSelect, Benchpress, alerts) {
+    const navigation = {};
+    let available;
+
+    navigation.init = function () {
+        available = ajaxify.data.available;
+
+        $(&#039;#available&#039;).find(&#039;li .drag-item&#039;).draggable({
+            connectToSortable: &#039;#active-navigation&#039;,
+            helper: &#039;clone&#039;,
+            distance: 10,
+            stop: drop,
+        });
+
+        $(&#039;#active-navigation&#039;).sortable().droppable({
+            accept: $(&#039;#available li .drag-item&#039;),
+        });
+
+        $(&#039;#enabled&#039;).on(&#039;click&#039;, &#039;.iconPicker&#039;, function () {
+            const iconEl = $(this).find(&#039;i&#039;);
+            iconSelect.init(iconEl, function (el) {
+                const newIconClass = el.attr(&#039;value&#039;);
+                const index = iconEl.parents(&#039;[data-index]&#039;).attr(&#039;data-index&#039;);
+                $(&#039;#active-navigation [data-index=&quot;&#039; + index + &#039;&quot;] i.nav-icon&#039;).attr(&#039;class&#039;, &#039;fa fa-fw &#039; + newIconClass);
+                iconEl.siblings(&#039;[name=&quot;iconClass&quot;]&#039;).val(newIconClass);
+                iconEl.siblings(&#039;.change-icon-link&#039;).toggleClass(&#039;hidden&#039;, !!newIconClass);
+            });
+        });
+
+        $(&#039;#enabled&#039;).on(&#039;click&#039;, &#039;[name=&quot;dropdown&quot;]&#039;, function () {
+            const el = $(this);
+            const index = el.parents(&#039;[data-index]&#039;).attr(&#039;data-index&#039;);
+            $(&#039;#active-navigation [data-index=&quot;&#039; + index + &#039;&quot;] i.dropdown-icon&#039;).toggleClass(&#039;hidden&#039;, !el.is(&#039;:checked&#039;));
+        });
+
+        $(&#039;#active-navigation&#039;).on(&#039;click&#039;, &#039;li&#039;, onSelect);
+
+        $(&#039;#enabled&#039;)
+            .on(&#039;click&#039;, &#039;.delete&#039;, remove)
+            .on(&#039;click&#039;, &#039;.toggle&#039;, toggle);
+
+        $(&#039;#save&#039;).on(&#039;click&#039;, save);
+    };
+
+    function onSelect() {
+        const clickedIndex = $(this).attr(&#039;data-index&#039;);
+        $(&#039;#active-navigation li&#039;).removeClass(&#039;active&#039;);
+        $(this).addClass(&#039;active&#039;);
+
+        const detailsForm = $(&#039;#enabled&#039;).children(&#039;[data-index=&quot;&#039; + clickedIndex + &#039;&quot;]&#039;);
+        $(&#039;#enabled li&#039;).addClass(&#039;hidden&#039;);
+
+        if (detailsForm.length) {
+            detailsForm.removeClass(&#039;hidden&#039;);
+        }
+        return false;
+    }
+
+    function drop(ev, ui) {
+        const id = ui.helper.attr(&#039;data-id&#039;);
+        const el = $(&#039;#active-navigation [data-id=&quot;&#039; + id + &#039;&quot;]&#039;);
+        const data = id === &#039;custom&#039; ? {
+            iconClass: &#039;fa-navicon&#039;,
+            groups: available[0].groups,
+            enabled: true,
+        } : available[id];
+
+        data.index = (parseInt($(&#039;#enabled&#039;).children().last().attr(&#039;data-index&#039;), 10) || 0) + 1;
+        data.title = translator.escape(data.title);
+        data.text = translator.escape(data.text);
+        data.groups = ajaxify.data.groups;
+        Benchpress.parse(&#039;admin/settings/navigation&#039;, &#039;navigation&#039;, { navigation: [data] }, function (li) {
+            translator.translate(li, function (li) {
+                li = $(translator.unescape(li));
+                el.after(li);
+                el.remove();
+            });
+        });
+        Benchpress.parse(&#039;admin/settings/navigation&#039;, &#039;enabled&#039;, { enabled: [data] }, function (li) {
+            translator.translate(li, function (li) {
+                li = $(translator.unescape(li));
+                $(&#039;#enabled&#039;).append(li);
+                componentHandler.upgradeDom();
+            });
+        });
+    }
+
+    function save() {
+        const nav = [];
+
+        const indices = [];
+        $(&#039;#active-navigation li&#039;).each(function () {
+            indices.push($(this).attr(&#039;data-index&#039;));
+        });
+
+        indices.forEach(function (index) {
+            const el = $(&#039;#enabled&#039;).children(&#039;[data-index=&quot;&#039; + index + &#039;&quot;]&#039;);
+            const form = el.find(&#039;form&#039;).serializeArray();
+            const data = {};
+
+            form.forEach(function (input) {
+                if (data[input.name]) {
+                    if (!Array.isArray(data[input.name])) {
+                        data[input.name] = [
+                            data[input.name],
+                        ];
+                    }
+                    data[input.name].push(input.value);
+                } else {
+                    data[input.name] = input.value;
+                }
+            });
+
+            nav.push(data);
+        });
+
+        socket.emit(&#039;admin.navigation.save&#039;, nav, function (err) {
+            if (err) {
+                alerts.error(err);
+            } else {
+                alerts.success(&#039;Successfully saved navigation&#039;);
+            }
+        });
+    }
+
+    function remove() {
+        const index = $(this).parents(&#039;[data-index]&#039;).attr(&#039;data-index&#039;);
+        $(&#039;#active-navigation [data-index=&quot;&#039; + index + &#039;&quot;]&#039;).remove();
+        $(&#039;#enabled [data-index=&quot;&#039; + index + &#039;&quot;]&#039;).remove();
+        return false;
+    }
+
+    function toggle() {
+        const btn = $(this);
+        const disabled = btn.hasClass(&#039;btn-success&#039;);
+        const index = btn.parents(&#039;[data-index]&#039;).attr(&#039;data-index&#039;);
+        translator.translate(disabled ? &#039;[[admin/settings/navigation:btn.disable]]&#039; : &#039;[[admin/settings/navigation:btn.enable]]&#039;, function (html) {
+            btn.toggleClass(&#039;btn-warning&#039;).toggleClass(&#039;btn-success&#039;).html(html);
+            btn.parents(&#039;li&#039;).find(&#039;[name=&quot;enabled&quot;]&#039;).val(disabled ? &#039;on&#039; : &#039;&#039;);
+            $(&#039;#active-navigation [data-index=&quot;&#039; + index + &#039;&quot;] a&#039;).toggleClass(&#039;text-muted&#039;, !disabled);
+        });
+        return false;
+    }
+
+    return navigation;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

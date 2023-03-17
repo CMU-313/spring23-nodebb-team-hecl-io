@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.87</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">390</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">26.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.73</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const async = require(&#039;async&#039;);
+const nconf = require(&#039;nconf&#039;);
+const session = require(&#039;express-session&#039;);
+const semver = require(&#039;semver&#039;);
+
+const connection = require(&#039;./postgres/connection&#039;);
+
+const postgresModule = module.exports;
+
+postgresModule.questions = [
+    {
+        name: &#039;postgres:host&#039;,
+        description: &#039;Host IP or address of your PostgreSQL instance&#039;,
+        default: nconf.get(&#039;postgres:host&#039;) || &#039;127.0.0.1&#039;,
+    },
+    {
+        name: &#039;postgres:port&#039;,
+        description: &#039;Host port of your PostgreSQL instance&#039;,
+        default: nconf.get(&#039;postgres:port&#039;) || 5432,
+    },
+    {
+        name: &#039;postgres:username&#039;,
+        description: &#039;PostgreSQL username&#039;,
+        default: nconf.get(&#039;postgres:username&#039;) || &#039;&#039;,
+    },
+    {
+        name: &#039;postgres:password&#039;,
+        description: &#039;Password of your PostgreSQL database&#039;,
+        hidden: true,
+        default: nconf.get(&#039;postgres:password&#039;) || &#039;&#039;,
+        before: function (value) { value = value || nconf.get(&#039;postgres:password&#039;) || &#039;&#039;; return value; },
+    },
+    {
+        name: &#039;postgres:database&#039;,
+        description: &#039;PostgreSQL database name&#039;,
+        default: nconf.get(&#039;postgres:database&#039;) || &#039;nodebb&#039;,
+    },
+    {
+        name: &#039;postgres:ssl&#039;,
+        description: &#039;Enable SSL for PostgreSQL database access&#039;,
+        default: nconf.get(&#039;postgres:ssl&#039;) || false,
+    },
+];
+
+postgresModule.init = async function () {
+    const { Pool } = require(&#039;pg&#039;);
+    const connOptions = connection.getConnectionOptions();
+    const pool = new Pool(connOptions);
+    postgresModule.pool = pool;
+    postgresModule.client = pool;
+    const client = await pool.connect();
+    try {
+        await checkUpgrade(client);
+    } catch (err) {
+        winston.error(`NodeBB could not connect to your PostgreSQL database. PostgreSQL returned the following error: ${err.message}`);
+        throw err;
+    } finally {
+        client.release();
+    }
+};
+
+
+async function checkUpgrade(client) {
+    const res = await client.query(`
+SELECT EXISTS(SELECT *
+                FROM &quot;information_schema&quot;.&quot;columns&quot;
+               WHERE &quot;table_schema&quot; = &#039;public&#039;
+                 AND &quot;table_name&quot; = &#039;objects&#039;
+                 AND &quot;column_name&quot; = &#039;data&#039;) a,
+       EXISTS(SELECT *
+                FROM &quot;information_schema&quot;.&quot;columns&quot;
+               WHERE &quot;table_schema&quot; = &#039;public&#039;
+                 AND &quot;table_name&quot; = &#039;legacy_hash&#039;
+                 AND &quot;column_name&quot; = &#039;_key&#039;) b,
+       EXISTS(SELECT *
+                FROM &quot;information_schema&quot;.&quot;routines&quot;
+               WHERE &quot;routine_schema&quot; = &#039;public&#039;
+                 AND &quot;routine_name&quot; = &#039;nodebb_get_sorted_set_members&#039;) c`);
+
+    if (res.rows[0].a &amp;&amp; res.rows[0].b &amp;&amp; res.rows[0].c) {
+        return;
+    }
+
+    await client.query(`BEGIN`);
+    try {
+        if (!res.rows[0].b) {
+            await client.query(`
+CREATE TYPE LEGACY_OBJECT_TYPE AS ENUM (
+    &#039;hash&#039;, &#039;zset&#039;, &#039;set&#039;, &#039;list&#039;, &#039;string&#039;
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_object&quot; (
+    &quot;_key&quot; TEXT NOT NULL
+        PRIMARY KEY,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL,
+    &quot;expireAt&quot; TIMESTAMPTZ DEFAULT NULL,
+    UNIQUE ( &quot;_key&quot;, &quot;type&quot; )
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_hash&quot; (
+    &quot;_key&quot; TEXT NOT NULL
+        PRIMARY KEY,
+    &quot;data&quot; JSONB NOT NULL,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL
+        DEFAULT &#039;hash&#039;::LEGACY_OBJECT_TYPE
+        CHECK ( &quot;type&quot; = &#039;hash&#039; ),
+    CONSTRAINT &quot;fk__legacy_hash__key&quot;
+        FOREIGN KEY (&quot;_key&quot;, &quot;type&quot;)
+        REFERENCES &quot;legacy_object&quot;(&quot;_key&quot;, &quot;type&quot;)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_zset&quot; (
+    &quot;_key&quot; TEXT NOT NULL,
+    &quot;value&quot; TEXT NOT NULL,
+    &quot;score&quot; NUMERIC NOT NULL,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL
+        DEFAULT &#039;zset&#039;::LEGACY_OBJECT_TYPE
+        CHECK ( &quot;type&quot; = &#039;zset&#039; ),
+    PRIMARY KEY (&quot;_key&quot;, &quot;value&quot;),
+    CONSTRAINT &quot;fk__legacy_zset__key&quot;
+        FOREIGN KEY (&quot;_key&quot;, &quot;type&quot;)
+        REFERENCES &quot;legacy_object&quot;(&quot;_key&quot;, &quot;type&quot;)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_set&quot; (
+    &quot;_key&quot; TEXT NOT NULL,
+    &quot;member&quot; TEXT NOT NULL,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL
+        DEFAULT &#039;set&#039;::LEGACY_OBJECT_TYPE
+        CHECK ( &quot;type&quot; = &#039;set&#039; ),
+    PRIMARY KEY (&quot;_key&quot;, &quot;member&quot;),
+    CONSTRAINT &quot;fk__legacy_set__key&quot;
+        FOREIGN KEY (&quot;_key&quot;, &quot;type&quot;)
+        REFERENCES &quot;legacy_object&quot;(&quot;_key&quot;, &quot;type&quot;)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_list&quot; (
+    &quot;_key&quot; TEXT NOT NULL
+        PRIMARY KEY,
+    &quot;array&quot; TEXT[] NOT NULL,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL
+        DEFAULT &#039;list&#039;::LEGACY_OBJECT_TYPE
+        CHECK ( &quot;type&quot; = &#039;list&#039; ),
+    CONSTRAINT &quot;fk__legacy_list__key&quot;
+        FOREIGN KEY (&quot;_key&quot;, &quot;type&quot;)
+        REFERENCES &quot;legacy_object&quot;(&quot;_key&quot;, &quot;type&quot;)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+)`);
+            await client.query(`
+CREATE TABLE &quot;legacy_string&quot; (
+    &quot;_key&quot; TEXT NOT NULL
+        PRIMARY KEY,
+    &quot;data&quot; TEXT NOT NULL,
+    &quot;type&quot; LEGACY_OBJECT_TYPE NOT NULL
+        DEFAULT &#039;string&#039;::LEGACY_OBJECT_TYPE
+        CHECK ( &quot;type&quot; = &#039;string&#039; ),
+    CONSTRAINT &quot;fk__legacy_string__key&quot;
+        FOREIGN KEY (&quot;_key&quot;, &quot;type&quot;)
+        REFERENCES &quot;legacy_object&quot;(&quot;_key&quot;, &quot;type&quot;)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+)`);
+
+            if (res.rows[0].a) {
+                await client.query(`
+INSERT INTO &quot;legacy_object&quot; (&quot;_key&quot;, &quot;type&quot;, &quot;expireAt&quot;)
+SELECT DISTINCT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+                CASE WHEN (SELECT COUNT(*)
+                             FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 2
+                     THEN CASE WHEN (&quot;data&quot; ? &#039;value&#039;)
+                                 OR (&quot;data&quot; ? &#039;data&#039;)
+                               THEN &#039;string&#039;
+                               WHEN &quot;data&quot; ? &#039;array&#039;
+                               THEN &#039;list&#039;
+                               WHEN &quot;data&quot; ? &#039;members&#039;
+                               THEN &#039;set&#039;
+                               ELSE &#039;hash&#039;
+                          END
+                     WHEN (SELECT COUNT(*)
+                             FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 3
+                     THEN CASE WHEN (&quot;data&quot; ? &#039;value&#039;)
+                                AND (&quot;data&quot; ? &#039;score&#039;)
+                               THEN &#039;zset&#039;
+                               ELSE &#039;hash&#039;
+                          END
+                     ELSE &#039;hash&#039;
+                END::LEGACY_OBJECT_TYPE,
+                CASE WHEN (&quot;data&quot; ? &#039;expireAt&#039;)
+                     THEN to_timestamp((&quot;data&quot;-&gt;&gt;&#039;expireAt&#039;)::double precision / 1000)
+                     ELSE NULL
+                END
+  FROM &quot;objects&quot;`);
+                await client.query(`
+INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+SELECT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+       &quot;data&quot; - &#039;_key&#039; - &#039;expireAt&#039;
+  FROM &quot;objects&quot;
+ WHERE CASE WHEN (SELECT COUNT(*)
+                    FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 2
+            THEN NOT ((&quot;data&quot; ? &#039;value&#039;)
+                   OR (&quot;data&quot; ? &#039;data&#039;)
+                   OR (&quot;data&quot; ? &#039;members&#039;)
+                   OR (&quot;data&quot; ? &#039;array&#039;))
+            WHEN (SELECT COUNT(*)
+                    FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 3
+            THEN NOT ((&quot;data&quot; ? &#039;value&#039;)
+                  AND (&quot;data&quot; ? &#039;score&#039;))
+            ELSE TRUE
+       END`);
+                await client.query(`
+INSERT INTO &quot;legacy_zset&quot; (&quot;_key&quot;, &quot;value&quot;, &quot;score&quot;)
+SELECT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+       &quot;data&quot;-&gt;&gt;&#039;value&#039;,
+       (&quot;data&quot;-&gt;&gt;&#039;score&#039;)::NUMERIC
+  FROM &quot;objects&quot;
+ WHERE (SELECT COUNT(*)
+          FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 3
+   AND (&quot;data&quot; ? &#039;value&#039;)
+   AND (&quot;data&quot; ? &#039;score&#039;)`);
+                await client.query(`
+INSERT INTO &quot;legacy_set&quot; (&quot;_key&quot;, &quot;member&quot;)
+SELECT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+       jsonb_array_elements_text(&quot;data&quot;-&gt;&#039;members&#039;)
+  FROM &quot;objects&quot;
+ WHERE (SELECT COUNT(*)
+          FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 2
+   AND (&quot;data&quot; ? &#039;members&#039;)`);
+                await client.query(`
+INSERT INTO &quot;legacy_list&quot; (&quot;_key&quot;, &quot;array&quot;)
+SELECT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+       ARRAY(SELECT t
+               FROM jsonb_array_elements_text(&quot;data&quot;-&gt;&#039;list&#039;) WITH ORDINALITY l(t, i)
+              ORDER BY i ASC)
+  FROM &quot;objects&quot;
+ WHERE (SELECT COUNT(*)
+          FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 2
+   AND (&quot;data&quot; ? &#039;array&#039;)`);
+                await client.query(`
+INSERT INTO &quot;legacy_string&quot; (&quot;_key&quot;, &quot;data&quot;)
+SELECT &quot;data&quot;-&gt;&gt;&#039;_key&#039;,
+       CASE WHEN &quot;data&quot; ? &#039;value&#039;
+            THEN &quot;data&quot;-&gt;&gt;&#039;value&#039;
+            ELSE &quot;data&quot;-&gt;&gt;&#039;data&#039;
+       END
+  FROM &quot;objects&quot;
+ WHERE (SELECT COUNT(*)
+          FROM jsonb_object_keys(&quot;data&quot; - &#039;expireAt&#039;)) = 2
+   AND ((&quot;data&quot; ? &#039;value&#039;)
+     OR (&quot;data&quot; ? &#039;data&#039;))`);
+                await client.query(`DROP TABLE &quot;objects&quot; CASCADE`);
+                await client.query(`DROP FUNCTION &quot;fun__objects__expireAt&quot;() CASCADE`);
+            }
+            await client.query(`
+CREATE VIEW &quot;legacy_object_live&quot; AS
+SELECT &quot;_key&quot;, &quot;type&quot;
+  FROM &quot;legacy_object&quot;
+ WHERE &quot;expireAt&quot; IS NULL
+    OR &quot;expireAt&quot; &gt; CURRENT_TIMESTAMP`);
+        }
+
+        if (!res.rows[0].c) {
+            await client.query(`
+CREATE FUNCTION &quot;nodebb_get_sorted_set_members&quot;(TEXT) RETURNS TEXT[] AS $$
+    SELECT array_agg(z.&quot;value&quot; ORDER BY z.&quot;score&quot; ASC)
+      FROM &quot;legacy_object_live&quot; o
+     INNER JOIN &quot;legacy_zset&quot; z
+             ON o.&quot;_key&quot; = z.&quot;_key&quot;
+            AND o.&quot;type&quot; = z.&quot;type&quot;
+          WHERE o.&quot;_key&quot; = $1
+$$ LANGUAGE sql
+STABLE
+STRICT
+PARALLEL SAFE`);
+        }
+    } catch (ex) {
+        await client.query(`ROLLBACK`);
+        throw ex;
+    }
+    await client.query(`COMMIT`);
+}
+
+postgresModule.createSessionStore = async function (options) {
+    const meta = require(&#039;../meta&#039;);
+
+    function done(db) {
+        const sessionStore = require(&#039;connect-pg-simple&#039;)(session);
+        return new sessionStore({
+            pool: db,
+            ttl: meta.getSessionTTLSeconds(),
+            pruneSessionInterval: nconf.get(&#039;isPrimary&#039;) ? 60 : false,
+        });
+    }
+
+    const db = await connection.connect(options);
+
+    if (!nconf.get(&#039;isPrimary&#039;)) {
+        return done(db);
+    }
+
+    await db.query(`
+CREATE TABLE IF NOT EXISTS &quot;session&quot; (
+    &quot;sid&quot; CHAR(32) NOT NULL
+        COLLATE &quot;C&quot;
+        PRIMARY KEY,
+    &quot;sess&quot; JSONB NOT NULL,
+    &quot;expire&quot; TIMESTAMPTZ NOT NULL
+) WITHOUT OIDS;
+
+CREATE INDEX IF NOT EXISTS &quot;session_expire_idx&quot; ON &quot;session&quot;(&quot;expire&quot;);
+
+ALTER TABLE &quot;session&quot;
+    ALTER &quot;sid&quot; SET STORAGE MAIN,
+    CLUSTER ON &quot;session_expire_idx&quot;;`);
+
+    return done(db);
+};
+
+postgresModule.createIndices = function (callback) {
+    if (!postgresModule.pool) {
+        winston.warn(&#039;[database/createIndices] database not initialized&#039;);
+        return callback();
+    }
+
+    const query = postgresModule.pool.query.bind(postgresModule.pool);
+
+    winston.info(&#039;[database] Checking database indices.&#039;);
+    async.series([
+        async.apply(query, `CREATE INDEX IF NOT EXISTS &quot;idx__legacy_zset__key__score&quot; ON &quot;legacy_zset&quot;(&quot;_key&quot; ASC, &quot;score&quot; DESC)`),
+        async.apply(query, `CREATE INDEX IF NOT EXISTS &quot;idx__legacy_object__expireAt&quot; ON &quot;legacy_object&quot;(&quot;expireAt&quot; ASC)`),
+    ], (err) =&gt; {
+        if (err) {
+            winston.error(`Error creating index ${err.message}`);
+            return callback(err);
+        }
+        winston.info(&#039;[database] Checking database indices done!&#039;);
+        callback();
+    });
+};
+
+postgresModule.checkCompatibility = function (callback) {
+    const postgresPkg = require(&#039;pg/package.json&#039;);
+    postgresModule.checkCompatibilityVersion(postgresPkg.version, callback);
+};
+
+postgresModule.checkCompatibilityVersion = function (version, callback) {
+    if (semver.lt(version, &#039;7.0.0&#039;)) {
+        return callback(new Error(&#039;The `pg` package is out-of-date, please run `./nodebb setup` again.&#039;));
+    }
+
+    callback();
+};
+
+postgresModule.info = async function (db) {
+    if (!db) {
+        db = await connection.connect(nconf.get(&#039;postgres&#039;));
+    }
+    postgresModule.pool = postgresModule.pool || db;
+    const res = await db.query(`
+        SELECT true &quot;postgres&quot;,
+           current_setting(&#039;server_version&#039;) &quot;version&quot;,
+             EXTRACT(EPOCH FROM NOW() - pg_postmaster_start_time()) * 1000 &quot;uptime&quot;
+    `);
+    return {
+        ...res.rows[0],
+        raw: JSON.stringify(res.rows[0], null, 4),
+    };
+};
+
+postgresModule.close = async function () {
+    await postgresModule.pool.end();
+};
+
+require(&#039;./postgres/main&#039;)(postgresModule);
+require(&#039;./postgres/hash&#039;)(postgresModule);
+require(&#039;./postgres/sets&#039;)(postgresModule);
+require(&#039;./postgres/sorted&#039;)(postgresModule);
+require(&#039;./postgres/list&#039;)(postgresModule);
+require(&#039;./postgres/transaction&#039;)(postgresModule);
+
+require(&#039;../promisify&#039;)(postgresModule, [&#039;client&#039;, &#039;sessionStore&#039;, &#039;pool&#039;, &#039;transaction&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

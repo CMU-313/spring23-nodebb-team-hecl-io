@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres/sorted.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres/sorted.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.91</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">682</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">101.62</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.14</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+    const util = require(&#039;util&#039;);
+    const Cursor = require(&#039;pg-cursor&#039;);
+    Cursor.prototype.readAsync = util.promisify(Cursor.prototype.read);
+    const sleep = util.promisify(setTimeout);
+
+    require(&#039;./sorted/add&#039;)(module);
+    require(&#039;./sorted/remove&#039;)(module);
+    require(&#039;./sorted/union&#039;)(module);
+    require(&#039;./sorted/intersect&#039;)(module);
+
+    module.getSortedSetRange = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, 1, false);
+    };
+
+    module.getSortedSetRevRange = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, -1, false);
+    };
+
+    module.getSortedSetRangeWithScores = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, 1, true);
+    };
+
+    module.getSortedSetRevRangeWithScores = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, -1, true);
+    };
+
+    async function getSortedSetRange(key, start, stop, sort, withScores) {
+        if (!key) {
+            return;
+        }
+
+        if (!Array.isArray(key)) {
+            key = [key];
+        }
+
+        if (start &lt; 0 &amp;&amp; start &gt; stop) {
+            return [];
+        }
+
+        let reverse = false;
+        if (start === 0 &amp;&amp; stop &lt; -1) {
+            reverse = true;
+            sort *= -1;
+            start = Math.abs(stop + 1);
+            stop = -1;
+        } else if (start &lt; 0 &amp;&amp; stop &gt; start) {
+            const tmp1 = Math.abs(stop + 1);
+            stop = Math.abs(start + 1);
+            start = tmp1;
+        }
+
+        let limit = stop - start + 1;
+        if (limit &lt;= 0) {
+            limit = null;
+        }
+
+        const res = await module.pool.query({
+            name: `getSortedSetRangeWithScores${sort &gt; 0 ? &#039;Asc&#039; : &#039;Desc&#039;}`,
+            text: `
+SELECT z.&quot;value&quot;,
+       z.&quot;score&quot;
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+ ORDER BY z.&quot;score&quot; ${sort &gt; 0 ? &#039;ASC&#039; : &#039;DESC&#039;}
+ LIMIT $3::INTEGER
+OFFSET $2::INTEGER`,
+            values: [key, start, limit],
+        });
+
+        if (reverse) {
+            res.rows.reverse();
+        }
+
+        if (withScores) {
+            res.rows = res.rows.map(r =&gt; ({ value: r.value, score: parseFloat(r.score) }));
+        } else {
+            res.rows = res.rows.map(r =&gt; r.value);
+        }
+
+        return res.rows;
+    }
+
+    module.getSortedSetRangeByScore = async function (key, start, count, min, max) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, 1, false);
+    };
+
+    module.getSortedSetRevRangeByScore = async function (key, start, count, max, min) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, -1, false);
+    };
+
+    module.getSortedSetRangeByScoreWithScores = async function (key, start, count, min, max) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, 1, true);
+    };
+
+    module.getSortedSetRevRangeByScoreWithScores = async function (key, start, count, max, min) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, -1, true);
+    };
+
+    async function getSortedSetRangeByScore(key, start, count, min, max, sort, withScores) {
+        if (!key) {
+            return;
+        }
+
+        if (!Array.isArray(key)) {
+            key = [key];
+        }
+
+        if (parseInt(count, 10) === -1) {
+            count = null;
+        }
+
+        if (min === &#039;-inf&#039;) {
+            min = null;
+        }
+        if (max === &#039;+inf&#039;) {
+            max = null;
+        }
+
+        const res = await module.pool.query({
+            name: `getSortedSetRangeByScoreWithScores${sort &gt; 0 ? &#039;Asc&#039; : &#039;Desc&#039;}`,
+            text: `
+SELECT z.&quot;value&quot;,
+       z.&quot;score&quot;
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+   AND (z.&quot;score&quot; &gt;= $4::NUMERIC OR $4::NUMERIC IS NULL)
+   AND (z.&quot;score&quot; &lt;= $5::NUMERIC OR $5::NUMERIC IS NULL)
+ ORDER BY z.&quot;score&quot; ${sort &gt; 0 ? &#039;ASC&#039; : &#039;DESC&#039;}
+ LIMIT $3::INTEGER
+OFFSET $2::INTEGER`,
+            values: [key, start, count, min, max],
+        });
+
+        if (withScores) {
+            res.rows = res.rows.map(r =&gt; ({ value: r.value, score: parseFloat(r.score) }));
+        } else {
+            res.rows = res.rows.map(r =&gt; r.value);
+        }
+
+        return res.rows;
+    }
+
+    module.sortedSetCount = async function (key, min, max) {
+        if (!key) {
+            return;
+        }
+
+        if (min === &#039;-inf&#039;) {
+            min = null;
+        }
+        if (max === &#039;+inf&#039;) {
+            max = null;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetCount&#039;,
+            text: `
+SELECT COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND (z.&quot;score&quot; &gt;= $2::NUMERIC OR $2::NUMERIC IS NULL)
+   AND (z.&quot;score&quot; &lt;= $3::NUMERIC OR $3::NUMERIC IS NULL)`,
+            values: [key, min, max],
+        });
+
+        return parseInt(res.rows[0].c, 10);
+    };
+
+    module.sortedSetCard = async function (key) {
+        if (!key) {
+            return 0;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetCard&#039;,
+            text: `
+SELECT COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        });
+
+        return parseInt(res.rows[0].c, 10);
+    };
+
+    module.sortedSetsCard = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetsCard&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k,
+       COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+ GROUP BY o.&quot;_key&quot;`,
+            values: [keys],
+        });
+
+        return keys.map(k =&gt; parseInt((res.rows.find(r =&gt; r.k === k) || { c: 0 }).c, 10));
+    };
+
+    module.sortedSetsCardSum = async function (keys) {
+        if (!keys || (Array.isArray(keys) &amp;&amp; !keys.length)) {
+            return 0;
+        }
+        if (!Array.isArray(keys)) {
+            keys = [keys];
+        }
+        const counts = await module.sortedSetsCard(keys);
+        const sum = counts.reduce((acc, val) =&gt; acc + val, 0);
+        return sum;
+    };
+
+    module.sortedSetRank = async function (key, value) {
+        const result = await getSortedSetRank(&#039;ASC&#039;, [key], [value]);
+        return result ? result[0] : null;
+    };
+
+    module.sortedSetRevRank = async function (key, value) {
+        const result = await getSortedSetRank(&#039;DESC&#039;, [key], [value]);
+        return result ? result[0] : null;
+    };
+
+    async function getSortedSetRank(sort, keys, values) {
+        values = values.map(helpers.valueToString);
+        const res = await module.pool.query({
+            name: `getSortedSetRank${sort}`,
+            text: `
+SELECT (SELECT r
+          FROM (SELECT z.&quot;value&quot; v,
+                       RANK() OVER (PARTITION BY o.&quot;_key&quot;
+                                        ORDER BY z.&quot;score&quot; ${sort},
+                                                 z.&quot;value&quot; ${sort}) - 1 r
+                  FROM &quot;legacy_object_live&quot; o
+                 INNER JOIN &quot;legacy_zset&quot; z
+                         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+                        AND o.&quot;type&quot; = z.&quot;type&quot;
+                 WHERE o.&quot;_key&quot; = kvi.k) r
+         WHERE v = kvi.v) r
+  FROM UNNEST($1::TEXT[], $2::TEXT[]) WITH ORDINALITY kvi(k, v, i)
+ ORDER BY kvi.i ASC`,
+            values: [keys, values],
+        });
+
+        return res.rows.map(r =&gt; (r.r === null ? null : parseFloat(r.r)));
+    }
+
+    module.sortedSetsRanks = async function (keys, values) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        return await getSortedSetRank(&#039;ASC&#039;, keys, values);
+    };
+
+    module.sortedSetsRevRanks = async function (keys, values) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        return await getSortedSetRank(&#039;DESC&#039;, keys, values);
+    };
+
+    module.sortedSetRanks = async function (key, values) {
+        if (!Array.isArray(values) || !values.length) {
+            return [];
+        }
+
+        return await getSortedSetRank(&#039;ASC&#039;, new Array(values.length).fill(key), values);
+    };
+
+    module.sortedSetRevRanks = async function (key, values) {
+        if (!Array.isArray(values) || !values.length) {
+            return [];
+        }
+
+        return await getSortedSetRank(&#039;DESC&#039;, new Array(values.length).fill(key), values);
+    };
+
+    module.sortedSetScore = async function (key, value) {
+        if (!key) {
+            return null;
+        }
+
+        value = helpers.valueToString(value);
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetScore&#039;,
+            text: `
+SELECT z.&quot;score&quot; s
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND z.&quot;value&quot; = $2::TEXT`,
+            values: [key, value],
+        });
+        if (res.rows.length) {
+            return parseFloat(res.rows[0].s);
+        }
+        return null;
+    };
+
+    module.sortedSetsScore = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        value = helpers.valueToString(value);
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetsScore&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k,
+       z.&quot;score&quot; s
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+   AND z.&quot;value&quot; = $2::TEXT`,
+            values: [keys, value],
+        });
+
+        return keys.map((k) =&gt; {
+            const s = res.rows.find(r =&gt; r.k === k);
+            return s ? parseFloat(s.s) : null;
+        });
+    };
+
+    module.sortedSetScores = async function (key, values) {
+        if (!key) {
+            return null;
+        }
+        if (!values.length) {
+            return [];
+        }
+        values = values.map(helpers.valueToString);
+
+        const res = await module.pool.query({
+            name: &#039;sortedSetScores&#039;,
+            text: `
+SELECT z.&quot;value&quot; v,
+       z.&quot;score&quot; s
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND z.&quot;value&quot; = ANY($2::TEXT[])`,
+            values: [key, values],
+        });
+
+        return values.map((v) =&gt; {
+            const s = res.rows.find(r =&gt; r.v === v);
+            return s ? parseFloat(s.s) : null;
+        });
+    };
+
+    module.isSortedSetMember = async function (key, value) {
+        if (!key) {
+            return;
+        }
+
+        value = helpers.valueToString(value);
+
+        const res = await module.pool.query({
+            name: &#039;isSortedSetMember&#039;,
+            text: `
+SELECT 1
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND z.&quot;value&quot; = $2::TEXT`,
+            values: [key, value],
+        });
+
+        return !!res.rows.length;
+    };
+
+    module.isSortedSetMembers = async function (key, values) {
+        if (!key) {
+            return;
+        }
+
+        if (!values.length) {
+            return [];
+        }
+        values = values.map(helpers.valueToString);
+
+        const res = await module.pool.query({
+            name: &#039;isSortedSetMembers&#039;,
+            text: `
+SELECT z.&quot;value&quot; v
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND z.&quot;value&quot; = ANY($2::TEXT[])`,
+            values: [key, values],
+        });
+
+        return values.map(v =&gt; res.rows.some(r =&gt; r.v === v));
+    };
+
+    module.isMemberOfSortedSets = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        value = helpers.valueToString(value);
+
+        const res = await module.pool.query({
+            name: &#039;isMemberOfSortedSets&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+   AND z.&quot;value&quot; = $2::TEXT`,
+            values: [keys, value],
+        });
+
+        return keys.map(k =&gt; res.rows.some(r =&gt; r.k === k));
+    };
+
+    module.getSortedSetMembers = async function (key) {
+        const data = await module.getSortedSetsMembers([key]);
+        return data &amp;&amp; data[0];
+    };
+
+    module.getSortedSetsMembers = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        const res = await module.pool.query({
+            name: &#039;getSortedSetsMembers&#039;,
+            text: `
+SELECT &quot;_key&quot; k,
+       &quot;nodebb_get_sorted_set_members&quot;(&quot;_key&quot;) m
+  FROM UNNEST($1::TEXT[]) &quot;_key&quot;;`,
+            values: [keys],
+        });
+
+        return keys.map(k =&gt; (res.rows.find(r =&gt; r.k === k) || {}).m || []);
+    };
+
+    module.sortedSetIncrBy = async function (key, increment, value) {
+        if (!key) {
+            return;
+        }
+
+        value = helpers.valueToString(value);
+        increment = parseFloat(increment);
+
+        return await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectType(client, key, &#039;zset&#039;);
+            const res = await client.query({
+                name: &#039;sortedSetIncrBy&#039;,
+                text: `
+INSERT INTO &quot;legacy_zset&quot; (&quot;_key&quot;, &quot;value&quot;, &quot;score&quot;)
+VALUES ($1::TEXT, $2::TEXT, $3::NUMERIC)
+ON CONFLICT (&quot;_key&quot;, &quot;value&quot;)
+DO UPDATE SET &quot;score&quot; = &quot;legacy_zset&quot;.&quot;score&quot; + $3::NUMERIC
+RETURNING &quot;score&quot; s`,
+                values: [key, value, increment],
+            });
+            return parseFloat(res.rows[0].s);
+        });
+    };
+
+    module.sortedSetIncrByBulk = async function (data) {
+        // TODO: perf single query?
+        return await Promise.all(data.map(item =&gt; module.sortedSetIncrBy(item[0], item[1], item[2])));
+    };
+
+    module.getSortedSetRangeByLex = async function (key, min, max, start, count) {
+        return await sortedSetLex(key, min, max, 1, start, count);
+    };
+
+    module.getSortedSetRevRangeByLex = async function (key, max, min, start, count) {
+        return await sortedSetLex(key, min, max, -1, start, count);
+    };
+
+    module.sortedSetLexCount = async function (key, min, max) {
+        const q = buildLexQuery(key, min, max);
+
+        const res = await module.pool.query({
+            name: `sortedSetLexCount${q.suffix}`,
+            text: `
+SELECT COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE ${q.where}`,
+            values: q.values,
+        });
+
+        return parseInt(res.rows[0].c, 10);
+    };
+
+    async function sortedSetLex(key, min, max, sort, start, count) {
+        start = start !== undefined ? start : 0;
+        count = count !== undefined ? count : 0;
+
+        const q = buildLexQuery(key, min, max);
+        q.values.push(start);
+        q.values.push(count &lt;= 0 ? null : count);
+        const res = await module.pool.query({
+            name: `sortedSetLex${sort &gt; 0 ? &#039;Asc&#039; : &#039;Desc&#039;}${q.suffix}`,
+            text: `
+SELECT z.&quot;value&quot; v
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE ${q.where}
+ ORDER BY z.&quot;value&quot; ${sort &gt; 0 ? &#039;ASC&#039; : &#039;DESC&#039;}
+ LIMIT $${q.values.length}::INTEGER
+OFFSET $${q.values.length - 1}::INTEGER`,
+            values: q.values,
+        });
+
+        return res.rows.map(r =&gt; r.v);
+    }
+
+    module.sortedSetRemoveRangeByLex = async function (key, min, max) {
+        const q = buildLexQuery(key, min, max);
+        await module.pool.query({
+            name: `sortedSetRemoveRangeByLex${q.suffix}`,
+            text: `
+DELETE FROM &quot;legacy_zset&quot; z
+ USING &quot;legacy_object_live&quot; o
+ WHERE o.&quot;_key&quot; = z.&quot;_key&quot;
+   AND o.&quot;type&quot; = z.&quot;type&quot;
+   AND ${q.where}`,
+            values: q.values,
+        });
+    };
+
+    function buildLexQuery(key, min, max) {
+        const q = {
+            suffix: &#039;&#039;,
+            where: `o.&quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        };
+
+        if (min !== &#039;-&#039;) {
+            if (min.match(/^\(/)) {
+                q.values.push(min.slice(1));
+                q.suffix += &#039;GT&#039;;
+                q.where += ` AND z.&quot;value&quot; &gt; $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            } else if (min.match(/^\[/)) {
+                q.values.push(min.slice(1));
+                q.suffix += &#039;GE&#039;;
+                q.where += ` AND z.&quot;value&quot; &gt;= $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            } else {
+                q.values.push(min);
+                q.suffix += &#039;GE&#039;;
+                q.where += ` AND z.&quot;value&quot; &gt;= $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            }
+        }
+
+        if (max !== &#039;+&#039;) {
+            if (max.match(/^\(/)) {
+                q.values.push(max.slice(1));
+                q.suffix += &#039;LT&#039;;
+                q.where += ` AND z.&quot;value&quot; &lt; $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            } else if (max.match(/^\[/)) {
+                q.values.push(max.slice(1));
+                q.suffix += &#039;LE&#039;;
+                q.where += ` AND z.&quot;value&quot; &lt;= $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            } else {
+                q.values.push(max);
+                q.suffix += &#039;LE&#039;;
+                q.where += ` AND z.&quot;value&quot; &lt;= $${q.values.length}::TEXT COLLATE &quot;C&quot;`;
+            }
+        }
+
+        return q;
+    }
+
+    module.getSortedSetScan = async function (params) {
+        let { match } = params;
+        if (match.startsWith(&#039;*&#039;)) {
+            match = `%${match.substring(1)}`;
+        }
+
+        if (match.endsWith(&#039;*&#039;)) {
+            match = `${match.substring(0, match.length - 1)}%`;
+        }
+
+        const res = await module.pool.query({
+            text: `
+SELECT z.&quot;value&quot;,
+       z.&quot;score&quot;
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+  AND z.&quot;value&quot; LIKE &#039;${match}&#039;
+  LIMIT $2::INTEGER`,
+            values: [params.key, params.limit],
+        });
+        if (!params.withScores) {
+            return res.rows.map(r =&gt; r.value);
+        }
+        return res.rows.map(r =&gt; ({ value: r.value, score: parseFloat(r.score) }));
+    };
+
+    module.processSortedSet = async function (setKey, process, options) {
+        const client = await module.pool.connect();
+        const batchSize = (options || {}).batch || 100;
+        const cursor = client.query(new Cursor(`
+SELECT z.&quot;value&quot;, z.&quot;score&quot;
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_zset&quot; z
+         ON o.&quot;_key&quot; = z.&quot;_key&quot;
+        AND o.&quot;type&quot; = z.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ ORDER BY z.&quot;score&quot; ASC, z.&quot;value&quot; ASC`, [setKey]));
+
+        if (process &amp;&amp; process.constructor &amp;&amp; process.constructor.name !== &#039;AsyncFunction&#039;) {
+            process = util.promisify(process);
+        }
+
+        while (true) {
+            /* eslint-disable no-await-in-loop */
+            let rows = await cursor.readAsync(batchSize);
+            if (!rows.length) {
+                client.release();
+                return;
+            }
+
+            if (options.withScores) {
+                rows = rows.map(r =&gt; ({ value: r.value, score: parseFloat(r.score) }));
+            } else {
+                rows = rows.map(r =&gt; r.value);
+            }
+            try {
+                await process(rows);
+            } catch (err) {
+                await client.release();
+                throw err;
+            }
+            if (options.interval) {
+                await sleep(options.interval);
+            }
+        }
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

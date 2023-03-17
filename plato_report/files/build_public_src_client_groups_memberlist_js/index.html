@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/groups/memberlist.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/groups/memberlist.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">77.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">167</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">29.83</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.58</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;forum/groups/memberlist&#039;, [&#039;api&#039;, &#039;bootbox&#039;, &#039;alerts&#039;], function (api, bootbox, alerts) {
+    const MemberList = {};
+    let groupName;
+    let templateName;
+
+    MemberList.init = function (_templateName) {
+        templateName = _templateName || &#039;groups/details&#039;;
+        groupName = ajaxify.data.group.name;
+
+        handleMemberAdd();
+        handleMemberSearch();
+        handleMemberInfiniteScroll();
+    };
+
+    function handleMemberAdd() {
+        $(&#039;[component=&quot;groups/members/add&quot;]&#039;).on(&#039;click&#039;, function () {
+            app.parseAndTranslate(&#039;admin/partials/groups/add-members&#039;, {}, function (html) {
+                const foundUsers = [];
+                const modal = bootbox.dialog({
+                    title: &#039;[[groups:details.add-member]]&#039;,
+                    message: html,
+                    buttons: {
+                        ok: {
+                            callback: function () {
+                                const users = [];
+                                modal.find(&#039;[data-uid][data-selected]&#039;).each(function (index, el) {
+                                    users.push(foundUsers[$(el).attr(&#039;data-uid&#039;)]);
+                                });
+                                addUserToGroup(users, function () {
+                                    modal.modal(&#039;hide&#039;);
+                                });
+                            },
+                        },
+                    },
+                });
+                modal.on(&#039;click&#039;, &#039;[data-username]&#039;, function () {
+                    const isSelected = $(this).attr(&#039;data-selected&#039;) === &#039;1&#039;;
+                    if (isSelected) {
+                        $(this).removeAttr(&#039;data-selected&#039;);
+                    } else {
+                        $(this).attr(&#039;data-selected&#039;, 1);
+                    }
+                    $(this).find(&#039;i&#039;).toggleClass(&#039;invisible&#039;);
+                });
+                modal.find(&#039;input&#039;).on(&#039;keyup&#039;, function () {
+                    api.get(&#039;/api/users&#039;, {
+                        query: $(this).val(),
+                        paginate: false,
+                    }, function (err, result) {
+                        if (err) {
+                            return alerts.error(err);
+                        }
+                        result.users.forEach(function (user) {
+                            foundUsers[user.uid] = user;
+                        });
+                        app.parseAndTranslate(&#039;admin/partials/groups/add-members&#039;, &#039;users&#039;, { users: result.users }, function (html) {
+                            modal.find(&#039;#search-result&#039;).html(html);
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    function addUserToGroup(users, callback) {
+        function done() {
+            users = users.filter(function (user) {
+                return !$(&#039;[component=&quot;groups/members&quot;] [data-uid=&quot;&#039; + user.uid + &#039;&quot;]&#039;).length;
+            });
+            parseAndTranslate(users, function (html) {
+                $(&#039;[component=&quot;groups/members&quot;] tbody&#039;).prepend(html);
+            });
+            callback();
+        }
+        const uids = users.map(function (user) { return user.uid; });
+        if (groupName === &#039;administrators&#039;) {
+            socket.emit(&#039;admin.user.makeAdmins&#039;, uids, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                done();
+            });
+        } else {
+            Promise.all(uids.map(uid =&gt; api.put(&#039;/groups/&#039; + ajaxify.data.group.slug + &#039;/membership/&#039; + uid))).then(done).catch(alerts.error);
+        }
+    }
+
+    function handleMemberSearch() {
+        const searchEl = $(&#039;[component=&quot;groups/members/search&quot;]&#039;);
+        searchEl.on(&#039;keyup&#039;, utils.debounce(function () {
+            const query = searchEl.val();
+            socket.emit(&#039;groups.searchMembers&#039;, {
+                groupName: groupName,
+                query: query,
+            }, function (err, results) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                parseAndTranslate(results.users, function (html) {
+                    $(&#039;[component=&quot;groups/members&quot;] tbody&#039;).html(html);
+                    $(&#039;[component=&quot;groups/members&quot;]&#039;).attr(&#039;data-nextstart&#039;, 20);
+                });
+            });
+        }, 250));
+    }
+
+    function handleMemberInfiniteScroll() {
+        $(&#039;[component=&quot;groups/members&quot;] tbody&#039;).on(&#039;scroll&#039;, function () {
+            const $this = $(this);
+            const bottom = ($this[0].scrollHeight - $this.innerHeight()) * 0.9;
+
+            if ($this.scrollTop() &gt; bottom &amp;&amp; !$(&#039;[component=&quot;groups/members/search&quot;]&#039;).val()) {
+                loadMoreMembers();
+            }
+        });
+    }
+
+    function loadMoreMembers() {
+        const members = $(&#039;[component=&quot;groups/members&quot;]&#039;);
+        if (members.attr(&#039;loading&#039;)) {
+            return;
+        }
+
+        members.attr(&#039;loading&#039;, 1);
+        socket.emit(&#039;groups.loadMoreMembers&#039;, {
+            groupName: groupName,
+            after: members.attr(&#039;data-nextstart&#039;),
+        }, function (err, data) {
+            if (err) {
+                return alerts.error(err);
+            }
+
+            if (data &amp;&amp; data.users.length) {
+                onMembersLoaded(data.users, function () {
+                    members.removeAttr(&#039;loading&#039;);
+                    members.attr(&#039;data-nextstart&#039;, data.nextStart);
+                });
+            } else {
+                members.removeAttr(&#039;loading&#039;);
+            }
+        });
+    }
+
+    function onMembersLoaded(users, callback) {
+        users = users.filter(function (user) {
+            return !$(&#039;[component=&quot;groups/members&quot;] [data-uid=&quot;&#039; + user.uid + &#039;&quot;]&#039;).length;
+        });
+
+        parseAndTranslate(users, function (html) {
+            $(&#039;[component=&quot;groups/members&quot;] tbody&#039;).append(html);
+            callback();
+        });
+    }
+
+    function parseAndTranslate(users, callback) {
+        app.parseAndTranslate(templateName, &#039;group.members&#039;, {
+            group: {
+                members: users,
+                isOwner: ajaxify.data.group.isOwner,
+            },
+        }, callback);
+    }
+
+    return MemberList;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

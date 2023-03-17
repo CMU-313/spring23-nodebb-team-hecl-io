@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.59</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">278</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.60</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.27</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const os = require(&#039;os&#039;);
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+const util = require(&#039;util&#039;);
+const validator = require(&#039;validator&#039;);
+const cookieParser = require(&#039;cookie-parser&#039;)(nconf.get(&#039;secret&#039;));
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const logger = require(&#039;../logger&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const ratelimit = require(&#039;../middleware/ratelimit&#039;);
+
+const Namespaces = Object.create(null);
+
+const Sockets = module.exports;
+
+Sockets.init = async function (server) {
+    requireModules();
+
+    const SocketIO = require(&#039;socket.io&#039;).Server;
+    const io = new SocketIO({
+        path: `${nconf.get(&#039;relative_path&#039;)}/socket.io`,
+    });
+
+    if (nconf.get(&#039;isCluster&#039;)) {
+        if (nconf.get(&#039;redis&#039;)) {
+            const adapter = await require(&#039;../database/redis&#039;).socketAdapter();
+            io.adapter(adapter);
+        } else {
+            winston.warn(&#039;clustering detected, you should setup redis!&#039;);
+        }
+    }
+
+    io.use(authorize);
+
+    io.on(&#039;connection&#039;, onConnection);
+
+    const opts = {
+        transports: nconf.get(&#039;socket.io:transports&#039;) || [&#039;polling&#039;, &#039;websocket&#039;],
+        cookie: false,
+    };
+    /*
+     * Restrict socket.io listener to cookie domain. If none is set, infer based on url.
+     * Production only so you don&#039;t get accidentally locked out.
+     * Can be overridden via config (socket.io:origins)
+     */
+    if (process.env.NODE_ENV !== &#039;development&#039; || nconf.get(&#039;socket.io:cors&#039;)) {
+        const origins = nconf.get(&#039;socket.io:origins&#039;);
+        opts.cors = nconf.get(&#039;socket.io:cors&#039;) || {
+            origin: origins,
+            methods: [&#039;GET&#039;, &#039;POST&#039;],
+            allowedHeaders: [&#039;content-type&#039;],
+        };
+        winston.info(`[socket.io] Restricting access to origin: ${origins}`);
+    }
+
+    io.listen(server, opts);
+    Sockets.server = io;
+};
+
+function onConnection(socket) {
+    socket.ip = (socket.request.headers[&#039;x-forwarded-for&#039;] || socket.request.connection.remoteAddress || &#039;&#039;).split(&#039;,&#039;)[0];
+    socket.request.ip = socket.ip;
+    logger.io_one(socket, socket.uid);
+
+    onConnect(socket);
+    socket.onAny((event, ...args) =&gt; {
+        const payload = { data: [event].concat(args) };
+        const als = require(&#039;../als&#039;);
+        als.run({ uid: socket.uid }, onMessage, socket, payload);
+    });
+
+    socket.on(&#039;disconnect&#039;, () =&gt; {
+        onDisconnect(socket);
+    });
+}
+
+function onDisconnect(socket) {
+    require(&#039;./uploads&#039;).clear(socket.id);
+    plugins.hooks.fire(&#039;action:sockets.disconnect&#039;, { socket: socket });
+}
+
+async function onConnect(socket) {
+    try {
+        await validateSession(socket, &#039;[[error:invalid-session]]&#039;);
+    } catch (e) {
+        if (e.message === &#039;[[error:invalid-session]]&#039;) {
+            socket.emit(&#039;event:invalid_session&#039;);
+        }
+
+        return;
+    }
+
+    if (socket.uid) {
+        socket.join(`uid_${socket.uid}`);
+        socket.join(&#039;online_users&#039;);
+    } else {
+        socket.join(&#039;online_guests&#039;);
+    }
+
+    socket.join(`sess_${socket.request.signedCookies[nconf.get(&#039;sessionKey&#039;)]}`);
+    socket.emit(&#039;checkSession&#039;, socket.uid);
+    socket.emit(&#039;setHostname&#039;, os.hostname());
+    plugins.hooks.fire(&#039;action:sockets.connect&#039;, { socket: socket });
+}
+
+async function onMessage(socket, payload) {
+    if (!payload.data.length) {
+        return winston.warn(&#039;[socket.io] Empty payload&#039;);
+    }
+
+    const eventName = payload.data[0];
+    const params = typeof payload.data[1] === &#039;function&#039; ? {} : payload.data[1];
+    const callback = typeof payload.data[payload.data.length - 1] === &#039;function&#039; ? payload.data[payload.data.length - 1] : function () {};
+
+    if (!eventName) {
+        return winston.warn(&#039;[socket.io] Empty method name&#039;);
+    }
+
+    const parts = eventName.toString().split(&#039;.&#039;);
+    const namespace = parts[0];
+    const methodToCall = parts.reduce((prev, cur) =&gt; {
+        if (prev !== null &amp;&amp; prev[cur] &amp;&amp; (!prev.hasOwnProperty || prev.hasOwnProperty(cur))) {
+            return prev[cur];
+        }
+        return null;
+    }, Namespaces);
+
+    if (!methodToCall || typeof methodToCall !== &#039;function&#039;) {
+        if (process.env.NODE_ENV === &#039;development&#039;) {
+            winston.warn(`[socket.io] Unrecognized message: ${eventName}`);
+        }
+        const escapedName = validator.escape(String(eventName));
+        return callback({ message: `[[error:invalid-event, ${escapedName}]]` });
+    }
+
+    socket.previousEvents = socket.previousEvents || [];
+    socket.previousEvents.push(eventName);
+    if (socket.previousEvents.length &gt; 20) {
+        socket.previousEvents.shift();
+    }
+
+    if (!eventName.startsWith(&#039;admin.&#039;) &amp;&amp; ratelimit.isFlooding(socket)) {
+        winston.warn(`[socket.io] Too many emits! Disconnecting uid : ${socket.uid}. Events : ${socket.previousEvents}`);
+        return socket.disconnect();
+    }
+
+    try {
+        await checkMaintenance(socket);
+        await validateSession(socket, &#039;[[error:revalidate-failure]]&#039;);
+
+        if (Namespaces[namespace].before) {
+            await Namespaces[namespace].before(socket, eventName, params);
+        }
+
+        if (methodToCall.constructor &amp;&amp; methodToCall.constructor.name === &#039;AsyncFunction&#039;) {
+            const result = await methodToCall(socket, params);
+            callback(null, result);
+        } else {
+            methodToCall(socket, params, (err, result) =&gt; {
+                callback(err ? { message: err.message } : null, result);
+            });
+        }
+    } catch (err) {
+        winston.error(`${eventName}\n${err.stack ? err.stack : err.message}`);
+        callback({ message: err.message });
+    }
+}
+
+function requireModules() {
+    const modules = [
+        &#039;admin&#039;, &#039;categories&#039;, &#039;groups&#039;, &#039;meta&#039;, &#039;modules&#039;,
+        &#039;notifications&#039;, &#039;plugins&#039;, &#039;posts&#039;, &#039;topics&#039;, &#039;user&#039;,
+        &#039;blacklist&#039;, &#039;uploads&#039;,
+    ];
+
+    modules.forEach((module) =&gt; {
+        Namespaces[module] = require(`./${module}`);
+    });
+}
+
+async function checkMaintenance(socket) {
+    const meta = require(&#039;../meta&#039;);
+    if (!meta.config.maintenanceMode) {
+        return;
+    }
+    const isAdmin = await user.isAdministrator(socket.uid);
+    if (isAdmin) {
+        return;
+    }
+    const validator = require(&#039;validator&#039;);
+    throw new Error(`[[pages:maintenance.text, ${validator.escape(String(meta.config.title || &#039;NodeBB&#039;))}]]`);
+}
+
+const getSessionAsync = util.promisify(
+    (sid, callback) =&gt; db.sessionStore.get(sid, (err, sessionObj) =&gt; callback(err, sessionObj || null))
+);
+
+async function validateSession(socket, errorMsg) {
+    const req = socket.request;
+    const { sessionId } = await plugins.hooks.fire(&#039;filter:sockets.sessionId&#039;, {
+        sessionId: req.signedCookies ? req.signedCookies[nconf.get(&#039;sessionKey&#039;)] : null,
+        request: req,
+    });
+
+    if (!sessionId) {
+        return;
+    }
+
+    const sessionData = await getSessionAsync(sessionId);
+
+    if (!sessionData) {
+        throw new Error(errorMsg);
+    }
+
+    await plugins.hooks.fire(&#039;static:sockets.validateSession&#039;, {
+        req: req,
+        socket: socket,
+        session: sessionData,
+    });
+}
+
+const cookieParserAsync = util.promisify((req, callback) =&gt; cookieParser(req, {}, err =&gt; callback(err)));
+
+async function authorize(socket, callback) {
+    const { request } = socket;
+
+    if (!request) {
+        return callback(new Error(&#039;[[error:not-authorized]]&#039;));
+    }
+
+    await cookieParserAsync(request);
+
+    const { sessionId } = await plugins.hooks.fire(&#039;filter:sockets.sessionId&#039;, {
+        sessionId: request.signedCookies ? request.signedCookies[nconf.get(&#039;sessionKey&#039;)] : null,
+        request: request,
+    });
+
+    const sessionData = await getSessionAsync(sessionId);
+
+    if (sessionData &amp;&amp; sessionData.passport &amp;&amp; sessionData.passport.user) {
+        request.session = sessionData;
+        socket.uid = parseInt(sessionData.passport.user, 10);
+    } else {
+        socket.uid = 0;
+    }
+    request.uid = socket.uid;
+    callback();
+}
+
+Sockets.in = function (room) {
+    return Sockets.server &amp;&amp; Sockets.server.in(room);
+};
+
+Sockets.getUserSocketCount = function (uid) {
+    return Sockets.getCountInRoom(`uid_${uid}`);
+};
+
+Sockets.getCountInRoom = function (room) {
+    if (!Sockets.server) {
+        return 0;
+    }
+    const roomMap = Sockets.server.sockets.adapter.rooms.get(room);
+    return roomMap ? roomMap.size : 0;
+};
+
+Sockets.warnDeprecated = (socket, replacement) =&gt; {
+    if (socket.previousEvents &amp;&amp; socket.emit) {
+        socket.emit(&#039;event:deprecated_call&#039;, {
+            eventName: socket.previousEvents[socket.previousEvents.length - 1],
+            replacement: replacement,
+        });
+    }
+    winston.warn(`[deprecated]\n ${new Error(&#039;-&#039;).stack.split(&#039;\n&#039;).slice(2, 5).join(&#039;\n&#039;)}\n     use ${replacement}`);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

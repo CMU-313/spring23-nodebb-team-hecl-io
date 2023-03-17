@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres/list.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres/list.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.42</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">189</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">26.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.80</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+
+    module.listPrepend = async function (key, value) {
+        if (!key) {
+            return;
+        }
+
+        await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectType(client, key, &#039;list&#039;);
+            value = Array.isArray(value) ? value : [value];
+            value.reverse();
+            await client.query({
+                name: &#039;listPrependValues&#039;,
+                text: `
+INSERT INTO &quot;legacy_list&quot; (&quot;_key&quot;, &quot;array&quot;)
+VALUES ($1::TEXT, $2::TEXT[])
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;array&quot; = EXCLUDED.array || &quot;legacy_list&quot;.&quot;array&quot;`,
+                values: [key, value],
+            });
+        });
+    };
+
+    module.listAppend = async function (key, value) {
+        if (!key) {
+            return;
+        }
+        await module.transaction(async (client) =&gt; {
+            value = Array.isArray(value) ? value : [value];
+
+            await helpers.ensureLegacyObjectType(client, key, &#039;list&#039;);
+            await client.query({
+                name: &#039;listAppend&#039;,
+                text: `
+INSERT INTO &quot;legacy_list&quot; (&quot;_key&quot;, &quot;array&quot;)
+VALUES ($1::TEXT, $2::TEXT[])
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;array&quot; = &quot;legacy_list&quot;.&quot;array&quot; || EXCLUDED.array`,
+                values: [key, value],
+            });
+        });
+    };
+
+    module.listRemoveLast = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;listRemoveLast&#039;,
+            text: `
+WITH A AS (
+    SELECT l.*
+      FROM &quot;legacy_object_live&quot; o
+     INNER JOIN &quot;legacy_list&quot; l
+             ON o.&quot;_key&quot; = l.&quot;_key&quot;
+            AND o.&quot;type&quot; = l.&quot;type&quot;
+     WHERE o.&quot;_key&quot; = $1::TEXT
+       FOR UPDATE)
+UPDATE &quot;legacy_list&quot; l
+   SET &quot;array&quot; = A.&quot;array&quot;[1 : array_length(A.&quot;array&quot;, 1) - 1]
+  FROM A
+ WHERE A.&quot;_key&quot; = l.&quot;_key&quot;
+RETURNING A.&quot;array&quot;[array_length(A.&quot;array&quot;, 1)] v`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].v : null;
+    };
+
+    module.listRemoveAll = async function (key, value) {
+        if (!key) {
+            return;
+        }
+        // TODO: remove all values with one query
+        if (Array.isArray(value)) {
+            await Promise.all(value.map(v =&gt; module.listRemoveAll(key, v)));
+            return;
+        }
+        await module.pool.query({
+            name: &#039;listRemoveAll&#039;,
+            text: `
+UPDATE &quot;legacy_list&quot; l
+   SET &quot;array&quot; = array_remove(l.&quot;array&quot;, $2::TEXT)
+  FROM &quot;legacy_object_live&quot; o
+ WHERE o.&quot;_key&quot; = l.&quot;_key&quot;
+   AND o.&quot;type&quot; = l.&quot;type&quot;
+   AND o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, value],
+        });
+    };
+
+    module.listTrim = async function (key, start, stop) {
+        if (!key) {
+            return;
+        }
+
+        stop += 1;
+
+        await module.pool.query(stop &gt; 0 ? {
+            name: &#039;listTrim&#039;,
+            text: `
+UPDATE &quot;legacy_list&quot; l
+   SET &quot;array&quot; = ARRAY(SELECT m.m
+                         FROM UNNEST(l.&quot;array&quot;) WITH ORDINALITY m(m, i)
+                        ORDER BY m.i ASC
+                        LIMIT ($3::INTEGER - $2::INTEGER)
+                       OFFSET $2::INTEGER)
+  FROM &quot;legacy_object_live&quot; o
+ WHERE o.&quot;_key&quot; = l.&quot;_key&quot;
+   AND o.&quot;type&quot; = l.&quot;type&quot;
+   AND o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, start, stop],
+        } : {
+            name: &#039;listTrimBack&#039;,
+            text: `
+UPDATE &quot;legacy_list&quot; l
+   SET &quot;array&quot; = ARRAY(SELECT m.m
+                         FROM UNNEST(l.&quot;array&quot;) WITH ORDINALITY m(m, i)
+                        ORDER BY m.i ASC
+                        LIMIT ($3::INTEGER - $2::INTEGER + array_length(l.&quot;array&quot;, 1))
+                       OFFSET $2::INTEGER)
+  FROM &quot;legacy_object_live&quot; o
+ WHERE o.&quot;_key&quot; = l.&quot;_key&quot;
+   AND o.&quot;type&quot; = l.&quot;type&quot;
+   AND o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, start, stop],
+        });
+    };
+
+    module.getListRange = async function (key, start, stop) {
+        if (!key) {
+            return;
+        }
+
+        stop += 1;
+
+        const res = await module.pool.query(stop &gt; 0 ? {
+            name: &#039;getListRange&#039;,
+            text: `
+SELECT ARRAY(SELECT m.m
+               FROM UNNEST(l.&quot;array&quot;) WITH ORDINALITY m(m, i)
+              ORDER BY m.i ASC
+              LIMIT ($3::INTEGER - $2::INTEGER)
+             OFFSET $2::INTEGER) l
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_list&quot; l
+         ON o.&quot;_key&quot; = l.&quot;_key&quot;
+        AND o.&quot;type&quot; = l.&quot;type&quot;
+      WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, start, stop],
+        } : {
+            name: &#039;getListRangeBack&#039;,
+            text: `
+SELECT ARRAY(SELECT m.m
+               FROM UNNEST(l.&quot;array&quot;) WITH ORDINALITY m(m, i)
+              ORDER BY m.i ASC
+              LIMIT ($3::INTEGER - $2::INTEGER + array_length(l.&quot;array&quot;, 1))
+             OFFSET $2::INTEGER) l
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_list&quot; l
+         ON o.&quot;_key&quot; = l.&quot;_key&quot;
+        AND o.&quot;type&quot; = l.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, start, stop],
+        });
+
+        return res.rows.length ? res.rows[0].l : [];
+    };
+
+    module.listLength = async function (key) {
+        const res = await module.pool.query({
+            name: &#039;listLength&#039;,
+            text: `
+SELECT array_length(l.&quot;array&quot;, 1) l
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_list&quot; l
+         ON o.&quot;_key&quot; = l.&quot;_key&quot;
+        AND o.&quot;type&quot; = l.&quot;type&quot;
+      WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].l : 0;
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

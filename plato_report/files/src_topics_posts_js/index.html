@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/posts.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/posts.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.06</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">409</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">65.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.07</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const backlinkRegex = new RegExp(`(?:${nconf.get(&#039;url&#039;).replace(&#039;/&#039;, &#039;\\/&#039;)}|\b|\\s)\\/topic\\/(\\d+)(?:\\/\\w+)?`, &#039;g&#039;);
+
+module.exports = function (Topics) {
+    Topics.onNewPostMade = async function (postData) {
+        await Topics.updateLastPostTime(postData.tid, postData.timestamp);
+        await Topics.addPostToTopic(postData.tid, postData);
+    };
+
+    Topics.getTopicPosts = async function (topicData, set, start, stop, uid, reverse) {
+        if (!topicData) {
+            return [];
+        }
+
+        let repliesStart = start;
+        let repliesStop = stop;
+        if (stop &gt; 0) {
+            repliesStop -= 1;
+            if (start &gt; 0) {
+                repliesStart -= 1;
+            }
+        }
+        let pids = [];
+        if (start !== 0 || stop !== 0) {
+            pids = await posts.getPidsFromSet(set, repliesStart, repliesStop, reverse);
+        }
+        if (!pids.length &amp;&amp; !topicData.mainPid) {
+            return [];
+        }
+
+        if (topicData.mainPid &amp;&amp; start === 0) {
+            pids.unshift(topicData.mainPid);
+        }
+        let postData = await posts.getPostsByPids(pids, uid);
+        if (!postData.length) {
+            return [];
+        }
+        let replies = postData;
+        if (topicData.mainPid &amp;&amp; start === 0) {
+            postData[0].index = 0;
+            replies = postData.slice(1);
+        }
+
+        Topics.calculatePostIndices(replies, repliesStart);
+        await addEventStartEnd(postData, set, reverse, topicData);
+        const allPosts = postData.slice();
+        postData = await user.blocks.filter(uid, postData);
+        if (allPosts.length !== postData.length) {
+            const includedPids = new Set(postData.map(p =&gt; p.pid));
+            allPosts.reverse().forEach((p, index) =&gt; {
+                if (!includedPids.has(p.pid) &amp;&amp; allPosts[index + 1] &amp;&amp; !reverse) {
+                    allPosts[index + 1].eventEnd = p.eventEnd;
+                }
+            });
+        }
+
+        const result = await plugins.hooks.fire(&#039;filter:topic.getPosts&#039;, {
+            topic: topicData,
+            uid: uid,
+            posts: await Topics.addPostData(postData, uid),
+        });
+        return result.posts;
+    };
+
+    async function addEventStartEnd(postData, set, reverse, topicData) {
+        if (!postData.length) {
+            return;
+        }
+        postData.forEach((p, index) =&gt; {
+            if (p &amp;&amp; p.index === 0 &amp;&amp; reverse) {
+                p.eventStart = topicData.lastposttime;
+                p.eventEnd = Date.now();
+            } else if (p &amp;&amp; postData[index + 1]) {
+                p.eventStart = reverse ? postData[index + 1].timestamp : p.timestamp;
+                p.eventEnd = reverse ? p.timestamp : postData[index + 1].timestamp;
+            }
+        });
+        const lastPost = postData[postData.length - 1];
+        if (lastPost) {
+            lastPost.eventStart = reverse ? topicData.timestamp : lastPost.timestamp;
+            lastPost.eventEnd = reverse ? lastPost.timestamp : Date.now();
+            if (lastPost.index) {
+                const nextPost = await db[reverse ? &#039;getSortedSetRevRangeWithScores&#039; : &#039;getSortedSetRangeWithScores&#039;](set, lastPost.index, lastPost.index);
+                if (reverse) {
+                    lastPost.eventStart = nextPost.length ? nextPost[0].score : lastPost.eventStart;
+                } else {
+                    lastPost.eventEnd = nextPost.length ? nextPost[0].score : lastPost.eventEnd;
+                }
+            }
+        }
+    }
+
+    Topics.addPostData = async function (postData, uid) {
+        if (!Array.isArray(postData) || !postData.length) {
+            return [];
+        }
+        const pids = postData.map(post =&gt; post &amp;&amp; post.pid);
+
+        async function getPostUserData(field, method) {
+            const uids = _.uniq(postData.filter(p =&gt; p &amp;&amp; parseInt(p[field], 10) &gt;= 0).map(p =&gt; p[field]));
+            const userData = await method(uids);
+            return _.zipObject(uids, userData);
+        }
+        const [
+            bookmarks,
+            endorsed,
+            voteData,
+            userData,
+            editors,
+            replies,
+        ] = await Promise.all([
+            posts.hasBookmarked(pids, uid),
+            posts.hasEndorsed(pids, uid),
+            posts.getVoteStatusByPostIDs(pids, uid),
+            getPostUserData(&#039;uid&#039;, async uids =&gt; await posts.getUserInfoForPosts(uids, uid)),
+            getPostUserData(&#039;editor&#039;, async uids =&gt; await user.getUsersFields(uids, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;])),
+            getPostReplies(pids, uid),
+            Topics.addParentPosts(postData),
+        ]);
+
+        postData.forEach((postObj, i) =&gt; {
+            if (postObj) {
+                postObj.user = postObj.uid ? userData[postObj.uid] : { ...userData[postObj.uid] };
+                postObj.editor = postObj.editor ? editors[postObj.editor] : null;
+                postObj.bookmarked = bookmarks[i];
+                postObj.endorsed = endorsed[i];
+                postObj.upvoted = voteData.upvotes[i];
+                postObj.downvoted = voteData.downvotes[i];
+                postObj.votes = postObj.votes || 0;
+                postObj.replies = replies[i];
+                postObj.selfPost = parseInt(uid, 10) &gt; 0 &amp;&amp; parseInt(uid, 10) === postObj.uid;
+
+                // Username override for guests, if enabled
+                if (meta.config.allowGuestHandles &amp;&amp; postObj.uid === 0 &amp;&amp; postObj.handle) {
+                    postObj.user.username = validator.escape(String(postObj.handle));
+                    postObj.user.displayname = postObj.user.username;
+                }
+            }
+        });
+
+        const result = await plugins.hooks.fire(&#039;filter:topics.addPostData&#039;, {
+            posts: postData,
+            uid: uid,
+        });
+        return result.posts;
+    };
+
+    Topics.modifyPostsByPrivilege = function (topicData, topicPrivileges) {
+        const loggedIn = parseInt(topicPrivileges.uid, 10) &gt; 0;
+        topicData.posts.forEach((post) =&gt; {
+            if (post) {
+                post.topicOwnerPost = parseInt(topicData.uid, 10) === parseInt(post.uid, 10);
+                post.display_edit_tools = topicPrivileges.isAdminOrMod || (post.selfPost &amp;&amp; topicPrivileges[&#039;posts:edit&#039;]);
+                post.display_delete_tools = topicPrivileges.isAdminOrMod || (post.selfPost &amp;&amp; topicPrivileges[&#039;posts:delete&#039;]);
+                post.display_moderator_tools = post.display_edit_tools || post.display_delete_tools;
+                post.display_move_tools = topicPrivileges.isAdminOrMod &amp;&amp; post.index !== 0;
+                post.display_post_menu = topicPrivileges.isAdminOrMod ||
+                    (post.selfPost &amp;&amp;
+                        ((!topicData.locked &amp;&amp; !post.deleted) ||
+                        (post.deleted &amp;&amp; parseInt(post.deleterUid, 10) === parseInt(topicPrivileges.uid, 10)))) ||
+                    ((loggedIn || topicData.postSharing.length) &amp;&amp; !post.deleted);
+                post.ip = topicPrivileges.isAdminOrMod ? post.ip : undefined;
+
+                posts.modifyPostByPrivilege(post, topicPrivileges);
+            }
+        });
+    };
+
+    Topics.addParentPosts = async function (postData) {
+        let parentPids = postData.map(postObj =&gt; (postObj &amp;&amp; postObj.hasOwnProperty(&#039;toPid&#039;) ? parseInt(postObj.toPid, 10) : null)).filter(Boolean);
+
+        if (!parentPids.length) {
+            return;
+        }
+        parentPids = _.uniq(parentPids);
+        const parentPosts = await posts.getPostsFields(parentPids, [&#039;uid&#039;]);
+        const parentUids = _.uniq(parentPosts.map(postObj =&gt; postObj &amp;&amp; postObj.uid));
+        const userData = await user.getUsersFields(parentUids, [&#039;username&#039;]);
+
+        const usersMap = {};
+        userData.forEach((user) =&gt; {
+            usersMap[user.uid] = user.username;
+        });
+        const parents = {};
+        parentPosts.forEach((post, i) =&gt; {
+            parents[parentPids[i]] = { username: usersMap[post.uid] };
+        });
+
+        postData.forEach((post) =&gt; {
+            post.parent = parents[post.toPid];
+        });
+    };
+
+    Topics.calculatePostIndices = function (posts, start) {
+        posts.forEach((post, index) =&gt; {
+            if (post) {
+                post.index = start + index + 1;
+            }
+        });
+    };
+
+    Topics.getLatestUndeletedPid = async function (tid) {
+        const pid = await Topics.getLatestUndeletedReply(tid);
+        if (pid) {
+            return pid;
+        }
+        const mainPid = await Topics.getTopicField(tid, &#039;mainPid&#039;);
+        const mainPost = await posts.getPostFields(mainPid, [&#039;pid&#039;, &#039;deleted&#039;]);
+        return mainPost.pid &amp;&amp; !mainPost.deleted ? mainPost.pid : null;
+    };
+
+    Topics.getLatestUndeletedReply = async function (tid) {
+        let isDeleted = false;
+        let index = 0;
+        do {
+            /* eslint-disable no-await-in-loop */
+            const pids = await db.getSortedSetRevRange(`tid:${tid}:posts`, index, index);
+            if (!pids.length) {
+                return null;
+            }
+            isDeleted = await posts.getPostField(pids[0], &#039;deleted&#039;);
+            if (!isDeleted) {
+                return parseInt(pids[0], 10);
+            }
+            index += 1;
+        } while (isDeleted);
+    };
+
+    Topics.addPostToTopic = async function (tid, postData) {
+        const mainPid = await Topics.getTopicField(tid, &#039;mainPid&#039;);
+        if (!parseInt(mainPid, 10)) {
+            await Topics.setTopicField(tid, &#039;mainPid&#039;, postData.pid);
+        } else {
+            const upvotes = parseInt(postData.upvotes, 10) || 0;
+            const downvotes = parseInt(postData.downvotes, 10) || 0;
+            const votes = upvotes - downvotes;
+            await db.sortedSetsAdd([
+                `tid:${tid}:posts`, `tid:${tid}:posts:votes`,
+            ], [postData.timestamp, votes], postData.pid);
+        }
+        await Topics.increasePostCount(tid);
+        await db.sortedSetIncrBy(`tid:${tid}:posters`, 1, postData.uid);
+        const posterCount = await db.sortedSetCard(`tid:${tid}:posters`);
+        await Topics.setTopicField(tid, &#039;postercount&#039;, posterCount);
+        await Topics.updateTeaser(tid);
+    };
+
+    Topics.removePostFromTopic = async function (tid, postData) {
+        await db.sortedSetsRemove([
+            `tid:${tid}:posts`,
+            `tid:${tid}:posts:votes`,
+        ], postData.pid);
+        await Topics.decreasePostCount(tid);
+        await db.sortedSetIncrBy(`tid:${tid}:posters`, -1, postData.uid);
+        await db.sortedSetsRemoveRangeByScore([`tid:${tid}:posters`], &#039;-inf&#039;, 0);
+        const posterCount = await db.sortedSetCard(`tid:${tid}:posters`);
+        await Topics.setTopicField(tid, &#039;postercount&#039;, posterCount);
+        await Topics.updateTeaser(tid);
+    };
+
+    Topics.getPids = async function (tid) {
+        let [mainPid, pids] = await Promise.all([
+            Topics.getTopicField(tid, &#039;mainPid&#039;),
+            db.getSortedSetRange(`tid:${tid}:posts`, 0, -1),
+        ]);
+        if (parseInt(mainPid, 10)) {
+            pids = [mainPid].concat(pids);
+        }
+        return pids;
+    };
+
+    Topics.increasePostCount = async function (tid) {
+        incrementFieldAndUpdateSortedSet(tid, &#039;postcount&#039;, 1, &#039;topics:posts&#039;);
+    };
+
+    Topics.decreasePostCount = async function (tid) {
+        incrementFieldAndUpdateSortedSet(tid, &#039;postcount&#039;, -1, &#039;topics:posts&#039;);
+    };
+
+    Topics.increaseViewCount = async function (tid) {
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+        incrementFieldAndUpdateSortedSet(tid, &#039;viewcount&#039;, 1, [&#039;topics:views&#039;, `cid:${cid}:tids:views`]);
+    };
+
+    async function incrementFieldAndUpdateSortedSet(tid, field, by, set) {
+        const value = await db.incrObjectFieldBy(`topic:${tid}`, field, by);
+        await db[Array.isArray(set) ? &#039;sortedSetsAdd&#039; : &#039;sortedSetAdd&#039;](set, value, tid);
+    }
+
+    Topics.getTitleByPid = async function (pid) {
+        return await Topics.getTopicFieldByPid(&#039;title&#039;, pid);
+    };
+
+    Topics.getTopicFieldByPid = async function (field, pid) {
+        const tid = await posts.getPostField(pid, &#039;tid&#039;);
+        return await Topics.getTopicField(tid, field);
+    };
+
+    Topics.getTopicDataByPid = async function (pid) {
+        const tid = await posts.getPostField(pid, &#039;tid&#039;);
+        return await Topics.getTopicData(tid);
+    };
+
+    Topics.getPostCount = async function (tid) {
+        return await db.getObjectField(`topic:${tid}`, &#039;postcount&#039;);
+    };
+
+    async function getPostReplies(pids, callerUid) {
+        const keys = pids.map(pid =&gt; `pid:${pid}:replies`);
+        const arrayOfReplyPids = await db.getSortedSetsMembers(keys);
+
+        const uniquePids = _.uniq(_.flatten(arrayOfReplyPids));
+
+        let replyData = await posts.getPostsFields(uniquePids, [&#039;pid&#039;, &#039;uid&#039;, &#039;timestamp&#039;]);
+        const result = await plugins.hooks.fire(&#039;filter:topics.getPostReplies&#039;, {
+            uid: callerUid,
+            replies: replyData,
+        });
+        replyData = await user.blocks.filter(callerUid, result.replies);
+
+        const uids = replyData.map(replyData =&gt; replyData &amp;&amp; replyData.uid);
+
+        const uniqueUids = _.uniq(uids);
+
+        const userData = await user.getUsersWithFields(uniqueUids, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;], callerUid);
+
+        const uidMap = _.zipObject(uniqueUids, userData);
+        const pidMap = _.zipObject(replyData.map(r =&gt; r.pid), replyData);
+
+        const returnData = arrayOfReplyPids.map((replyPids) =&gt; {
+            replyPids = replyPids.filter(pid =&gt; pidMap[pid]);
+            const uidsUsed = {};
+            const currentData = {
+                hasMore: false,
+                users: [],
+                text: replyPids.length &gt; 1 ? `[[topic:replies_to_this_post, ${replyPids.length}]]` : &#039;[[topic:one_reply_to_this_post]]&#039;,
+                count: replyPids.length,
+                timestampISO: replyPids.length ? utils.toISOString(pidMap[replyPids[0]].timestamp) : undefined,
+            };
+
+            replyPids.sort((a, b) =&gt; parseInt(a, 10) - parseInt(b, 10));
+
+            replyPids.forEach((replyPid) =&gt; {
+                const replyData = pidMap[replyPid];
+                if (!uidsUsed[replyData.uid] &amp;&amp; currentData.users.length &lt; 6) {
+                    currentData.users.push(uidMap[replyData.uid]);
+                    uidsUsed[replyData.uid] = true;
+                }
+            });
+
+            if (currentData.users.length &gt; 5) {
+                currentData.users.pop();
+                currentData.hasMore = true;
+            }
+
+            return currentData;
+        });
+
+        return returnData;
+    }
+
+    Topics.syncBacklinks = async (postData) =&gt; {
+        if (!postData) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+
+        // Scan post content for topic links
+        const matches = [...postData.content.matchAll(backlinkRegex)];
+        if (!matches) {
+            return 0;
+        }
+
+        const { pid, uid, tid } = postData;
+        let add = _.uniq(matches.map(match =&gt; match[1]).map(tid =&gt; parseInt(tid, 10)));
+
+        const now = Date.now();
+        const topicsExist = await Topics.exists(add);
+        const current = (await db.getSortedSetMembers(`pid:${pid}:backlinks`)).map(tid =&gt; parseInt(tid, 10));
+        const remove = current.filter(tid =&gt; !add.includes(tid));
+        add = add.filter((_tid, idx) =&gt; topicsExist[idx] &amp;&amp; !current.includes(_tid) &amp;&amp; tid !== _tid);
+
+        // Remove old backlinks
+        await db.sortedSetRemove(`pid:${pid}:backlinks`, remove);
+
+        // Add new backlinks
+        await db.sortedSetAdd(`pid:${pid}:backlinks`, add.map(() =&gt; now), add);
+        await Promise.all(add.map(async (tid) =&gt; {
+            await Topics.events.log(tid, {
+                uid,
+                type: &#039;backlink&#039;,
+                href: `/post/${pid}`,
+            });
+        }));
+
+        return add.length + (current - remove);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

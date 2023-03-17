@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/partials/categories/category-rows.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/partials/categories/category-rows.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">108</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">60.67</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.69</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;ul data-cid=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;cid&#039;] : null)) + 
+      &quot;\&quot;&gt;\n&quot; + 
+      compiled.blocks[&#039;categories&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n&lt;/ul&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;categories&#039;: function categories(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;categories&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-parent-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;parentCid&#039;] : null)) + 
+          &quot;\&quot; data-name=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;\&quot; &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;disabled&#039;] : null) ?
+            &quot;class=\&quot;disabled\&quot;&quot; :
+            &quot;&quot;) + 
+          &quot;&gt;\n        &lt;div class=\&quot;row category-row\&quot;&gt;\n            &lt;div class=\&quot;col-md-9\&quot;&gt;\n                &lt;div class=\&quot;clearfix\&quot;&gt;\n                    &lt;div class=\&quot;toggle\&quot;&gt;\n                        &lt;i class=\&quot;fa fa-chevron-down\&quot;&gt;&lt;/i&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;information\&quot;&gt;\n                        &lt;div class=\&quot;icon\&quot; style=\&quot;\n                            color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;color&#039;] : null)) + 
+          &quot;;\n                            background-color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;bgColor&#039;] : null)) + 
+          &quot;;\n                            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;backgroundImage&#039;] : null) ?
+            &quot;\n                            background-image: url(&#039;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;backgroundImage&#039;] : null)) + 
+              &quot;&#039;);\n                            &quot; :
+            &quot;&quot;) + 
+          &quot;\n                        \&quot;&gt;\n                            &lt;i data-name=\&quot;icon\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;icon&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;fa &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;icon&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                        &lt;/div&gt;\n                        &lt;h5 class=\&quot;category-header\&quot;&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/categories/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/a&gt; &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;link&#039;] : null) ?
+            &quot;&lt;small&gt;&lt;a class=\&quot;text-muted\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;link&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-link\&quot;&gt;&lt;/i&gt; &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;link&#039;] : null)) + 
+              &quot;&lt;/a&gt;&lt;/small&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;&lt;/h5&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;col-md-3\&quot;&gt;\n                &lt;div class=\&quot;clearfix pull-right text-right\&quot;&gt;\n                    &lt;div class=\&quot;btn-group category-tools\&quot;&gt;\n                        &lt;button class=\&quot;btn btn-default btn-xs dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; type=\&quot;button\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-ellipsis-h\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n                        &lt;ul class=\&quot;dropdown-menu dropdown-menu-right\&quot;&gt;\n                            &lt;li&gt;&lt;a href=\&quot;./categories/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot;&gt;[[admin/manage/categories:edit]]&lt;/a&gt;&lt;/li&gt;\n                            &lt;li&gt;&lt;a href=\&quot;./categories/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;/analytics\&quot;&gt;[[admin/manage/categories:analytics]]&lt;/a&gt;&lt;/li&gt;\n                            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/privileges/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot;&gt;[[admin/manage/categories:privileges]]&lt;/a&gt;&lt;/li&gt;\n\n                            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;link&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;link&#039;] : null)) :
+            __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/category/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null))) + 
+          &quot;\&quot; target=\&quot;_blank\&quot;&gt;[[admin/manage/categories:view-category]]&lt;/a&gt;&lt;/li&gt;\n\n                            &lt;li&gt;\n                                &lt;a href=\&quot;#\&quot; data-disable-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-action=\&quot;toggle\&quot; data-disabled=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;disabled&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                                &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;disabled&#039;] : null) ?
+            &quot;\n                                [[admin/manage/categories:enable]]\n                                &quot; :
+            &quot;\n                                [[admin/manage/categories:disable]]\n                                &quot;) + 
+          &quot;\n                                &lt;/a&gt;\n                            &lt;/li&gt;\n                            &lt;li&gt;\n                                &lt;a href=\&quot;#\&quot; class=\&quot;set-order\&quot; data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-order=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;order&#039;] : null)) + 
+          &quot;\&quot;&gt;[[admin/manage/categories:set-order]]&lt;/a&gt;\n                            &lt;/li&gt;\n                        &lt;/ul&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n\n        &lt;ul class=\&quot;list-unstyled has-more-categories &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;hasMoreSubCategories&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hidden&quot;) + 
+          &quot;\&quot;&gt;\n            &lt;li&gt;\n                &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/categories?cid=&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;&amp;page=&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;showMorePage&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;btn btn-outline-secondary\&quot;&gt;[[category:x-more-categories, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categories&#039;] != null &amp;&amp; context[&#039;categories&#039;][key0] != null) ? context[&#039;categories&#039;][key0][&#039;subCategoriesLeft&#039;] : null)) + 
+          &quot;]]&lt;/a&gt;\n            &lt;/li&gt;\n        &lt;/ul&gt;\n    &lt;/li&gt;\n&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

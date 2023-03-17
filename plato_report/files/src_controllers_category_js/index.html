@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/category.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/category.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">48.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">206</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.17</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.72</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+const qs = require(&#039;querystring&#039;);
+
+const db = require(&#039;../database&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const user = require(&#039;../user&#039;);
+const categories = require(&#039;../categories&#039;);
+const meta = require(&#039;../meta&#039;);
+const pagination = require(&#039;../pagination&#039;);
+const helpers = require(&#039;./helpers&#039;);
+const utils = require(&#039;../utils&#039;);
+const translator = require(&#039;../translator&#039;);
+const analytics = require(&#039;../analytics&#039;);
+
+const categoryController = module.exports;
+
+const url = nconf.get(&#039;url&#039;);
+const relative_path = nconf.get(&#039;relative_path&#039;);
+
+categoryController.get = async function (req, res, next) {
+    const cid = req.params.category_id;
+
+    let currentPage = parseInt(req.query.page, 10) || 1;
+    let topicIndex = utils.isNumber(req.params.topic_index) ? parseInt(req.params.topic_index, 10) - 1 : 0;
+    if ((req.params.topic_index &amp;&amp; !utils.isNumber(req.params.topic_index)) || !utils.isNumber(cid)) {
+        return next();
+    }
+
+    const [categoryFields, userPrivileges, userSettings, rssToken] = await Promise.all([
+        categories.getCategoryFields(cid, [&#039;slug&#039;, &#039;disabled&#039;, &#039;link&#039;]),
+        privileges.categories.get(cid, req.uid),
+        user.getSettings(req.uid),
+        user.auth.getFeedToken(req.uid),
+    ]);
+
+    if (!categoryFields.slug ||
+        (categoryFields &amp;&amp; categoryFields.disabled) ||
+        (userSettings.usePagination &amp;&amp; currentPage &lt; 1)) {
+        return next();
+    }
+    if (topicIndex &lt; 0) {
+        return helpers.redirect(res, `/category/${categoryFields.slug}?${qs.stringify(req.query)}`);
+    }
+
+    if (!userPrivileges.read) {
+        return helpers.notAllowed(req, res);
+    }
+
+    if (!res.locals.isAPI &amp;&amp; !req.params.slug &amp;&amp; (categoryFields.slug &amp;&amp; categoryFields.slug !== `${cid}/`)) {
+        return helpers.redirect(res, `/category/${categoryFields.slug}?${qs.stringify(req.query)}`, true);
+    }
+
+    if (categoryFields.link) {
+        await db.incrObjectField(`category:${cid}`, &#039;timesClicked&#039;);
+        return helpers.redirect(res, validator.unescape(categoryFields.link));
+    }
+
+    if (!userSettings.usePagination) {
+        topicIndex = Math.max(0, topicIndex - (Math.ceil(userSettings.topicsPerPage / 2) - 1));
+    } else if (!req.query.page) {
+        const index = Math.max(parseInt((topicIndex || 0), 10), 0);
+        currentPage = Math.ceil((index + 1) / userSettings.topicsPerPage);
+        topicIndex = 0;
+    }
+
+    const targetUid = await user.getUidByUserslug(req.query.author);
+    const start = ((currentPage - 1) * userSettings.topicsPerPage) + topicIndex;
+    const stop = start + userSettings.topicsPerPage - 1;
+
+    const categoryData = await categories.getCategoryById({
+        uid: req.uid,
+        cid: cid,
+        start: start,
+        stop: stop,
+        sort: req.query.sort || userSettings.categoryTopicSort,
+        settings: userSettings,
+        query: req.query,
+        tag: req.query.tag,
+        targetUid: targetUid,
+    });
+    if (!categoryData) {
+        return next();
+    }
+
+    if (topicIndex &gt; Math.max(categoryData.topic_count - 1, 0)) {
+        return helpers.redirect(res, `/category/${categoryData.slug}/${categoryData.topic_count}?${qs.stringify(req.query)}`);
+    }
+    const pageCount = Math.max(1, Math.ceil(categoryData.topic_count / userSettings.topicsPerPage));
+    if (userSettings.usePagination &amp;&amp; currentPage &gt; pageCount) {
+        return next();
+    }
+
+    categories.modifyTopicsByPrivilege(categoryData.topics, userPrivileges);
+    categoryData.tagWhitelist = categories.filterTagWhitelist(categoryData.tagWhitelist, userPrivileges.isAdminOrMod);
+
+    await buildBreadcrumbs(req, categoryData);
+    if (categoryData.children.length) {
+        const allCategories = [];
+        categories.flattenCategories(allCategories, categoryData.children);
+        await categories.getRecentTopicReplies(allCategories, req.uid, req.query);
+        categoryData.subCategoriesLeft = Math.max(0, categoryData.children.length - categoryData.subCategoriesPerPage);
+        categoryData.hasMoreSubCategories = categoryData.children.length &gt; categoryData.subCategoriesPerPage;
+        categoryData.nextSubCategoryStart = categoryData.subCategoriesPerPage;
+        categoryData.children = categoryData.children.slice(0, categoryData.subCategoriesPerPage);
+        categoryData.children.forEach((child) =&gt; {
+            if (child) {
+                helpers.trimChildren(child);
+                helpers.setCategoryTeaser(child);
+            }
+        });
+    }
+
+    categoryData.title = translator.escape(categoryData.name);
+    categoryData.selectCategoryLabel = &#039;[[category:subcategories]]&#039;;
+    categoryData.description = translator.escape(categoryData.description);
+    categoryData.privileges = userPrivileges;
+    categoryData.showSelect = userPrivileges.editable;
+    categoryData.showTopicTools = userPrivileges.editable;
+    categoryData.topicIndex = topicIndex;
+    categoryData.rssFeedUrl = `${url}/category/${categoryData.cid}.rss`;
+    if (parseInt(req.uid, 10)) {
+        categories.markAsRead([cid], req.uid);
+        categoryData.rssFeedUrl += `?uid=${req.uid}&amp;token=${rssToken}`;
+    }
+
+    addTags(categoryData, res);
+
+    categoryData[&#039;feeds:disableRSS&#039;] = meta.config[&#039;feeds:disableRSS&#039;] || 0;
+    categoryData[&#039;reputation:disabled&#039;] = meta.config[&#039;reputation:disabled&#039;];
+    categoryData.pagination = pagination.create(currentPage, pageCount, req.query);
+    categoryData.pagination.rel.forEach((rel) =&gt; {
+        rel.href = `${url}/category/${categoryData.slug}${rel.href}`;
+        res.locals.linkTags.push(rel);
+    });
+
+    analytics.increment([`pageviews:byCid:${categoryData.cid}`]);
+
+    res.render(&#039;category&#039;, categoryData);
+};
+
+async function buildBreadcrumbs(req, categoryData) {
+    const breadcrumbs = [
+        {
+            text: categoryData.name,
+            url: `${relative_path}/category/${categoryData.slug}`,
+            cid: categoryData.cid,
+        },
+    ];
+    const crumbs = await helpers.buildCategoryBreadcrumbs(categoryData.parentCid);
+    if (req.originalUrl.startsWith(`${relative_path}/api/category`) || req.originalUrl.startsWith(`${relative_path}/category`)) {
+        categoryData.breadcrumbs = crumbs.concat(breadcrumbs);
+    }
+}
+
+function addTags(categoryData, res) {
+    res.locals.metaTags = [
+        {
+            name: &#039;title&#039;,
+            content: categoryData.name,
+            noEscape: true,
+        },
+        {
+            property: &#039;og:title&#039;,
+            content: categoryData.name,
+            noEscape: true,
+        },
+        {
+            name: &#039;description&#039;,
+            content: categoryData.description,
+            noEscape: true,
+        },
+        {
+            property: &#039;og:type&#039;,
+            content: &#039;website&#039;,
+        },
+    ];
+
+    if (categoryData.backgroundImage) {
+        if (!categoryData.backgroundImage.startsWith(&#039;http&#039;)) {
+            categoryData.backgroundImage = url + categoryData.backgroundImage;
+        }
+        res.locals.metaTags.push({
+            property: &#039;og:image&#039;,
+            content: categoryData.backgroundImage,
+        });
+    }
+
+    res.locals.linkTags = [
+        {
+            rel: &#039;up&#039;,
+            href: url,
+        },
+    ];
+
+    if (!categoryData[&#039;feeds:disableRSS&#039;]) {
+        res.locals.linkTags.push({
+            rel: &#039;alternate&#039;,
+            type: &#039;application/rss+xml&#039;,
+            href: categoryData.rssFeedUrl,
+        });
+    }
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

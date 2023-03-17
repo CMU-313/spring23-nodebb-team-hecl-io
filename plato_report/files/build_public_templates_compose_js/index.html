@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/compose.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/compose.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">204</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">46.99</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.41</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div component=\&quot;composer\&quot; class=\&quot;composer&quot; + 
+      (guard((context != null) ? context[&#039;resizable&#039;] : null) ?
+        &quot; resizable&quot; :
+        &quot;&quot;) + 
+      (guard((context != null) ? context[&#039;isTopicOrMain&#039;] : null) ?
+        &quot;&quot; :
+        &quot; reply&quot;) + 
+      &quot;\&quot;&quot; + 
+      (guard((context != null) ? context[&#039;disabled&#039;] : null) ?
+        &quot;&quot; :
+        &quot; style=\&quot;visibility: inherit;\&quot;&quot;) + 
+      &quot;&gt;\n\n\t&lt;div class=\&quot;composer-container\&quot;&gt;\n\t\t&lt;form id=\&quot;compose-form\&quot; method=\&quot;post\&quot;&gt;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;pid&#039;] : null) ?
+        &quot;\n\t\t\t&lt;input type=\&quot;hidden\&quot; name=\&quot;pid\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;pid&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n\t\t\t&lt;input type=\&quot;hidden\&quot; name=\&quot;thumb\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;thumb&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;tid&#039;] : null) ?
+        &quot;\n\t\t\t&lt;input type=\&quot;hidden\&quot; name=\&quot;tid\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;tid&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;cid&#039;] : null) ?
+        &quot;\n\t\t\t&lt;input type=\&quot;hidden\&quot; name=\&quot;cid\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;cid&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&lt;input type=\&quot;hidden\&quot; name=\&quot;_csrf\&quot; value=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;csrf_token&#039;] : null)) + 
+      &quot;\&quot; /&gt;\n\t\t&lt;/form&gt;\n\n\t\t&lt;div class=\&quot;title-container row\&quot;&gt;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;isTopic&#039;] : null) ?
+        &quot;\n\t\t\t&lt;div class=\&quot;category-list-container\&quot;&gt;&lt;div component=\&quot;category-selector\&quot; class=\&quot;btn-group bottom-sheet\&quot;&gt;\n&lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot;&gt;\n    &lt;span component=\&quot;category-selector-selected\&quot;&gt;&quot; + 
+          ((guard((context != null) ? context[&#039;selectedCategory&#039;] : null) &amp;&amp; !guard((context != null) ? context[&#039;showCategorySelectLabel&#039;] : null)) ?
+            &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+              __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard((context != null) ? context[&#039;selectedCategory&#039;] : null)])) + 
+              &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-stack-1x &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;icon&#039;] : null)) + 
+              &quot;\&quot; style=\&quot;color: &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;color&#039;] : null)) + 
+              &quot;;\&quot;&gt;&lt;/i&gt;&lt;/span&gt; &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;name&#039;] : null)) :
+            &quot;\n    &lt;span class=\&quot;visible-sm-inline visible-md-inline visible-lg-inline\&quot;&gt;&quot; + 
+              (guard((context != null) ? context[&#039;selectCategoryLabel&#039;] : null) ?
+                __escape(guard((context != null) ? context[&#039;selectCategoryLabel&#039;] : null)) :
+                &quot;[[topic:thread_tools.select_category]]&quot;) + 
+              &quot;&lt;/span&gt;&lt;span class=\&quot;visible-xs-inline\&quot;&gt;&lt;i class=\&quot;fa fa-fw &quot; + 
+              (guard((context != null) ? context[&#039;selectCategoryIcon&#039;] : null) ?
+                __escape(guard((context != null) ? context[&#039;selectCategoryIcon&#039;] : null)) :
+                &quot;fa-list&quot;) + 
+              &quot;\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n    &quot;) + 
+          &quot;&lt;/span&gt; &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n&lt;/button&gt;\n&lt;div component=\&quot;category-selector-search\&quot; class=\&quot;hidden\&quot;&gt;\n    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; autocomplete=\&quot;off\&quot;&gt;\n&lt;/div&gt;\n&lt;ul component=\&quot;category/list\&quot; class=\&quot;dropdown-menu category-dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n    &lt;li component=\&quot;category/no-matches\&quot; role=\&quot;presentation\&quot; class=\&quot;category hidden\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot;&gt;[[search:no-matches]]&lt;/a&gt;\n    &lt;/li&gt;\n    &quot; + 
+          compiled.blocks[&#039;categoryItems&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n&lt;/ul&gt;\n&lt;/div&gt;&lt;/div&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;isTopicOrMain&#039;] : null) ?
+        &quot;\n\t\t\t&lt;div class=\&quot;display-scheduler pull-right&quot; + 
+          (guard((context != null) ? context[&#039;canSchedule&#039;] : null) ?
+            &quot;&quot; :
+            &quot; hidden&quot;) + 
+          &quot;\&quot;&gt;\n\t\t\t\t&lt;i class=\&quot;fa fa-clock-o\&quot;&gt;&lt;/i&gt;\n\t\t\t&lt;/div&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;showHandleInput&#039;] : null) ?
+        &quot;\n\t\t\t&lt;div class=\&quot;col-sm-3 col-md-12\&quot;&gt;\n\t\t\t\t&lt;input class=\&quot;handle form-control\&quot; type=\&quot;text\&quot; tabindex=\&quot;1\&quot; placeholder=\&quot;[[topic:composer.handle_placeholder]]\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;handle&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n\t\t\t&lt;/div&gt;\n\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t&lt;div class=\&quot;&quot; + 
+      (guard((context != null) ? context[&#039;isTopic&#039;] : null) ?
+        &quot;col-lg-9&quot; :
+        &quot;col-lg-12&quot;) + 
+      &quot; col-md-12\&quot;&gt;\n\t\t\t\t&quot; + 
+      (guard((context != null) ? context[&#039;isTopicOrMain&#039;] : null) ?
+        &quot;\n\t\t\t\t&lt;input name=\&quot;title\&quot; form=\&quot;compose-form\&quot; class=\&quot;title form-control\&quot; type=\&quot;text\&quot; tabindex=\&quot;1\&quot; placeholder=\&quot;[[topic:composer.title_placeholder]]\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;topicTitle&#039;] : null)) + 
+          &quot;\&quot;/&gt;\n\t\t\t\t&quot; :
+        &quot;\n\t\t\t\t&lt;span class=\&quot;title\&quot;&gt;[[topic:composer.replying_to, \&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;topicTitle&#039;] : null)) + 
+          &quot;\&quot;]]&lt;/span&gt;\n\t\t\t\t&quot;) + 
+      &quot;\n\t\t\t\t&lt;div id=\&quot;quick-search-container\&quot; class=\&quot;quick-search-container hidden\&quot;&gt;\n\t\t\t\t\t&lt;div class=\&quot;quick-search-results-container\&quot;&gt;&lt;/div&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t&lt;/div&gt;\n\t\t&lt;/div&gt;\n\n\t\t&lt;div class=\&quot;category-tag-row\&quot;&gt;\n\t\t\t&lt;div class=\&quot;btn-toolbar formatting-bar\&quot;&gt;\n\t\t\t\t&lt;ul class=\&quot;formatting-group\&quot;&gt;\n\t\t\t\t\t&quot; + 
+      compiled.blocks[&#039;formatting&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\n\t\t\t\t\t&lt;!--[if gte IE 9]&gt;&lt;!--&gt;\n\t\t\t\t\t\t&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;upload:post:image&#039;] : null) ?
+        &quot;\n\t\t\t\t\t\t&lt;li class=\&quot;img-upload-btn hide\&quot; data-format=\&quot;picture\&quot; tabindex=\&quot;-1\&quot;&gt;\n\t\t\t\t\t\t\t&lt;i class=\&quot;fa fa-file-image-o\&quot;&gt;&lt;/i&gt;\n\t\t\t\t\t\t&lt;/li&gt;\n\t\t\t\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t\t\t\t&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;upload:post:file&#039;] : null) ?
+        &quot;\n\t\t\t\t\t\t&lt;li class=\&quot;file-upload-btn hide\&quot; data-format=\&quot;upload\&quot; tabindex=\&quot;-1\&quot;&gt;\n\t\t\t\t\t\t\t&lt;i class=\&quot;fa fa-file-o\&quot;&gt;&lt;/i&gt;\n\t\t\t\t\t\t&lt;/li&gt;\n\t\t\t\t\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\t\t\t\t\t&lt;!--&lt;![endif]--&gt;\n\n\t\t\t\t\t&lt;form id=\&quot;fileForm\&quot; method=\&quot;post\&quot; enctype=\&quot;multipart/form-data\&quot;&gt;\n\t\t\t\t\t\t&lt;!--[if gte IE 9]&gt;&lt;!--&gt;\n\t\t\t\t\t\t\t&lt;input type=\&quot;file\&quot; id=\&quot;files\&quot; name=\&quot;files[]\&quot; multiple class=\&quot;gte-ie9 hide\&quot;/&gt;\n\t\t\t\t\t\t&lt;!--&lt;![endif]--&gt;\n\t\t\t\t\t\t&lt;!--[if lt IE 9]&gt;\n\t\t\t\t\t\t\t&lt;input type=\&quot;file\&quot; id=\&quot;files\&quot; name=\&quot;files[]\&quot; class=\&quot;lt-ie9 hide\&quot; value=\&quot;Upload\&quot;/&gt;\n\t\t\t\t\t\t&lt;![endif]--&gt;\n\t\t\t\t\t&lt;/form&gt;\n\t\t\t\t&lt;/ul&gt;\n\n\t\t\t\t&lt;div class=\&quot;btn-group pull-right action-bar\&quot;&gt;\n\t\t\t\t\t&lt;a href=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;discardRoute&#039;] : null)) + 
+      &quot;\&quot; class=\&quot;btn btn-default composer-discard\&quot; data-action=\&quot;discard\&quot; tabindex=\&quot;-1\&quot;&gt;&lt;i class=\&quot;fa fa-times\&quot;&gt;&lt;/i&gt; [[topic:composer.discard]]&lt;/a&gt;\n\n\t\t\t\t\t&lt;button type=\&quot;submit\&quot; form=\&quot;compose-form\&quot; class=\&quot;btn btn-primary composer-submit\&quot; data-action=\&quot;post\&quot; tabindex=\&quot;6\&quot; data-text-variant=\&quot; [[topic:composer.schedule]]\&quot;&gt;&lt;i class=\&quot;fa fa-check\&quot;&gt;&lt;/i&gt; [[topic:composer.submit]]&lt;/button&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t&lt;/div&gt;\n\t\t&lt;/div&gt;\n\n\t\t&lt;div class=\&quot;row write-preview-container\&quot;&gt;\n\t\t\t&lt;div class=\&quot;col-md-6 col-sm-12 write-container\&quot;&gt;\n\t\t\t\t&lt;div class=\&quot;help-text\&quot;&gt;\n\t\t\t\t\t[[modules:composer.compose]] &lt;span class=\&quot;help hidden\&quot;&gt;&lt;i class=\&quot;fa fa-question-circle\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n\t\t\t\t\t&lt;span class=\&quot;toggle-preview hide\&quot;&gt;[[modules:composer.show_preview]]&lt;/span&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;textarea name=\&quot;content\&quot; form=\&quot;compose-form\&quot; class=\&quot;write\&quot; tabindex=\&quot;5\&quot; placeholder=\&quot;[[modules:composer.textarea.placeholder]]\&quot;&gt;&quot; + 
+      __escape(guard((context != null) ? context[&#039;body&#039;] : null)) + 
+      &quot;&lt;/textarea&gt;\n\t\t\t&lt;/div&gt;\n\t\t\t&lt;div class=\&quot;col-md-6 hidden-sm hidden-xs preview-container\&quot;&gt;\n\t\t\t\t&lt;div class=\&quot;help-text\&quot;&gt;\n\t\t\t\t\t&lt;span class=\&quot;toggle-preview\&quot;&gt;[[modules:composer.hide_preview]]&lt;/span&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;div class=\&quot;preview well\&quot;&gt;&lt;/div&gt;\n\t\t\t&lt;/div&gt;\n\t\t&lt;/div&gt;\n\n\t\t&quot; + 
+      (guard((context != null) ? context[&#039;isTopicOrMain&#039;] : null) ?
+        &quot;\n\t\t&lt;div class=\&quot;tag-row\&quot;&gt;\n\t\t\t&lt;div class=\&quot;tags-container\&quot;&gt;\n\t\t\t\t&lt;div class=\&quot;btn-group dropup &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;tagWhitelist&#039;] != null) ? context[&#039;tagWhitelist&#039;][&#039;length&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hidden&quot;) + 
+          &quot;\&quot; component=\&quot;composer/tag/dropdown\&quot;&gt;\n\t\t\t\t\t&lt;button class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; type=\&quot;button\&quot;&gt;\n\t\t\t\t\t\t&lt;span class=\&quot;visible-sm-inline visible-md-inline visible-lg-inline\&quot;&gt;&lt;i class=\&quot;fa fa-tags\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n\t\t\t\t\t\t&lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n\t\t\t\t\t&lt;/button&gt;\n\n\t\t\t\t\t&lt;ul class=\&quot;dropdown-menu\&quot;&gt;\n\t\t\t\t\t\t&quot; + 
+          compiled.blocks[&#039;tagWhitelist&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n\t\t\t\t\t&lt;/ul&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;input class=\&quot;tags\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; placeholder=\&quot;[[tags:enter_tags_here, &quot; + 
+          __escape(guard((context != null) ? context[&#039;minimumTagLength&#039;] : null)) + 
+          &quot;, &quot; + 
+          __escape(guard((context != null) ? context[&#039;maximumTagLength&#039;] : null)) + 
+          &quot;]]\&quot; tabindex=\&quot;5\&quot;/&gt;\n\t\t\t&lt;/div&gt;\n\t\t&lt;/div&gt;\n\t\t&quot; :
+        &quot;&quot;) + 
+      &quot;\n\n\n\t&lt;/div&gt;\n&lt;/div&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;categoryItems&#039;: function categoryItems(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;categoryItems&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li role=\&quot;presentation\&quot; class=\&quot;category &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;disabledClass&#039;] : null) ?
+            &quot;disabled &quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-name=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;\&quot; data-parent-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;parentCid&#039;] : null)) + 
+          &quot;\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;level&#039;] : null)) + 
+          &quot;&lt;span component=\&quot;category-markup\&quot; style=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;match&#039;] : null) ?
+            &quot;font-weight: bold;&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null) ?
+            &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+              __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard(value)])) + 
+              &quot;\&quot;&gt;&lt;i style=\&quot;color: &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;color&#039;] : null)) + 
+              &quot;;\&quot; class=\&quot;fa fa-stack-1x fa-fw &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;/i&gt;&lt;/span&gt;&quot; :
+            &quot;&quot;) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;/a&gt;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;formatting&#039;: function formatting(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;formatting&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n\t\t\t\t\t\t&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;formatting&#039;] != null &amp;&amp; context[&#039;formatting&#039;][key0] != null) ? context[&#039;formatting&#039;][key0][&#039;spacer&#039;] : null) ?
+            &quot;\n\t\t\t\t\t\t&lt;li class=\&quot;spacer\&quot;&gt;&lt;/li&gt;\n\t\t\t\t\t\t&quot; :
+            &quot;\n\t\t\t\t\t\t&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;formatting&#039;] != null &amp;&amp; context[&#039;formatting&#039;][key0] != null &amp;&amp; context[&#039;formatting&#039;][key0][&#039;visibility&#039;] != null) ? context[&#039;formatting&#039;][key0][&#039;visibility&#039;][&#039;desktop&#039;] : null) ?
+                &quot;\n\t\t\t\t\t\t&lt;li tabindex=\&quot;-1\&quot; data-format=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;formatting&#039;] != null &amp;&amp; context[&#039;formatting&#039;][key0] != null) ? context[&#039;formatting&#039;][key0][&#039;name&#039;] : null)) + 
+                  &quot;\&quot;&gt;&lt;i class=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;formatting&#039;] != null &amp;&amp; context[&#039;formatting&#039;][key0] != null) ? context[&#039;formatting&#039;][key0][&#039;className&#039;] : null)) + 
+                  &quot;\&quot;&gt;&lt;/i&gt;&lt;/li&gt;\n\t\t\t\t\t\t&quot; :
+                &quot;&quot;) + 
+              &quot;\n\t\t\t\t\t\t&quot;) + 
+          &quot;\n\t\t\t\t\t&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;tagWhitelist&#039;: function tagWhitelist(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;tagWhitelist&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n\t\t\t\t\t\t&lt;li data-tag=\&quot;&quot; + 
+          __escape(guard(value)) + 
+          &quot;\&quot;&gt;&lt;a href=\&quot;#\&quot;&gt;&quot; + 
+          __escape(guard(value)) + 
+          &quot;&lt;/a&gt;&lt;/li&gt;\n\t\t\t\t\t\t&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

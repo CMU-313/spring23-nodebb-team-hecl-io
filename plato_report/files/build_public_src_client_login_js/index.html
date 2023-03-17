@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/login.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/login.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.76</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">111</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">22.09</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.10</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/login&#039;, [&#039;hooks&#039;, &#039;translator&#039;, &#039;jquery-form&#039;], function (hooks, translator) {
+    const Login = {
+        _capsState: false,
+    };
+
+    Login.init = function () {
+        const errorEl = $(&#039;#login-error-notify&#039;);
+        const submitEl = $(&#039;#login&#039;);
+        const formEl = $(&#039;#login-form&#039;);
+
+        submitEl.on(&#039;click&#039;, function (e) {
+            e.preventDefault();
+
+            if (!$(&#039;#username&#039;).val() || !$(&#039;#password&#039;).val()) {
+                errorEl.find(&#039;p&#039;).translateText(&#039;[[error:invalid-username-or-password]]&#039;);
+                errorEl.show();
+            } else {
+                errorEl.hide();
+
+                if (submitEl.hasClass(&#039;disabled&#039;)) {
+                    return;
+                }
+
+                submitEl.addClass(&#039;disabled&#039;);
+
+                hooks.fire(&#039;action:app.login&#039;);
+                formEl.ajaxSubmit({
+                    headers: {
+                        &#039;x-csrf-token&#039;: config.csrf_token,
+                    },
+                    beforeSend: function () {
+                        app.flags._login = true;
+                    },
+                    success: function (data) {
+                        hooks.fire(&#039;action:app.loggedIn&#039;, data);
+                        const pathname = utils.urlToLocation(data.next).pathname;
+                        const params = utils.params({ url: data.next });
+                        params.loggedin = true;
+                        delete params.register; // clear register message incase it exists
+                        const qs = decodeURIComponent($.param(params));
+
+                        window.location.href = pathname + &#039;?&#039; + qs;
+                    },
+                    error: function (data) {
+                        let message = data.responseText;
+                        const errInfo = data.responseJSON;
+                        if (data.status === 403 &amp;&amp; data.responseText === &#039;Forbidden&#039;) {
+                            window.location.href = config.relative_path + &#039;/login?error=csrf-invalid&#039;;
+                        } else if (errInfo &amp;&amp; errInfo.hasOwnProperty(&#039;banned_until&#039;)) {
+                            message = errInfo.banned_until ?
+                                translator.compile(&#039;error:user-banned-reason-until&#039;, (new Date(errInfo.banned_until).toLocaleString()), errInfo.reason) :
+                                &#039;[[error:user-banned-reason, &#039; + errInfo.reason + &#039;]]&#039;;
+                        }
+                        errorEl.find(&#039;p&#039;).translateText(message);
+                        errorEl.show();
+                        submitEl.removeClass(&#039;disabled&#039;);
+
+                        // Select the entire password if that field has focus
+                        if ($(&#039;#password:focus&#039;).length) {
+                            $(&#039;#password&#039;).select();
+                        }
+                    },
+                });
+            }
+        });
+
+        // Guard against caps lock
+        Login.capsLockCheck(document.querySelector(&#039;#password&#039;), document.querySelector(&#039;#caps-lock-warning&#039;));
+
+        $(&#039;#login-error-notify button&#039;).on(&#039;click&#039;, function (e) {
+            e.preventDefault();
+            errorEl.hide();
+            return false;
+        });
+
+        if ($(&#039;#content #username&#039;).val()) {
+            $(&#039;#content #password&#039;).val(&#039;&#039;).focus();
+        } else {
+            $(&#039;#content #username&#039;).focus();
+        }
+        $(&#039;#content #noscript&#039;).val(&#039;false&#039;);
+    };
+
+    Login.capsLockCheck = (inputEl, warningEl) =&gt; {
+        const toggle = (state) =&gt; {
+            warningEl.classList[state ? &#039;remove&#039; : &#039;add&#039;](&#039;hidden&#039;);
+            warningEl.parentNode.classList[state ? &#039;add&#039; : &#039;remove&#039;](&#039;has-warning&#039;);
+        };
+        if (!inputEl) {
+            return;
+        }
+        inputEl.addEventListener(&#039;keyup&#039;, function (e) {
+            if (Login._capsState &amp;&amp; e.key === &#039;CapsLock&#039;) {
+                toggle(false);
+                Login._capsState = !Login._capsState;
+                return;
+            }
+            Login._capsState = e.getModifierState &amp;&amp; e.getModifierState(&#039;CapsLock&#039;);
+            toggle(Login._capsState);
+        });
+
+        if (Login._capsState) {
+            toggle(true);
+        }
+    };
+
+    return Login;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

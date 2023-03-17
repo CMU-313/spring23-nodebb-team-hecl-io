@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/webserver.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/webserver.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">64.70</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">327</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.89</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.00</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const fs = require(&#039;fs&#039;);
+const util = require(&#039;util&#039;);
+const path = require(&#039;path&#039;);
+const os = require(&#039;os&#039;);
+const nconf = require(&#039;nconf&#039;);
+const express = require(&#039;express&#039;);
+const chalk = require(&#039;chalk&#039;);
+
+const app = express();
+app.renderAsync = util.promisify((tpl, data, callback) =&gt; app.render(tpl, data, callback));
+let server;
+const winston = require(&#039;winston&#039;);
+const flash = require(&#039;connect-flash&#039;);
+const bodyParser = require(&#039;body-parser&#039;);
+const cookieParser = require(&#039;cookie-parser&#039;);
+const session = require(&#039;express-session&#039;);
+const useragent = require(&#039;express-useragent&#039;);
+const favicon = require(&#039;serve-favicon&#039;);
+const detector = require(&#039;spider-detector&#039;);
+const helmet = require(&#039;helmet&#039;);
+
+const Benchpress = require(&#039;benchpressjs&#039;);
+const db = require(&#039;./database&#039;);
+const analytics = require(&#039;./analytics&#039;);
+const file = require(&#039;./file&#039;);
+const emailer = require(&#039;./emailer&#039;);
+const meta = require(&#039;./meta&#039;);
+const logger = require(&#039;./logger&#039;);
+const plugins = require(&#039;./plugins&#039;);
+const flags = require(&#039;./flags&#039;);
+const topicEvents = require(&#039;./topics/events&#039;);
+const privileges = require(&#039;./privileges&#039;);
+const routes = require(&#039;./routes&#039;);
+const auth = require(&#039;./routes/authentication&#039;);
+
+const helpers = require(&#039;./helpers&#039;);
+
+if (nconf.get(&#039;ssl&#039;)) {
+    server = require(&#039;https&#039;).createServer({
+        key: fs.readFileSync(nconf.get(&#039;ssl&#039;).key),
+        cert: fs.readFileSync(nconf.get(&#039;ssl&#039;).cert),
+    }, app);
+} else {
+    server = require(&#039;http&#039;).createServer(app);
+}
+
+module.exports.server = server;
+module.exports.app = app;
+
+server.on(&#039;error&#039;, (err) =&gt; {
+    if (err.code === &#039;EADDRINUSE&#039;) {
+        winston.error(`NodeBB address in use, exiting...\n${err.stack}`);
+    } else {
+        winston.error(err.stack);
+    }
+
+    throw err;
+});
+
+// see https://github.com/isaacs/server-destroy/blob/master/index.js
+const connections = {};
+server.on(&#039;connection&#039;, (conn) =&gt; {
+    const key = `${conn.remoteAddress}:${conn.remotePort}`;
+    connections[key] = conn;
+    conn.on(&#039;close&#039;, () =&gt; {
+        delete connections[key];
+    });
+});
+
+exports.destroy = function (callback) {
+    server.close(callback);
+    for (const connection of Object.values(connections)) {
+        connection.destroy();
+    }
+};
+
+exports.listen = async function () {
+    emailer.registerApp(app);
+    setupExpressApp(app);
+    helpers.register();
+    logger.init(app);
+    await initializeNodeBB();
+    winston.info(&#039;🎉 NodeBB Ready&#039;);
+
+    require(&#039;./socket.io&#039;).server.emit(&#039;event:nodebb.ready&#039;, {
+        &#039;cache-buster&#039;: meta.config[&#039;cache-buster&#039;],
+        hostname: os.hostname(),
+    });
+
+    plugins.hooks.fire(&#039;action:nodebb.ready&#039;);
+
+    await listen();
+};
+
+async function initializeNodeBB() {
+    const middleware = require(&#039;./middleware&#039;);
+    await meta.themes.setupPaths();
+    await plugins.init(app, middleware);
+    await plugins.hooks.fire(&#039;static:assets.prepare&#039;, {});
+    await plugins.hooks.fire(&#039;static:app.preload&#039;, {
+        app: app,
+        middleware: middleware,
+    });
+    await routes(app, middleware);
+    await privileges.init();
+    await meta.blacklist.load();
+    await flags.init();
+    await analytics.init();
+    await topicEvents.init();
+}
+
+function setupExpressApp(app) {
+    const middleware = require(&#039;./middleware&#039;);
+    const pingController = require(&#039;./controllers/ping&#039;);
+
+    const relativePath = nconf.get(&#039;relative_path&#039;);
+    const viewsDir = nconf.get(&#039;views_dir&#039;);
+
+    app.engine(&#039;tpl&#039;, (filepath, data, next) =&gt; {
+        filepath = filepath.replace(/\.tpl$/, &#039;.js&#039;);
+
+        Benchpress.__express(filepath, data, next);
+    });
+    app.set(&#039;view engine&#039;, &#039;tpl&#039;);
+    app.set(&#039;views&#039;, viewsDir);
+    app.set(&#039;json spaces&#039;, global.env === &#039;development&#039; ? 4 : 0);
+    app.use(flash());
+
+    app.enable(&#039;view cache&#039;);
+
+    if (global.env !== &#039;development&#039;) {
+        app.enable(&#039;cache&#039;);
+        app.enable(&#039;minification&#039;);
+    }
+
+    if (meta.config.useCompression) {
+        const compression = require(&#039;compression&#039;);
+        app.use(compression());
+    }
+    if (relativePath) {
+        app.use((req, res, next) =&gt; {
+            if (!req.path.startsWith(relativePath)) {
+                return require(&#039;./controllers/helpers&#039;).redirect(res, req.path);
+            }
+            next();
+        });
+    }
+
+    app.get(`${relativePath}/ping`, pingController.ping);
+    app.get(`${relativePath}/sping`, pingController.ping);
+
+    setupFavicon(app);
+
+    app.use(`${relativePath}/apple-touch-icon`, middleware.routeTouchIcon);
+
+    configureBodyParser(app);
+
+    app.use(cookieParser(nconf.get(&#039;secret&#039;)));
+    app.use(useragent.express());
+    app.use(detector.middleware());
+    app.use(session({
+        store: db.sessionStore,
+        secret: nconf.get(&#039;secret&#039;),
+        key: nconf.get(&#039;sessionKey&#039;),
+        cookie: setupCookie(),
+        resave: nconf.get(&#039;sessionResave&#039;) || false,
+        saveUninitialized: nconf.get(&#039;sessionSaveUninitialized&#039;) || false,
+    }));
+
+    setupHelmet(app);
+
+    app.use(middleware.addHeaders);
+    app.use(middleware.processRender);
+    auth.initialize(app, middleware);
+    const als = require(&#039;./als&#039;);
+    app.use((req, res, next) =&gt; {
+        als.run({ uid: req.uid }, next);
+    });
+    app.use(middleware.autoLocale); // must be added after auth middlewares are added
+
+    const toobusy = require(&#039;toobusy-js&#039;);
+    toobusy.maxLag(meta.config.eventLoopLagThreshold);
+    toobusy.interval(meta.config.eventLoopInterval);
+}
+
+function setupHelmet(app) {
+    const options = {
+        contentSecurityPolicy: false, // defaults are too restrive and break plugins that load external assets... 🔜
+        crossOriginOpenerPolicy: { policy: meta.config[&#039;cross-origin-opener-policy&#039;] },
+        crossOriginResourcePolicy: { policy: meta.config[&#039;cross-origin-resource-policy&#039;] },
+        referrerPolicy: { policy: &#039;strict-origin-when-cross-origin&#039; },
+    };
+
+    if (!meta.config[&#039;cross-origin-embedder-policy&#039;]) {
+        options.crossOriginEmbedderPolicy = false;
+    }
+    if (meta.config[&#039;hsts-enabled&#039;]) {
+        options.hsts = {
+            maxAge: meta.config[&#039;hsts-maxage&#039;],
+            includeSubDomains: !!meta.config[&#039;hsts-subdomains&#039;],
+            preload: !!meta.config[&#039;hsts-preload&#039;],
+        };
+    }
+
+    app.use(helmet(options));
+}
+
+
+function setupFavicon(app) {
+    let faviconPath = meta.config[&#039;brand:favicon&#039;] || &#039;favicon.ico&#039;;
+    faviconPath = path.join(nconf.get(&#039;base_dir&#039;), &#039;public&#039;, faviconPath.replace(/assets\/uploads/, &#039;uploads&#039;));
+    if (file.existsSync(faviconPath)) {
+        app.use(nconf.get(&#039;relative_path&#039;), favicon(faviconPath));
+    }
+}
+
+function configureBodyParser(app) {
+    const urlencodedOpts = nconf.get(&#039;bodyParser:urlencoded&#039;) || {};
+    if (!urlencodedOpts.hasOwnProperty(&#039;extended&#039;)) {
+        urlencodedOpts.extended = true;
+    }
+    app.use(bodyParser.urlencoded(urlencodedOpts));
+
+    const jsonOpts = nconf.get(&#039;bodyParser:json&#039;) || {};
+    app.use(bodyParser.json(jsonOpts));
+}
+
+function setupCookie() {
+    const cookie = meta.configs.cookie.get();
+    const ttl = meta.getSessionTTLSeconds() * 1000;
+    cookie.maxAge = ttl;
+
+    return cookie;
+}
+
+async function listen() {
+    let port = nconf.get(&#039;port&#039;);
+    const isSocket = isNaN(port) &amp;&amp; !Array.isArray(port);
+    const socketPath = isSocket ? nconf.get(&#039;port&#039;) : &#039;&#039;;
+
+    if (Array.isArray(port)) {
+        if (!port.length) {
+            winston.error(&#039;[startup] empty ports array in config.json&#039;);
+            process.exit();
+        }
+
+        winston.warn(&#039;[startup] If you want to start nodebb on multiple ports please use loader.js&#039;);
+        winston.warn(`[startup] Defaulting to first port in array, ${port[0]}`);
+        port = port[0];
+        if (!port) {
+            winston.error(&#039;[startup] Invalid port, exiting&#039;);
+            process.exit();
+        }
+    }
+    port = parseInt(port, 10);
+    if ((port !== 80 &amp;&amp; port !== 443) || nconf.get(&#039;trust_proxy&#039;) === true) {
+        winston.info(&#039;🤝 Enabling \&#039;trust proxy\&#039;&#039;);
+        app.enable(&#039;trust proxy&#039;);
+    }
+
+    if ((port === 80 || port === 443) &amp;&amp; process.env.NODE_ENV !== &#039;development&#039;) {
+        winston.info(&#039;Using ports 80 and 443 is not recommend; use a proxy instead. See README.md&#039;);
+    }
+
+    const bind_address = ((nconf.get(&#039;bind_address&#039;) === &#039;0.0.0.0&#039; || !nconf.get(&#039;bind_address&#039;)) ? &#039;0.0.0.0&#039; : nconf.get(&#039;bind_address&#039;));
+    const args = isSocket ? [socketPath] : [port, bind_address];
+    let oldUmask;
+
+    if (isSocket) {
+        oldUmask = process.umask(&#039;0000&#039;);
+        try {
+            await exports.testSocket(socketPath);
+        } catch (err) {
+            winston.error(`[startup] NodeBB was unable to secure domain socket access (${socketPath})\n${err.stack}`);
+            throw err;
+        }
+    }
+
+    return new Promise((resolve, reject) =&gt; {
+        server.listen(...args.concat([function (err) {
+            const onText = `${isSocket ? socketPath : `${bind_address}:${port}`}`;
+            if (err) {
+                winston.error(`[startup] NodeBB was unable to listen on: ${chalk.yellow(onText)}`);
+                reject(err);
+            }
+
+            winston.info(`📡 NodeBB is now listening on: ${chalk.yellow(onText)}`);
+            winston.info(`🔗 Canonical URL: ${chalk.yellow(nconf.get(&#039;url&#039;))}`);
+            if (oldUmask) {
+                process.umask(oldUmask);
+            }
+            resolve();
+        }]));
+    });
+}
+
+exports.testSocket = async function (socketPath) {
+    if (typeof socketPath !== &#039;string&#039;) {
+        throw new Error(`invalid socket path : ${socketPath}`);
+    }
+    const net = require(&#039;net&#039;);
+    const file = require(&#039;./file&#039;);
+    const exists = await file.exists(socketPath);
+    if (!exists) {
+        return;
+    }
+    return new Promise((resolve, reject) =&gt; {
+        const testSocket = new net.Socket();
+        testSocket.on(&#039;error&#039;, (err) =&gt; {
+            if (err.code !== &#039;ECONNREFUSED&#039;) {
+                return reject(err);
+            }
+            // The socket was stale, kick it out of the way
+            fs.unlink(socketPath, (err) =&gt; {
+                if (err) reject(err); else resolve();
+            });
+        });
+        testSocket.connect({ path: socketPath }, () =&gt; {
+            // Something&#039;s listening here, abort
+            reject(new Error(&#039;port-in-use&#039;));
+        });
+    });
+};
+
+require(&#039;./promisify&#039;)(exports);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/topic/threadTools.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/topic/threadTools.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.79</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">410</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">46.71</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.91</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/topic/threadTools&#039;, [
+    &#039;components&#039;,
+    &#039;translator&#039;,
+    &#039;handleBack&#039;,
+    &#039;forum/topic/posts&#039;,
+    &#039;api&#039;,
+    &#039;hooks&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (components, translator, handleBack, posts, api, hooks, bootbox, alerts) {
+    const ThreadTools = {};
+
+    ThreadTools.init = function (tid, topicContainer) {
+        renderMenu(topicContainer);
+
+        // function topicCommand(method, path, command, onComplete) {
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/delete&quot;]&#039;, function () {
+            topicCommand(&#039;del&#039;, &#039;/state&#039;, &#039;delete&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/restore&quot;]&#039;, function () {
+            topicCommand(&#039;put&#039;, &#039;/state&#039;, &#039;restore&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/purge&quot;]&#039;, function () {
+            topicCommand(&#039;del&#039;, &#039;&#039;, &#039;purge&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/lock&quot;]&#039;, function () {
+            topicCommand(&#039;put&#039;, &#039;/lock&#039;, &#039;lock&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/unlock&quot;]&#039;, function () {
+            topicCommand(&#039;del&#039;, &#039;/lock&#039;, &#039;unlock&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/pin&quot;]&#039;, function () {
+            topicCommand(&#039;put&#039;, &#039;/pin&#039;, &#039;pin&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/unpin&quot;]&#039;, function () {
+            topicCommand(&#039;del&#039;, &#039;/pin&#039;, &#039;unpin&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/resolve&quot;]&#039;, function () {
+            topicCommand(&#039;put&#039;, &#039;/resolve&#039;, &#039;resolve&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/unresolve&quot;]&#039;, function () {
+            topicCommand(&#039;del&#039;, &#039;/resolve&#039;, &#039;unresolve&#039;);
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/event/delete&quot;]&#039;, function () {
+            const eventId = $(this).attr(&#039;data-topic-event-id&#039;);
+            const eventEl = $(this).parents(&#039;[component=&quot;topic/event&quot;]&#039;);
+            bootbox.confirm(&#039;[[topic:delete-event-confirm]]&#039;, (ok) =&gt; {
+                if (ok) {
+                    api.del(`/topics/${tid}/events/${eventId}`, {})
+                        .then(function () {
+                            eventEl.remove();
+                        })
+                        .catch(alerts.error);
+                }
+            });
+        });
+
+        // todo: should also use topicCommand, but no write api call exists for this yet
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/mark-unread&quot;]&#039;, function () {
+            socket.emit(&#039;topics.markUnread&#039;, tid, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+
+                if (app.previousUrl &amp;&amp; !app.previousUrl.match(&#039;^/topic&#039;)) {
+                    ajaxify.go(app.previousUrl, function () {
+                        handleBack.onBackClicked(true);
+                    });
+                } else if (ajaxify.data.category) {
+                    ajaxify.go(&#039;category/&#039; + ajaxify.data.category.slug, handleBack.onBackClicked);
+                }
+
+                alerts.success(&#039;[[topic:mark_unread.success]]&#039;);
+            });
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/mark-unread-for-all&quot;]&#039;, function () {
+            const btn = $(this);
+            socket.emit(&#039;topics.markAsUnreadForAll&#039;, [tid], function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                alerts.success(&#039;[[topic:markAsUnreadForAll.success]]&#039;);
+                btn.parents(&#039;.thread-tools.open&#039;).find(&#039;.dropdown-toggle&#039;).trigger(&#039;click&#039;);
+            });
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/move&quot;]&#039;, function () {
+            require([&#039;forum/topic/move&#039;], function (move) {
+                move.init([tid], ajaxify.data.cid);
+            });
+            return false;
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/delete/posts&quot;]&#039;, function () {
+            require([&#039;forum/topic/delete-posts&#039;], function (deletePosts) {
+                deletePosts.init();
+            });
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/fork&quot;]&#039;, function () {
+            require([&#039;forum/topic/fork&#039;], function (fork) {
+                fork.init();
+            });
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/move-posts&quot;]&#039;, function () {
+            require([&#039;forum/topic/move-post&#039;], function (movePosts) {
+                movePosts.init();
+            });
+        });
+
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/following&quot;]&#039;, function () {
+            changeWatching(&#039;follow&#039;);
+        });
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/not-following&quot;]&#039;, function () {
+            changeWatching(&#039;follow&#039;, 0);
+        });
+        topicContainer.on(&#039;click&#039;, &#039;[component=&quot;topic/ignoring&quot;]&#039;, function () {
+            changeWatching(&#039;ignore&#039;);
+        });
+
+        function changeWatching(type, state = 1) {
+            const method = state ? &#039;put&#039; : &#039;del&#039;;
+            api[method](`/topics/${tid}/${type}`, {}, () =&gt; {
+                let message = &#039;&#039;;
+                if (type === &#039;follow&#039;) {
+                    message = state ? &#039;[[topic:following_topic.message]]&#039; : &#039;[[topic:not_following_topic.message]]&#039;;
+                } else if (type === &#039;ignore&#039;) {
+                    message = state ? &#039;[[topic:ignoring_topic.message]]&#039; : &#039;[[topic:not_following_topic.message]]&#039;;
+                }
+
+                // From here on out, type changes to &#039;unfollow&#039; if state is falsy
+                if (!state) {
+                    type = &#039;unfollow&#039;;
+                }
+
+                setFollowState(type);
+
+                alerts.alert({
+                    alert_id: &#039;follow_thread&#039;,
+                    message: message,
+                    type: &#039;success&#039;,
+                    timeout: 5000,
+                });
+
+                hooks.fire(&#039;action:topics.changeWatching&#039;, { tid: tid, type: type });
+            }, () =&gt; {
+                alerts.alert({
+                    type: &#039;danger&#039;,
+                    alert_id: &#039;topic_follow&#039;,
+                    title: &#039;[[global:please_log_in]]&#039;,
+                    message: &#039;[[topic:login_to_subscribe]]&#039;,
+                    timeout: 5000,
+                });
+            });
+
+            return false;
+        }
+    };
+
+    function renderMenu(container) {
+        container.on(&#039;show.bs.dropdown&#039;, &#039;.thread-tools&#039;, function () {
+            const $this = $(this);
+            const dropdownMenu = $this.find(&#039;.dropdown-menu&#039;);
+            if (dropdownMenu.html()) {
+                return;
+            }
+
+            dropdownMenu.toggleClass(&#039;hidden&#039;, true);
+            socket.emit(&#039;topics.loadTopicTools&#039;, { tid: ajaxify.data.tid, cid: ajaxify.data.cid }, function (err, data) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                app.parseAndTranslate(&#039;partials/topic/topic-menu-list&#039;, data, function (html) {
+                    dropdownMenu.html(html);
+                    dropdownMenu.toggleClass(&#039;hidden&#039;, false);
+
+                    hooks.fire(&#039;action:topic.tools.load&#039;, {
+                        element: dropdownMenu,
+                    });
+                });
+            });
+        });
+    }
+
+    function topicCommand(method, path, command, onComplete) {
+        if (!onComplete) {
+            onComplete = function () {};
+        }
+        const tid = ajaxify.data.tid;
+        const body = {};
+        const execute = function (ok) {
+            if (ok) {
+                api[method](`/topics/${tid}${path}`, body)
+                    .then(onComplete)
+                    .catch(alerts.error);
+            }
+        };
+
+        switch (command) {
+        case &#039;delete&#039;:
+        case &#039;restore&#039;:
+        case &#039;purge&#039;:
+            bootbox.confirm(`[[topic:thread_tools.${command}_confirm]]`, execute);
+            break;
+
+        case &#039;pin&#039;:
+            ThreadTools.requestPinExpiry(body, execute.bind(null, true));
+            break;
+
+        default:
+            execute(true);
+            break;
+        }
+    }
+
+    ThreadTools.requestPinExpiry = function (body, onSuccess) {
+        app.parseAndTranslate(&#039;modals/set-pin-expiry&#039;, {}, function (html) {
+            const modal = bootbox.dialog({
+                title: &#039;[[topic:thread_tools.pin]]&#039;,
+                message: html,
+                onEscape: true,
+                size: &#039;small&#039;,
+                buttons: {
+                    cancel: {
+                        label: &#039;[[modules:bootbox.cancel]]&#039;,
+                        className: &#039;btn-link&#039;,
+                    },
+                    save: {
+                        label: &#039;[[global:save]]&#039;,
+                        className: &#039;btn-primary&#039;,
+                        callback: function () {
+                            const expiryEl = modal.get(0).querySelector(&#039;#expiry&#039;);
+                            let expiry = expiryEl.value;
+
+                            // No expiry set
+                            if (expiry === &#039;&#039;) {
+                                return onSuccess();
+                            }
+
+                            // Expiration date set
+                            expiry = new Date(expiry);
+
+                            if (expiry &amp;&amp; expiry.getTime() &gt; Date.now()) {
+                                body.expiry = expiry.getTime();
+                                onSuccess();
+                            } else {
+                                alerts.error(&#039;[[error:invalid-date]]&#039;);
+                            }
+                        },
+                    },
+                },
+            });
+        });
+    };
+
+    ThreadTools.setLockedState = function (data) {
+        const threadEl = components.get(&#039;topic&#039;);
+        if (parseInt(data.tid, 10) !== parseInt(threadEl.attr(&#039;data-tid&#039;), 10)) {
+            return;
+        }
+
+        const isLocked = data.isLocked &amp;&amp; !ajaxify.data.privileges.isAdminOrMod;
+
+        components.get(&#039;topic/lock&#039;).toggleClass(&#039;hidden&#039;, data.isLocked).parent().attr(&#039;hidden&#039;, data.isLocked ? &#039;&#039; : null);
+        components.get(&#039;topic/unlock&#039;).toggleClass(&#039;hidden&#039;, !data.isLocked).parent().attr(&#039;hidden&#039;, !data.isLocked ? &#039;&#039; : null);
+
+        const hideReply = !!((data.isLocked || ajaxify.data.deleted) &amp;&amp; !ajaxify.data.privileges.isAdminOrMod);
+
+        components.get(&#039;topic/reply/container&#039;).toggleClass(&#039;hidden&#039;, hideReply);
+        components.get(&#039;topic/reply/locked&#039;).toggleClass(&#039;hidden&#039;, ajaxify.data.privileges.isAdminOrMod || !data.isLocked || ajaxify.data.deleted);
+
+        threadEl.find(&#039;[component=&quot;post&quot;]:not(.deleted) [component=&quot;post/reply&quot;], [component=&quot;post&quot;]:not(.deleted) [component=&quot;post/quote&quot;]&#039;).toggleClass(&#039;hidden&#039;, hideReply);
+        threadEl.find(&#039;[component=&quot;post/edit&quot;], [component=&quot;post/delete&quot;]&#039;).toggleClass(&#039;hidden&#039;, isLocked);
+
+        threadEl.find(&#039;[component=&quot;post&quot;][data-uid=&quot;&#039; + app.user.uid + &#039;&quot;].deleted [component=&quot;post/tools&quot;]&#039;).toggleClass(&#039;hidden&#039;, isLocked);
+
+        $(&#039;[component=&quot;topic/labels&quot;] [component=&quot;topic/locked&quot;]&#039;).toggleClass(&#039;hidden&#039;, !data.isLocked);
+        $(&#039;[component=&quot;post/tools&quot;] .dropdown-menu&#039;).html(&#039;&#039;);
+        ajaxify.data.locked = data.isLocked;
+
+        posts.addTopicEvents(data.events);
+    };
+
+    ThreadTools.setDeleteState = function (data) {
+        const threadEl = components.get(&#039;topic&#039;);
+        if (parseInt(data.tid, 10) !== parseInt(threadEl.attr(&#039;data-tid&#039;), 10)) {
+            return;
+        }
+
+        components.get(&#039;topic/delete&#039;).toggleClass(&#039;hidden&#039;, data.isDelete).parent().attr(&#039;hidden&#039;, data.isDelete ? &#039;&#039; : null);
+        components.get(&#039;topic/restore&#039;).toggleClass(&#039;hidden&#039;, !data.isDelete).parent().attr(&#039;hidden&#039;, !data.isDelete ? &#039;&#039; : null);
+        components.get(&#039;topic/purge&#039;).toggleClass(&#039;hidden&#039;, !data.isDelete).parent().attr(&#039;hidden&#039;, !data.isDelete ? &#039;&#039; : null);
+        components.get(&#039;topic/deleted/message&#039;).toggleClass(&#039;hidden&#039;, !data.isDelete);
+
+        if (data.isDelete) {
+            app.parseAndTranslate(&#039;partials/topic/deleted-message&#039;, {
+                deleter: data.user,
+                deleted: true,
+                deletedTimestampISO: utils.toISOString(Date.now()),
+            }, function (html) {
+                components.get(&#039;topic/deleted/message&#039;).replaceWith(html);
+                html.find(&#039;.timeago&#039;).timeago();
+            });
+        }
+        const hideReply = data.isDelete &amp;&amp; !ajaxify.data.privileges.isAdminOrMod;
+
+        components.get(&#039;topic/reply/container&#039;).toggleClass(&#039;hidden&#039;, hideReply);
+        components.get(&#039;topic/reply/locked&#039;).toggleClass(&#039;hidden&#039;, ajaxify.data.privileges.isAdminOrMod || !ajaxify.data.locked || data.isDelete);
+        threadEl.find(&#039;[component=&quot;post&quot;]:not(.deleted) [component=&quot;post/reply&quot;], [component=&quot;post&quot;]:not(.deleted) [component=&quot;post/quote&quot;]&#039;).toggleClass(&#039;hidden&#039;, hideReply);
+
+        threadEl.toggleClass(&#039;deleted&#039;, data.isDelete);
+        ajaxify.data.deleted = data.isDelete ? 1 : 0;
+
+        posts.addTopicEvents(data.events);
+    };
+
+
+    ThreadTools.setPinnedState = function (data) {
+        const threadEl = components.get(&#039;topic&#039;);
+        if (parseInt(data.tid, 10) !== parseInt(threadEl.attr(&#039;data-tid&#039;), 10)) {
+            return;
+        }
+
+        components.get(&#039;topic/pin&#039;).toggleClass(&#039;hidden&#039;, data.pinned).parent().attr(&#039;hidden&#039;, data.pinned ? &#039;&#039; : null);
+        components.get(&#039;topic/unpin&#039;).toggleClass(&#039;hidden&#039;, !data.pinned).parent().attr(&#039;hidden&#039;, !data.pinned ? &#039;&#039; : null);
+        const icon = $(&#039;[component=&quot;topic/labels&quot;] [component=&quot;topic/pinned&quot;]&#039;);
+        icon.toggleClass(&#039;hidden&#039;, !data.pinned);
+        if (data.pinned) {
+            icon.translateAttr(&#039;title&#039;, (
+                data.pinExpiry &amp;&amp; data.pinExpiryISO ?
+                    &#039;[[topic:pinned-with-expiry, &#039; + data.pinExpiryISO + &#039;]]&#039; :
+                    &#039;[[topic:pinned]]&#039;
+            ));
+        }
+        ajaxify.data.pinned = data.pinned;
+
+        posts.addTopicEvents(data.events);
+    };
+
+    ThreadTools.setResolvedState = function (data) {
+        const threadEl = components.get(&#039;topic&#039;);
+        if (parseInt(data.tid, 10) !== parseInt(threadEl.attr(&#039;data-tid&#039;), 10)) {
+            return;
+        }
+
+        components.get(&#039;topic/resolve&#039;).toggleClass(&#039;hidden&#039;, data.resolved).parent().attr(&#039;hidden&#039;, data.resolved ? &#039;&#039; : null);
+        components.get(&#039;topic/unresolve&#039;).toggleClass(&#039;hidden&#039;, !data.resolved).parent().attr(&#039;hidden&#039;, !data.resolved ? &#039;&#039; : null);
+        const resolveIcon = $(&#039;[component=&quot;topic/labels&quot;] [component=&quot;topic/resolved&quot;]&#039;);
+        resolveIcon.toggleClass(&#039;hidden&#039;, !data.resolved);
+        const unresolveIcon = $(&#039;[component=&quot;topic/labels&quot;] [component=&quot;topic/unresolved&quot;]&#039;);
+        unresolveIcon.toggleClass(&#039;hidden&#039;, data.resolved);
+
+        ajaxify.data.resolved = data.resolved;
+
+        posts.addTopicEvents(data.events);
+    };
+
+    function setFollowState(state) {
+        const titles = {
+            follow: &#039;[[topic:watching]]&#039;,
+            unfollow: &#039;[[topic:not-watching]]&#039;,
+            ignore: &#039;[[topic:ignoring]]&#039;,
+        };
+        translator.translate(titles[state], function (translatedTitle) {
+            $(&#039;[component=&quot;topic/watch&quot;] button&#039;)
+                .attr(&#039;title&#039;, translatedTitle)
+                .tooltip(&#039;fixTitle&#039;);
+        });
+
+        let menu = components.get(&#039;topic/following/menu&#039;);
+        menu.toggleClass(&#039;hidden&#039;, state !== &#039;follow&#039;);
+        components.get(&#039;topic/following/check&#039;).toggleClass(&#039;fa-check&#039;, state === &#039;follow&#039;);
+
+        menu = components.get(&#039;topic/not-following/menu&#039;);
+        menu.toggleClass(&#039;hidden&#039;, state !== &#039;unfollow&#039;);
+        components.get(&#039;topic/not-following/check&#039;).toggleClass(&#039;fa-check&#039;, state === &#039;unfollow&#039;);
+
+        menu = components.get(&#039;topic/ignoring/menu&#039;);
+        menu.toggleClass(&#039;hidden&#039;, state !== &#039;ignore&#039;);
+        components.get(&#039;topic/ignoring/check&#039;).toggleClass(&#039;fa-check&#039;, state === &#039;ignore&#039;);
+    }
+
+
+    return ThreadTools;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

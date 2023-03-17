@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/search.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/search.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.25</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">316</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">62.66</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.37</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;./database&#039;);
+const posts = require(&#039;./posts&#039;);
+const topics = require(&#039;./topics&#039;);
+const categories = require(&#039;./categories&#039;);
+const user = require(&#039;./user&#039;);
+const plugins = require(&#039;./plugins&#039;);
+const privileges = require(&#039;./privileges&#039;);
+const utils = require(&#039;./utils&#039;);
+
+const search = module.exports;
+
+search.search = async function (data) {
+    const start = process.hrtime();
+    data.sortBy = data.sortBy || &#039;relevance&#039;;
+
+    let result;
+    if (data.searchIn === &#039;posts&#039; || data.searchIn === &#039;titles&#039; || data.searchIn === &#039;titlesposts&#039;) {
+        result = await searchInContent(data);
+    } else if (data.searchIn === &#039;users&#039;) {
+        result = await user.search(data);
+    } else if (data.searchIn === &#039;categories&#039;) {
+        result = await categories.search(data);
+    } else if (data.searchIn === &#039;tags&#039;) {
+        result = await topics.searchAndLoadTags(data);
+    } else if (data.searchIn) {
+        result = await plugins.hooks.fire(&#039;filter:search.searchIn&#039;, {
+            data,
+        });
+    } else {
+        throw new Error(&#039;[[error:unknown-search-filter]]&#039;);
+    }
+
+    result.time = (process.elapsedTimeSince(start) / 1000).toFixed(2);
+    return result;
+};
+
+async function searchInContent(data) {
+    data.uid = data.uid || 0;
+
+    const [searchCids, searchUids] = await Promise.all([
+        getSearchCids(data),
+        getSearchUids(data),
+    ]);
+
+    async function doSearch(type, searchIn) {
+        if (searchIn.includes(data.searchIn)) {
+            const result = await plugins.hooks.fire(&#039;filter:search.query&#039;, {
+                index: type,
+                content: data.query,
+                matchWords: data.matchWords || &#039;all&#039;,
+                cid: searchCids,
+                uid: searchUids,
+                searchData: data,
+                ids: [],
+            });
+            return Array.isArray(result) ? result : result.ids;
+        }
+        return [];
+    }
+    let pids = [];
+    let tids = [];
+    const inTopic = String(data.query || &#039;&#039;).match(/^in:topic-([\d]+) /);
+    if (inTopic) {
+        const tid = inTopic[1];
+        const cleanedTerm = data.query.replace(inTopic[0], &#039;&#039;);
+        pids = await topics.search(tid, cleanedTerm);
+    } else {
+        [pids, tids] = await Promise.all([
+            doSearch(&#039;post&#039;, [&#039;posts&#039;, &#039;titlesposts&#039;]),
+            doSearch(&#039;topic&#039;, [&#039;titles&#039;, &#039;titlesposts&#039;]),
+        ]);
+    }
+
+    const mainPids = await topics.getMainPids(tids);
+
+    let allPids = mainPids.concat(pids).filter(Boolean);
+
+    allPids = await privileges.posts.filter(&#039;topics:read&#039;, allPids, data.uid);
+    allPids = await filterAndSort(allPids, data);
+
+    const metadata = await plugins.hooks.fire(&#039;filter:search.inContent&#039;, {
+        pids: allPids,
+        data: data,
+    });
+
+    if (data.returnIds) {
+        const mainPidsSet = new Set(mainPids);
+        const mainPidToTid = _.zipObject(mainPids, tids);
+        const pidsSet = new Set(pids);
+        const returnPids = allPids.filter(pid =&gt; pidsSet.has(pid));
+        const returnTids = allPids.filter(pid =&gt; mainPidsSet.has(pid)).map(pid =&gt; mainPidToTid[pid]);
+        return { pids: returnPids, tids: returnTids };
+    }
+
+    const itemsPerPage = Math.min(data.itemsPerPage || 10, 100);
+    const returnData = {
+        posts: [],
+        matchCount: metadata.pids.length,
+        pageCount: Math.max(1, Math.ceil(parseInt(metadata.pids.length, 10) / itemsPerPage)),
+    };
+
+    if (data.page) {
+        const start = Math.max(0, (data.page - 1)) * itemsPerPage;
+        metadata.pids = metadata.pids.slice(start, start + itemsPerPage);
+    }
+
+    returnData.posts = await posts.getPostSummaryByPids(metadata.pids, data.uid, {});
+    await plugins.hooks.fire(&#039;filter:search.contentGetResult&#039;, { result: returnData, data: data });
+    delete metadata.pids;
+    delete metadata.data;
+    return Object.assign(returnData, metadata);
+}
+
+async function filterAndSort(pids, data) {
+    if (data.sortBy === &#039;relevance&#039; &amp;&amp; !data.replies &amp;&amp; !data.timeRange &amp;&amp; !data.hasTags &amp;&amp; !plugins.hooks.hasListeners(&#039;filter:search.filterAndSort&#039;)) {
+        return pids;
+    }
+    let postsData = await getMatchedPosts(pids, data);
+    if (!postsData.length) {
+        return pids;
+    }
+    postsData = postsData.filter(Boolean);
+
+    postsData = filterByPostcount(postsData, data.replies, data.repliesFilter);
+    postsData = filterByTimerange(postsData, data.timeRange, data.timeFilter);
+    postsData = filterByTags(postsData, data.hasTags);
+
+    sortPosts(postsData, data);
+
+    const result = await plugins.hooks.fire(&#039;filter:search.filterAndSort&#039;, { pids: pids, posts: postsData, data: data });
+    return result.posts.map(post =&gt; post &amp;&amp; post.pid);
+}
+
+async function getMatchedPosts(pids, data) {
+    const postFields = [&#039;pid&#039;, &#039;uid&#039;, &#039;tid&#039;, &#039;timestamp&#039;, &#039;deleted&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;];
+
+    let postsData = await posts.getPostsFields(pids, postFields);
+    postsData = postsData.filter(post =&gt; post &amp;&amp; !post.deleted);
+    const uids = _.uniq(postsData.map(post =&gt; post.uid));
+    const tids = _.uniq(postsData.map(post =&gt; post.tid));
+
+    const [users, topics] = await Promise.all([
+        getUsers(uids, data),
+        getTopics(tids, data),
+    ]);
+
+    const tidToTopic = _.zipObject(tids, topics);
+    const uidToUser = _.zipObject(uids, users);
+    postsData.forEach((post) =&gt; {
+        if (topics &amp;&amp; tidToTopic[post.tid]) {
+            post.topic = tidToTopic[post.tid];
+            if (post.topic &amp;&amp; post.topic.category) {
+                post.category = post.topic.category;
+            }
+        }
+
+        if (uidToUser[post.uid]) {
+            post.user = uidToUser[post.uid];
+        }
+    });
+
+    return postsData.filter(post =&gt; post &amp;&amp; post.topic &amp;&amp; !post.topic.deleted);
+}
+
+async function getUsers(uids, data) {
+    if (data.sortBy.startsWith(&#039;user&#039;)) {
+        return user.getUsersFields(uids, [&#039;username&#039;]);
+    }
+    return [];
+}
+
+async function getTopics(tids, data) {
+    const topicsData = await topics.getTopicsData(tids);
+    const cids = _.uniq(topicsData.map(topic =&gt; topic &amp;&amp; topic.cid));
+    const categories = await getCategories(cids, data);
+
+    const cidToCategory = _.zipObject(cids, categories);
+    topicsData.forEach((topic) =&gt; {
+        if (topic &amp;&amp; categories &amp;&amp; cidToCategory[topic.cid]) {
+            topic.category = cidToCategory[topic.cid];
+        }
+        if (topic &amp;&amp; topic.tags) {
+            topic.tags = topic.tags.map(tag =&gt; tag.value);
+        }
+    });
+
+    return topicsData;
+}
+
+async function getCategories(cids, data) {
+    const categoryFields = [];
+
+    if (data.sortBy.startsWith(&#039;category.&#039;)) {
+        categoryFields.push(data.sortBy.split(&#039;.&#039;)[1]);
+    }
+    if (!categoryFields.length) {
+        return null;
+    }
+
+    return await db.getObjectsFields(cids.map(cid =&gt; `category:${cid}`), categoryFields);
+}
+
+function filterByPostcount(posts, postCount, repliesFilter) {
+    postCount = parseInt(postCount, 10);
+    if (postCount) {
+        if (repliesFilter === &#039;atleast&#039;) {
+            posts = posts.filter(post =&gt; post.topic &amp;&amp; post.topic.postcount &gt;= postCount);
+        } else {
+            posts = posts.filter(post =&gt; post.topic &amp;&amp; post.topic.postcount &lt;= postCount);
+        }
+    }
+    return posts;
+}
+
+function filterByTimerange(posts, timeRange, timeFilter) {
+    timeRange = parseInt(timeRange, 10) * 1000;
+    if (timeRange) {
+        const time = Date.now() - timeRange;
+        if (timeFilter === &#039;newer&#039;) {
+            posts = posts.filter(post =&gt; post.timestamp &gt;= time);
+        } else {
+            posts = posts.filter(post =&gt; post.timestamp &lt;= time);
+        }
+    }
+    return posts;
+}
+
+function filterByTags(posts, hasTags) {
+    if (Array.isArray(hasTags) &amp;&amp; hasTags.length) {
+        posts = posts.filter((post) =&gt; {
+            let hasAllTags = false;
+            if (post &amp;&amp; post.topic &amp;&amp; Array.isArray(post.topic.tags) &amp;&amp; post.topic.tags.length) {
+                hasAllTags = hasTags.every(tag =&gt; post.topic.tags.includes(tag));
+            }
+            return hasAllTags;
+        });
+    }
+    return posts;
+}
+
+function sortPosts(posts, data) {
+    if (!posts.length || data.sortBy === &#039;relevance&#039;) {
+        return;
+    }
+
+    data.sortDirection = data.sortDirection || &#039;desc&#039;;
+    const direction = data.sortDirection === &#039;desc&#039; ? 1 : -1;
+    const fields = data.sortBy.split(&#039;.&#039;);
+    if (fields.length === 1) {
+        return posts.sort((p1, p2) =&gt; direction * (p2[fields[0]] - p1[fields[0]]));
+    }
+
+    const firstPost = posts[0];
+    if (!fields || fields.length !== 2 || !firstPost[fields[0]] || !firstPost[fields[0]][fields[1]]) {
+        return;
+    }
+
+    const isNumeric = utils.isNumber(firstPost[fields[0]][fields[1]]);
+
+    if (isNumeric) {
+        posts.sort((p1, p2) =&gt; direction * (p2[fields[0]][fields[1]] - p1[fields[0]][fields[1]]));
+    } else {
+        posts.sort((p1, p2) =&gt; {
+            if (p1[fields[0]][fields[1]] &gt; p2[fields[0]][fields[1]]) {
+                return direction;
+            } else if (p1[fields[0]][fields[1]] &lt; p2[fields[0]][fields[1]]) {
+                return -direction;
+            }
+            return 0;
+        });
+    }
+}
+
+async function getSearchCids(data) {
+    if (!Array.isArray(data.categories) || !data.categories.length) {
+        return [];
+    }
+
+    if (data.categories.includes(&#039;all&#039;)) {
+        return await categories.getCidsByPrivilege(&#039;categories:cid&#039;, data.uid, &#039;read&#039;);
+    }
+
+    const [watchedCids, childrenCids] = await Promise.all([
+        getWatchedCids(data),
+        getChildrenCids(data),
+    ]);
+    return _.uniq(watchedCids.concat(childrenCids).concat(data.categories).filter(Boolean));
+}
+
+async function getWatchedCids(data) {
+    if (!data.categories.includes(&#039;watched&#039;)) {
+        return [];
+    }
+    return await user.getWatchedCategories(data.uid);
+}
+
+async function getChildrenCids(data) {
+    if (!data.searchChildren) {
+        return [];
+    }
+    const childrenCids = await Promise.all(data.categories.map(cid =&gt; categories.getChildrenCids(cid)));
+    return await privileges.categories.filterCids(&#039;find&#039;, _.uniq(_.flatten(childrenCids)), data.uid);
+}
+
+async function getSearchUids(data) {
+    if (!data.postedBy) {
+        return [];
+    }
+    return await user.getUidsByUsernames(Array.isArray(data.postedBy) ? data.postedBy : [data.postedBy]);
+}
+
+require(&#039;./promisify&#039;)(search);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

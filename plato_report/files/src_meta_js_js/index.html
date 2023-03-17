@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/js.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/js.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">75.45</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">140</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">17.04</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.20</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const fs = require(&#039;fs&#039;);
+const util = require(&#039;util&#039;);
+const mkdirp = require(&#039;mkdirp&#039;);
+const rimraf = require(&#039;rimraf&#039;);
+
+const rimrafAsync = util.promisify(rimraf);
+
+const file = require(&#039;../file&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const minifier = require(&#039;./minifier&#039;);
+
+const JS = module.exports;
+
+JS.scripts = {
+    base: [
+        &#039;node_modules/@adactive/bootstrap-tagsinput/src/bootstrap-tagsinput.js&#039;,
+        &#039;node_modules/jquery-serializeobject/jquery.serializeObject.js&#039;,
+        &#039;node_modules/jquery-deserialize/src/jquery.deserialize.js&#039;,
+        &#039;public/vendor/bootbox/wrapper.js&#039;,
+    ],
+
+    // plugins add entries into this object,
+    // they get linked into /build/public/src/modules
+    modules: {
+        &#039;../admin/plugins/persona.js&#039;: &#039;themes/nodebb-theme-persona/public/admin.js&#039;,
+        &#039;persona/quickreply.js&#039;: &#039;themes/nodebb-theme-persona/public/modules/quickreply.js&#039;,
+        &#039;../client/account/theme.js&#039;: &#039;themes/nodebb-theme-persona/public/settings.js&#039;,
+    },
+};
+
+const basePath = path.resolve(__dirname, &#039;../..&#039;);
+
+async function linkModules() {
+    const { modules } = JS.scripts;
+
+    await Promise.all([
+        mkdirp(path.join(__dirname, &#039;../../build/public/src/admin/plugins&#039;)),
+        mkdirp(path.join(__dirname, &#039;../../build/public/src/client/plugins&#039;)),
+    ]);
+
+    await Promise.all(Object.keys(modules).map(async (relPath) =&gt; {
+        const srcPath = path.join(__dirname, &#039;../../&#039;, modules[relPath]);
+        const destPath = path.join(__dirname, &#039;../../build/public/src/modules&#039;, relPath);
+        const [stats] = await Promise.all([
+            fs.promises.stat(srcPath),
+            mkdirp(path.dirname(destPath)),
+        ]);
+        if (stats.isDirectory()) {
+            await file.linkDirs(srcPath, destPath, true);
+        } else {
+            await fs.promises.copyFile(srcPath, destPath);
+        }
+    }));
+}
+
+const moduleDirs = [&#039;modules&#039;, &#039;admin&#039;, &#039;client&#039;];
+
+async function clearModules() {
+    const builtPaths = moduleDirs.map(
+        p =&gt; path.join(__dirname, &#039;../../build/public/src&#039;, p)
+    );
+    await Promise.all(
+        builtPaths.map(builtPath =&gt; rimrafAsync(builtPath))
+    );
+}
+
+JS.buildModules = async function () {
+    await clearModules();
+
+    const fse = require(&#039;fs-extra&#039;);
+    await fse.copy(
+        path.join(__dirname, `../../public/src`),
+        path.join(__dirname, `../../build/public/src`)
+    );
+
+    await linkModules();
+};
+
+JS.linkStatics = async function () {
+    await rimrafAsync(path.join(__dirname, &#039;../../build/public/plugins&#039;));
+
+    await Promise.all(Object.keys(plugins.staticDirs).map(async (mappedPath) =&gt; {
+        const sourceDir = plugins.staticDirs[mappedPath];
+        const destDir = path.join(__dirname, &#039;../../build/public/plugins&#039;, mappedPath);
+
+        await mkdirp(path.dirname(destDir));
+        await file.linkDirs(sourceDir, destDir, true);
+    }));
+};
+
+async function getBundleScriptList(target) {
+    const pluginDirectories = [];
+
+    if (target === &#039;admin&#039;) {
+        target = &#039;acp&#039;;
+    }
+    let pluginScripts = plugins[`${target}Scripts`].filter((path) =&gt; {
+        if (path.endsWith(&#039;.js&#039;)) {
+            return true;
+        }
+
+        pluginDirectories.push(path);
+        return false;
+    });
+
+    await Promise.all(pluginDirectories.map(async (directory) =&gt; {
+        const scripts = await file.walk(directory);
+        pluginScripts = pluginScripts.concat(scripts);
+    }));
+
+    pluginScripts = JS.scripts.base.concat(pluginScripts).map((script) =&gt; {
+        const srcPath = path.resolve(basePath, script).replace(/\\/g, &#039;/&#039;);
+        return {
+            srcPath: srcPath,
+            filename: path.relative(basePath, srcPath).replace(/\\/g, &#039;/&#039;),
+        };
+    });
+
+    return pluginScripts;
+}
+
+JS.buildBundle = async function (target, fork) {
+    const filename = `scripts-${target}.js`;
+    const files = await getBundleScriptList(target);
+    const minify = false; // webpack will minify in prod
+    const filePath = path.join(__dirname, &#039;../../build/public&#039;, filename);
+
+    await minifier.js.bundle({
+        files: files,
+        filename: filename,
+        destPath: filePath,
+    }, minify, fork);
+};
+
+JS.killMinifier = function () {
+    minifier.killAll();
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/flags/detail.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/flags/detail.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.81</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">178</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">21.10</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.87</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;forum/flags/detail&#039;, [
+    &#039;components&#039;, &#039;translator&#039;, &#039;benchpress&#039;, &#039;forum/account/header&#039;, &#039;accounts/delete&#039;, &#039;api&#039;, &#039;bootbox&#039;, &#039;alerts&#039;,
+], function (components, translator, Benchpress, AccountHeader, AccountsDelete, api, bootbox, alerts) {
+    const Detail = {};
+
+    Detail.init = function () {
+        // Update attributes
+        $(&#039;#state&#039;).val(ajaxify.data.state).removeAttr(&#039;disabled&#039;);
+        $(&#039;#assignee&#039;).val(ajaxify.data.assignee).removeAttr(&#039;disabled&#039;);
+
+        $(&#039;#content &gt; div&#039;).on(&#039;click&#039;, &#039;[data-action]&#039;, function () {
+            const action = this.getAttribute(&#039;data-action&#039;);
+            const uid = $(this).parents(&#039;[data-uid]&#039;).attr(&#039;data-uid&#039;);
+            const noteEl = document.getElementById(&#039;note&#039;);
+
+            switch (action) {
+            case &#039;assign&#039;:
+                $(&#039;#assignee&#039;).val(app.user.uid);
+                // falls through
+
+            case &#039;update&#039;: {
+                const data = $(&#039;#attributes&#039;).serializeArray().reduce((memo, cur) =&gt; {
+                    memo[cur.name] = cur.value;
+                    return memo;
+                }, {});
+
+                api.put(`/flags/${ajaxify.data.flagId}`, data).then(({ history }) =&gt; {
+                    alerts.success(&#039;[[flags:updated]]&#039;);
+                    Detail.reloadHistory(history);
+                }).catch(alerts.error);
+                break;
+            }
+
+            case &#039;appendNote&#039;:
+                api.post(`/flags/${ajaxify.data.flagId}/notes`, {
+                    note: noteEl.value,
+                    datetime: parseInt(noteEl.getAttribute(&#039;data-datetime&#039;), 10),
+                }).then((payload) =&gt; {
+                    alerts.success(&#039;[[flags:note-added]]&#039;);
+                    Detail.reloadNotes(payload.notes);
+                    Detail.reloadHistory(payload.history);
+
+                    noteEl.removeAttribute(&#039;data-datetime&#039;);
+                }).catch(alerts.error);
+                break;
+
+            case &#039;delete-note&#039;: {
+                const datetime = parseInt(this.closest(&#039;[data-datetime]&#039;).getAttribute(&#039;data-datetime&#039;), 10);
+                bootbox.confirm(&#039;[[flags:delete-note-confirm]]&#039;, function (ok) {
+                    if (ok) {
+                        api.delete(`/flags/${ajaxify.data.flagId}/notes/${datetime}`, {}).then((payload) =&gt; {
+                            alerts.success(&#039;[[flags:note-deleted]]&#039;);
+                            Detail.reloadNotes(payload.notes);
+                            Detail.reloadHistory(payload.history);
+                        }).catch(alerts.error);
+                    }
+                });
+                break;
+            }
+            case &#039;chat&#039;:
+                require([&#039;chat&#039;], function (chat) {
+                    chat.newChat(uid);
+                });
+                break;
+
+            case &#039;ban&#039;:
+                AccountHeader.banAccount(uid, ajaxify.refresh);
+                break;
+
+            case &#039;unban&#039;:
+                AccountHeader.unbanAccount(uid);
+                break;
+
+            case &#039;mute&#039;:
+                AccountHeader.muteAccount(uid, ajaxify.refresh);
+                break;
+
+            case &#039;unmute&#039;:
+                AccountHeader.unmuteAccount(uid);
+                break;
+
+            case &#039;delete-account&#039;:
+                AccountsDelete.account(uid, ajaxify.refresh);
+                break;
+
+            case &#039;delete-content&#039;:
+                AccountsDelete.content(uid, ajaxify.refresh);
+                break;
+
+            case &#039;delete-all&#039;:
+                AccountsDelete.purge(uid, ajaxify.refresh);
+                break;
+
+            case &#039;delete-post&#039;:
+                postAction(&#039;delete&#039;, api.del, `/posts/${ajaxify.data.target.pid}/state`);
+                break;
+
+            case &#039;purge-post&#039;:
+                postAction(&#039;purge&#039;, api.del, `/posts/${ajaxify.data.target.pid}`);
+                break;
+
+            case &#039;restore-post&#039;:
+                postAction(&#039;restore&#039;, api.put, `/posts/${ajaxify.data.target.pid}/state`);
+                break;
+
+            case &#039;prepare-edit&#039;: {
+                const selectedNoteEl = this.closest(&#039;[data-index]&#039;);
+                const index = selectedNoteEl.getAttribute(&#039;data-index&#039;);
+                const textareaEl = document.getElementById(&#039;note&#039;);
+                textareaEl.value = ajaxify.data.notes[index].content;
+                textareaEl.setAttribute(&#039;data-datetime&#039;, ajaxify.data.notes[index].datetime);
+
+                const siblings = selectedNoteEl.parentElement.children;
+                for (const el in siblings) {
+                    if (siblings.hasOwnProperty(el)) {
+                        siblings[el].classList.remove(&#039;editing&#039;);
+                    }
+                }
+                selectedNoteEl.classList.add(&#039;editing&#039;);
+                textareaEl.focus();
+                break;
+            }
+
+            case &#039;delete-flag&#039;: {
+                bootbox.confirm(&#039;[[flags:delete-flag-confirm]]&#039;, function (ok) {
+                    if (ok) {
+                        api.delete(`/flags/${ajaxify.data.flagId}`, {}).then(() =&gt; {
+                            alerts.success(&#039;[[flags:flag-deleted]]&#039;);
+                            ajaxify.go(&#039;flags&#039;);
+                        }).catch(alerts.error);
+                    }
+                });
+                break;
+            }
+            }
+        });
+    };
+
+    function postAction(action, method, path) {
+        translator.translate(&#039;[[topic:post_&#039; + action + &#039;_confirm]]&#039;, function (msg) {
+            bootbox.confirm(msg, function (confirm) {
+                if (!confirm) {
+                    return;
+                }
+
+                method(path).then(ajaxify.refresh).catch(alerts.error);
+            });
+        });
+    }
+
+    Detail.reloadNotes = function (notes) {
+        ajaxify.data.notes = notes;
+        Benchpress.render(&#039;flags/detail&#039;, {
+            notes: notes,
+        }, &#039;notes&#039;).then(function (html) {
+            const wrapperEl = components.get(&#039;flag/notes&#039;);
+            wrapperEl.empty();
+            wrapperEl.html(html);
+            wrapperEl.find(&#039;span.timeago&#039;).timeago();
+            document.getElementById(&#039;note&#039;).value = &#039;&#039;;
+        });
+    };
+
+    Detail.reloadHistory = function (history) {
+        app.parseAndTranslate(&#039;flags/detail&#039;, &#039;history&#039;, {
+            history: history,
+        }, function (html) {
+            const wrapperEl = components.get(&#039;flag/history&#039;);
+            wrapperEl.empty();
+            wrapperEl.html(html);
+            wrapperEl.find(&#039;span.timeago&#039;).timeago();
+        });
+    };
+
+    return Detail;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

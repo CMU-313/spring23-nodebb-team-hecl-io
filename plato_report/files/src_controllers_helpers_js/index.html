@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/helpers.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/helpers.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.95</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">575</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">55.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">7.02</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+const querystring = require(&#039;querystring&#039;);
+const _ = require(&#039;lodash&#039;);
+const chalk = require(&#039;chalk&#039;);
+
+const translator = require(&#039;../translator&#039;);
+const user = require(&#039;../user&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const categories = require(&#039;../categories&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const meta = require(&#039;../meta&#039;);
+const middlewareHelpers = require(&#039;../middleware/helpers&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const helpers = module.exports;
+
+const relative_path = nconf.get(&#039;relative_path&#039;);
+const url = nconf.get(&#039;url&#039;);
+
+helpers.noScriptErrors = async function (req, res, error, httpStatus) {
+    if (req.body.noscript !== &#039;true&#039;) {
+        if (typeof error === &#039;string&#039;) {
+            return res.status(httpStatus).send(error);
+        }
+        return res.status(httpStatus).json(error);
+    }
+    const middleware = require(&#039;../middleware&#039;);
+    const httpStatusString = httpStatus.toString();
+    await middleware.buildHeaderAsync(req, res);
+    res.status(httpStatus).render(httpStatusString, {
+        path: req.path,
+        loggedIn: req.loggedIn,
+        error: error,
+        returnLink: true,
+        title: `[[global:${httpStatusString}.title]]`,
+    });
+};
+
+helpers.terms = {
+    daily: &#039;day&#039;,
+    weekly: &#039;week&#039;,
+    monthly: &#039;month&#039;,
+};
+
+helpers.buildQueryString = function (query, key, value) {
+    const queryObj = { ...query };
+    if (value) {
+        queryObj[key] = value;
+    } else {
+        delete queryObj[key];
+    }
+    delete queryObj._;
+    return Object.keys(queryObj).length ? `?${querystring.stringify(queryObj)}` : &#039;&#039;;
+};
+
+helpers.addLinkTags = function (params) {
+    params.res.locals.linkTags = params.res.locals.linkTags || [];
+    params.res.locals.linkTags.push({
+        rel: &#039;canonical&#039;,
+        href: `${url}/${params.url}`,
+    });
+
+    params.tags.forEach((rel) =&gt; {
+        rel.href = `${url}/${params.url}${rel.href}`;
+        params.res.locals.linkTags.push(rel);
+    });
+};
+
+helpers.buildFilters = function (url, filter, query) {
+    return [{
+        name: &#039;[[unread:all-topics]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;filter&#039;, &#039;&#039;),
+        selected: filter === &#039;&#039;,
+        filter: &#039;&#039;,
+        icon: &#039;fa-book&#039;,
+    }, {
+        name: &#039;[[unread:new-topics]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;filter&#039;, &#039;new&#039;),
+        selected: filter === &#039;new&#039;,
+        filter: &#039;new&#039;,
+        icon: &#039;fa-clock-o&#039;,
+    }, {
+        name: &#039;[[unread:watched-topics]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;filter&#039;, &#039;watched&#039;),
+        selected: filter === &#039;watched&#039;,
+        filter: &#039;watched&#039;,
+        icon: &#039;fa-bell-o&#039;,
+    }, {
+        name: &#039;[[unread:unreplied-topics]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;filter&#039;, &#039;unreplied&#039;),
+        selected: filter === &#039;unreplied&#039;,
+        filter: &#039;unreplied&#039;,
+        icon: &#039;fa-reply&#039;,
+    }];
+};
+
+helpers.buildTerms = function (url, term, query) {
+    return [{
+        name: &#039;[[recent:alltime]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;term&#039;, &#039;&#039;),
+        selected: term === &#039;alltime&#039;,
+        term: &#039;alltime&#039;,
+    }, {
+        name: &#039;[[recent:day]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;term&#039;, &#039;daily&#039;),
+        selected: term === &#039;day&#039;,
+        term: &#039;day&#039;,
+    }, {
+        name: &#039;[[recent:week]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;term&#039;, &#039;weekly&#039;),
+        selected: term === &#039;week&#039;,
+        term: &#039;week&#039;,
+    }, {
+        name: &#039;[[recent:month]]&#039;,
+        url: url + helpers.buildQueryString(query, &#039;term&#039;, &#039;monthly&#039;),
+        selected: term === &#039;month&#039;,
+        term: &#039;month&#039;,
+    }];
+};
+
+helpers.notAllowed = async function (req, res, error) {
+    ({ error } = await plugins.hooks.fire(&#039;filter:helpers.notAllowed&#039;, { req, res, error }));
+
+    await plugins.hooks.fire(&#039;response:helpers.notAllowed&#039;, { req, res, error });
+    if (res.headersSent) {
+        return;
+    }
+
+    if (req.loggedIn || req.uid === -1) {
+        if (res.locals.isAPI) {
+            if (req.originalUrl.startsWith(`${relative_path}/api/v3`)) {
+                helpers.formatApiResponse(403, res, error);
+            } else {
+                res.status(403).json({
+                    path: req.path.replace(/^\/api/, &#039;&#039;),
+                    loggedIn: req.loggedIn,
+                    error: error,
+                    title: &#039;[[global:403.title]]&#039;,
+                    bodyClass: middlewareHelpers.buildBodyClass(req, res),
+                });
+            }
+        } else {
+            const middleware = require(&#039;../middleware&#039;);
+            await middleware.buildHeaderAsync(req, res);
+            res.status(403).render(&#039;403&#039;, {
+                path: req.path,
+                loggedIn: req.loggedIn,
+                error,
+                title: &#039;[[global:403.title]]&#039;,
+            });
+        }
+    } else if (res.locals.isAPI) {
+        req.session.returnTo = req.url.replace(/^\/api/, &#039;&#039;);
+        helpers.formatApiResponse(401, res, error);
+    } else {
+        req.session.returnTo = req.url;
+        res.redirect(`${relative_path}/login${req.path.startsWith(&#039;/admin&#039;) ? &#039;?local=1&#039; : &#039;&#039;}`);
+    }
+};
+
+helpers.redirect = function (res, url, permanent) {
+    // this is used by sso plugins to redirect to the auth route
+    // { external: &#039;/auth/sso&#039; } or { external: &#039;https://domain/auth/sso&#039; }
+    if (url.hasOwnProperty(&#039;external&#039;)) {
+        const redirectUrl = encodeURI(prependRelativePath(url.external));
+        if (res.locals.isAPI) {
+            res.set(&#039;X-Redirect&#039;, redirectUrl).status(200).json({ external: redirectUrl });
+        } else {
+            res.redirect(permanent ? 308 : 307, redirectUrl);
+        }
+        return;
+    }
+
+    if (res.locals.isAPI) {
+        url = encodeURI(url);
+        res.set(&#039;X-Redirect&#039;, url).status(200).json(url);
+    } else {
+        res.redirect(permanent ? 308 : 307, encodeURI(prependRelativePath(url)));
+    }
+};
+
+function prependRelativePath(url) {
+    return url.startsWith(&#039;http://&#039;) || url.startsWith(&#039;https://&#039;) ?
+        url : relative_path + url;
+}
+
+helpers.buildCategoryBreadcrumbs = async function (cid) {
+    const breadcrumbs = [];
+
+    while (parseInt(cid, 10)) {
+        /* eslint-disable no-await-in-loop */
+        const data = await categories.getCategoryFields(cid, [&#039;name&#039;, &#039;slug&#039;, &#039;parentCid&#039;, &#039;disabled&#039;, &#039;isSection&#039;]);
+        if (!data.disabled &amp;&amp; !data.isSection) {
+            breadcrumbs.unshift({
+                text: String(data.name),
+                url: `${relative_path}/category/${data.slug}`,
+                cid: cid,
+            });
+        }
+        cid = data.parentCid;
+    }
+    if (meta.config.homePageRoute &amp;&amp; meta.config.homePageRoute !== &#039;categories&#039;) {
+        breadcrumbs.unshift({
+            text: &#039;[[global:header.categories]]&#039;,
+            url: `${relative_path}/categories`,
+        });
+    }
+
+    breadcrumbs.unshift({
+        text: &#039;[[global:home]]&#039;,
+        url: `${relative_path}/`,
+    });
+
+    return breadcrumbs;
+};
+
+helpers.buildBreadcrumbs = function (crumbs) {
+    const breadcrumbs = [
+        {
+            text: &#039;[[global:home]]&#039;,
+            url: `${relative_path}/`,
+        },
+    ];
+
+    crumbs.forEach((crumb) =&gt; {
+        if (crumb) {
+            if (crumb.url) {
+                crumb.url = `${utils.isRelativeUrl(crumb.url) ? relative_path : &#039;&#039;}${crumb.url}`;
+            }
+            breadcrumbs.push(crumb);
+        }
+    });
+
+    return breadcrumbs;
+};
+
+helpers.buildTitle = function (pageTitle) {
+    const titleLayout = meta.config.titleLayout || &#039;{pageTitle} | {browserTitle}&#039;;
+
+    const browserTitle = validator.escape(String(meta.config.browserTitle || meta.config.title || &#039;NodeBB&#039;));
+    pageTitle = pageTitle || &#039;&#039;;
+    const title = titleLayout.replace(&#039;{pageTitle}&#039;, () =&gt; pageTitle).replace(&#039;{browserTitle}&#039;, () =&gt; browserTitle);
+    return title;
+};
+
+helpers.getCategories = async function (set, uid, privilege, selectedCid) {
+    const cids = await categories.getCidsByPrivilege(set, uid, privilege);
+    return await getCategoryData(cids, uid, selectedCid, Object.values(categories.watchStates), privilege);
+};
+
+helpers.getCategoriesByStates = async function (uid, selectedCid, states, privilege = &#039;topics:read&#039;) {
+    const cids = await categories.getAllCidsFromSet(&#039;categories:cid&#039;);
+    return await getCategoryData(cids, uid, selectedCid, states, privilege);
+};
+
+async function getCategoryData(cids, uid, selectedCid, states, privilege) {
+    const [visibleCategories, selectData] = await Promise.all([
+        helpers.getVisibleCategories({
+            cids, uid, states, privilege, showLinks: false,
+        }),
+        helpers.getSelectedCategory(selectedCid),
+    ]);
+
+    const categoriesData = categories.buildForSelectCategories(visibleCategories, [&#039;disabledClass&#039;]);
+
+    categoriesData.forEach((category) =&gt; {
+        category.selected = selectData.selectedCids.includes(category.cid);
+    });
+    selectData.selectedCids.sort((a, b) =&gt; a - b);
+    return {
+        categories: categoriesData,
+        selectedCategory: selectData.selectedCategory,
+        selectedCids: selectData.selectedCids,
+    };
+}
+
+helpers.getVisibleCategories = async function (params) {
+    const { cids, uid, privilege } = params;
+    const states = params.states || [categories.watchStates.watching, categories.watchStates.notwatching];
+    const showLinks = !!params.showLinks;
+
+    let [allowed, watchState, categoriesData, isAdmin, isModerator] = await Promise.all([
+        privileges.categories.isUserAllowedTo(privilege, cids, uid),
+        categories.getWatchState(cids, uid),
+        categories.getCategoriesData(cids),
+        user.isAdministrator(uid),
+        user.isModerator(uid, cids),
+    ]);
+
+    const filtered = await plugins.hooks.fire(&#039;filter:helpers.getVisibleCategories&#039;, {
+        uid: uid,
+        allowed: allowed,
+        watchState: watchState,
+        categoriesData: categoriesData,
+        isModerator: isModerator,
+        isAdmin: isAdmin,
+    });
+    ({ allowed, watchState, categoriesData, isModerator, isAdmin } = filtered);
+
+    categories.getTree(categoriesData, params.parentCid);
+
+    const cidToAllowed = _.zipObject(cids, allowed.map((allowed, i) =&gt; isAdmin || isModerator[i] || allowed));
+    const cidToCategory = _.zipObject(cids, categoriesData);
+    const cidToWatchState = _.zipObject(cids, watchState);
+
+    return categoriesData.filter((c) =&gt; {
+        if (!c) {
+            return false;
+        }
+        const hasVisibleChildren = checkVisibleChildren(c, cidToAllowed, cidToWatchState, states);
+        const isCategoryVisible = (
+            cidToAllowed[c.cid] &amp;&amp;
+            (showLinks || !c.link) &amp;&amp;
+            !c.disabled &amp;&amp;
+            states.includes(cidToWatchState[c.cid])
+        );
+        const shouldBeRemoved = !hasVisibleChildren &amp;&amp; !isCategoryVisible;
+        const shouldBeDisaplayedAsDisabled = hasVisibleChildren &amp;&amp; !isCategoryVisible;
+
+        if (shouldBeDisaplayedAsDisabled) {
+            c.disabledClass = true;
+        }
+
+        if (shouldBeRemoved &amp;&amp; c.parent &amp;&amp; c.parent.cid &amp;&amp; cidToCategory[c.parent.cid]) {
+            cidToCategory[c.parent.cid].children =
+                cidToCategory[c.parent.cid].children.filter(child =&gt; child.cid !== c.cid);
+        }
+
+        return !shouldBeRemoved;
+    });
+};
+
+helpers.getSelectedCategory = async function (cids) {
+    if (cids &amp;&amp; !Array.isArray(cids)) {
+        cids = [cids];
+    }
+    cids = cids &amp;&amp; cids.map(cid =&gt; parseInt(cid, 10));
+    let selectedCategories = await categories.getCategoriesData(cids);
+    const selectedCids = selectedCategories.map(c =&gt; c &amp;&amp; c.cid).filter(Boolean);
+    if (selectedCategories.length &gt; 1) {
+        selectedCategories = {
+            icon: &#039;fa-plus&#039;,
+            name: &#039;[[unread:multiple-categories-selected]]&#039;,
+            bgColor: &#039;#ddd&#039;,
+        };
+    } else if (selectedCategories.length === 1 &amp;&amp; selectedCategories[0]) {
+        selectedCategories = selectedCategories[0];
+    } else {
+        selectedCategories = null;
+    }
+    return {
+        selectedCids: selectedCids,
+        selectedCategory: selectedCategories,
+    };
+};
+
+helpers.trimChildren = function (category) {
+    if (category &amp;&amp; Array.isArray(category.children)) {
+        category.children = category.children.slice(0, category.subCategoriesPerPage);
+        category.children.forEach((child) =&gt; {
+            if (category.isSection) {
+                helpers.trimChildren(child);
+            } else {
+                child.children = undefined;
+            }
+        });
+    }
+};
+
+helpers.setCategoryTeaser = function (category) {
+    if (Array.isArray(category.posts) &amp;&amp; category.posts.length &amp;&amp; category.posts[0]) {
+        category.teaser = {
+            url: `${nconf.get(&#039;relative_path&#039;)}/post/${category.posts[0].pid}`,
+            timestampISO: category.posts[0].timestampISO,
+            pid: category.posts[0].pid,
+            topic: category.posts[0].topic,
+        };
+    }
+};
+
+function checkVisibleChildren(c, cidToAllowed, cidToWatchState, states) {
+    if (!c || !Array.isArray(c.children)) {
+        return false;
+    }
+    return c.children.some(c =&gt; !c.disabled &amp;&amp; (
+        (cidToAllowed[c.cid] &amp;&amp; states.includes(cidToWatchState[c.cid])) ||
+        checkVisibleChildren(c, cidToAllowed, cidToWatchState, states)
+    ));
+}
+
+helpers.getHomePageRoutes = async function (uid) {
+    const routes = [
+        {
+            route: &#039;categories&#039;,
+            name: &#039;Categories&#039;,
+        },
+        {
+            route: &#039;unread&#039;,
+            name: &#039;Unread&#039;,
+        },
+        {
+            route: &#039;recent&#039;,
+            name: &#039;Recent&#039;,
+        },
+        {
+            route: &#039;top&#039;,
+            name: &#039;Top&#039;,
+        },
+        {
+            route: &#039;popular&#039;,
+            name: &#039;Popular&#039;,
+        },
+        {
+            route: &#039;custom&#039;,
+            name: &#039;Custom&#039;,
+        },
+    ];
+    const data = await plugins.hooks.fire(&#039;filter:homepage.get&#039;, {
+        uid: uid,
+        routes: routes,
+    });
+    return data.routes;
+};
+
+helpers.formatApiResponse = async (statusCode, res, payload) =&gt; {
+    if (res.req.method === &#039;HEAD&#039;) {
+        return res.sendStatus(statusCode);
+    }
+
+    if (String(statusCode).startsWith(&#039;2&#039;)) {
+        if (res.req.loggedIn) {
+            res.set(&#039;cache-control&#039;, &#039;private&#039;);
+        }
+
+        let code = &#039;ok&#039;;
+        let message = &#039;OK&#039;;
+        switch (statusCode) {
+        case 202:
+            code = &#039;accepted&#039;;
+            message = &#039;Accepted&#039;;
+            break;
+
+        case 204:
+            code = &#039;no-content&#039;;
+            message = &#039;No Content&#039;;
+            break;
+        }
+
+        res.status(statusCode).json({
+            status: { code, message },
+            response: payload || {},
+        });
+    } else if (payload instanceof Error) {
+        const { message } = payload;
+        const response = {};
+
+        // Update status code based on some common error codes
+        switch (message) {
+        case &#039;[[error:user-banned]]&#039;:
+            Object.assign(response, await generateBannedResponse(res));
+            // intentional fall through
+
+        case &#039;[[error:no-privileges]]&#039;:
+            statusCode = 403;
+            break;
+
+        case &#039;[[error:invalid-uid]]&#039;:
+            statusCode = 401;
+            break;
+        }
+
+        if (message.startsWith(&#039;[[error:required-parameters-missing, &#039;)) {
+            const params = message.slice(&#039;[[error:required-parameters-missing, &#039;.length, -2).split(&#039; &#039;);
+            Object.assign(response, { params });
+        }
+
+        const returnPayload = await helpers.generateError(statusCode, message, res);
+        returnPayload.response = response;
+
+        if (global.env === &#039;development&#039;) {
+            returnPayload.stack = payload.stack;
+            process.stdout.write(`[${chalk.yellow(&#039;api&#039;)}] Exception caught, error with stack trace follows:\n`);
+            process.stdout.write(payload.stack);
+        }
+        res.status(statusCode).json(returnPayload);
+    } else if (!payload) {
+        // Non-2xx statusCode, generate predefined error
+        const returnPayload = await helpers.generateError(statusCode, null, res);
+        res.status(statusCode).json(returnPayload);
+    }
+};
+
+async function generateBannedResponse(res) {
+    const response = {};
+    const [reason, expiry] = await Promise.all([
+        user.bans.getReason(res.req.uid),
+        user.getUserField(res.req.uid, &#039;banned:expire&#039;),
+    ]);
+
+    response.reason = reason;
+    if (expiry) {
+        Object.assign(response, {
+            expiry,
+            expiryISO: new Date(expiry).toISOString(),
+            expiryLocaleString: new Date(expiry).toLocaleString(),
+        });
+    }
+
+    return response;
+}
+
+helpers.generateError = async (statusCode, message, res) =&gt; {
+    async function translateMessage(message) {
+        const { req } = res;
+        const settings = req.query.lang ? null : await user.getSettings(req.uid);
+        const language = String(req.query.lang || settings.userLang || meta.config.defaultLang);
+        return await translator.translate(message, language);
+    }
+    if (message &amp;&amp; message.startsWith(&#039;[[&#039;)) {
+        message = await translateMessage(message);
+    }
+
+    const payload = {
+        status: {
+            code: &#039;internal-server-error&#039;,
+            message: message || await translateMessage(`[[error:api.${statusCode}]]`),
+        },
+        response: {},
+    };
+
+    switch (statusCode) {
+    case 400:
+        payload.status.code = &#039;bad-request&#039;;
+        break;
+
+    case 401:
+        payload.status.code = &#039;not-authorised&#039;;
+        break;
+
+    case 403:
+        payload.status.code = &#039;forbidden&#039;;
+        break;
+
+    case 404:
+        payload.status.code = &#039;not-found&#039;;
+        break;
+
+    case 426:
+        payload.status.code = &#039;upgrade-required&#039;;
+        break;
+
+    case 429:
+        payload.status.code = &#039;too-many-requests&#039;;
+        break;
+
+    case 500:
+        payload.status.code = &#039;internal-server-error&#039;;
+        break;
+
+    case 501:
+        payload.status.code = &#039;not-implemented&#039;;
+        break;
+
+    case 503:
+        payload.status.code = &#039;service-unavailable&#039;;
+        break;
+    }
+
+    return payload;
+};
+
+require(&#039;../promisify&#039;)(helpers);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

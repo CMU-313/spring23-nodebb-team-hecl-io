@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/redis.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/redis.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">119</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">20.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.35</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const semver = require(&#039;semver&#039;);
+const session = require(&#039;express-session&#039;);
+
+const connection = require(&#039;./redis/connection&#039;);
+
+const redisModule = module.exports;
+
+redisModule.questions = [
+    {
+        name: &#039;redis:host&#039;,
+        description: &#039;Host IP or address of your Redis instance&#039;,
+        default: nconf.get(&#039;redis:host&#039;) || &#039;127.0.0.1&#039;,
+    },
+    {
+        name: &#039;redis:port&#039;,
+        description: &#039;Host port of your Redis instance&#039;,
+        default: nconf.get(&#039;redis:port&#039;) || 6379,
+    },
+    {
+        name: &#039;redis:password&#039;,
+        description: &#039;Password of your Redis database&#039;,
+        hidden: true,
+        default: nconf.get(&#039;redis:password&#039;) || &#039;&#039;,
+        before: function (value) { value = value || nconf.get(&#039;redis:password&#039;) || &#039;&#039;; return value; },
+    },
+    {
+        name: &#039;redis:database&#039;,
+        description: &#039;Which database to use (0..n)&#039;,
+        default: nconf.get(&#039;redis:database&#039;) || 0,
+    },
+];
+
+
+redisModule.init = async function () {
+    redisModule.client = await connection.connect(nconf.get(&#039;redis&#039;));
+};
+
+redisModule.createSessionStore = async function (options) {
+    const meta = require(&#039;../meta&#039;);
+    const sessionStore = require(&#039;connect-redis&#039;)(session);
+    const client = await connection.connect(options);
+    const store = new sessionStore({
+        client: client,
+        ttl: meta.getSessionTTLSeconds(),
+    });
+    return store;
+};
+
+redisModule.checkCompatibility = async function () {
+    const info = await redisModule.info(redisModule.client);
+    await redisModule.checkCompatibilityVersion(info.redis_version);
+};
+
+redisModule.checkCompatibilityVersion = function (version, callback) {
+    if (semver.lt(version, &#039;2.8.9&#039;)) {
+        callback(new Error(&#039;Your Redis version is not new enough to support NodeBB, please upgrade Redis to v2.8.9 or higher.&#039;));
+    }
+    callback();
+};
+
+redisModule.close = async function () {
+    await redisModule.client.quit();
+};
+
+redisModule.info = async function (cxn) {
+    if (!cxn) {
+        cxn = await connection.connect(nconf.get(&#039;redis&#039;));
+    }
+    redisModule.client = redisModule.client || cxn;
+    const data = await cxn.info();
+    const lines = data.toString().split(&#039;\r\n&#039;).sort();
+    const redisData = {};
+    lines.forEach((line) =&gt; {
+        const parts = line.split(&#039;:&#039;);
+        if (parts[1]) {
+            redisData[parts[0]] = parts[1];
+        }
+    });
+
+    const keyInfo = redisData[`db${nconf.get(&#039;redis:database&#039;)}`];
+    if (keyInfo) {
+        const split = keyInfo.split(&#039;,&#039;);
+        redisData.keys = (split[0] || &#039;&#039;).replace(&#039;keys=&#039;, &#039;&#039;);
+        redisData.expires = (split[1] || &#039;&#039;).replace(&#039;expires=&#039;, &#039;&#039;);
+        redisData.avg_ttl = (split[2] || &#039;&#039;).replace(&#039;avg_ttl=&#039;, &#039;&#039;);
+    }
+
+    redisData.instantaneous_input = (redisData.instantaneous_input_kbps / 1024).toFixed(3);
+    redisData.instantaneous_output = (redisData.instantaneous_output_kbps / 1024).toFixed(3);
+
+    redisData.total_net_input = (redisData.total_net_input_bytes / (1024 * 1024 * 1024)).toFixed(3);
+    redisData.total_net_output = (redisData.total_net_output_bytes / (1024 * 1024 * 1024)).toFixed(3);
+
+    redisData.used_memory_human = (redisData.used_memory / (1024 * 1024 * 1024)).toFixed(3);
+    redisData.raw = JSON.stringify(redisData, null, 4);
+    redisData.redis = true;
+    return redisData;
+};
+
+redisModule.socketAdapter = async function () {
+    const redisAdapter = require(&#039;@socket.io/redis-adapter&#039;);
+    const pub = await connection.connect(nconf.get(&#039;redis&#039;));
+    const sub = await connection.connect(nconf.get(&#039;redis&#039;));
+    return redisAdapter(pub, sub, {
+        key: `db:${nconf.get(&#039;redis:database&#039;)}:adapter_key`,
+    });
+};
+
+require(&#039;./redis/main&#039;)(redisModule);
+require(&#039;./redis/hash&#039;)(redisModule);
+require(&#039;./redis/sets&#039;)(redisModule);
+require(&#039;./redis/sorted&#039;)(redisModule);
+require(&#039;./redis/list&#039;)(redisModule);
+require(&#039;./redis/transaction&#039;)(redisModule);
+
+require(&#039;../promisify&#039;)(redisModule, [&#039;client&#039;, &#039;sessionStore&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/sockets.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/sockets.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.84</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">257</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">31.40</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.18</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+// eslint-disable-next-line no-redeclare
+const io = require(&#039;socket.io-client&#039;);
+// eslint-disable-next-line no-redeclare
+const $ = require(&#039;jquery&#039;);
+
+app = window.app || {};
+
+(function () {
+    let reconnecting = false;
+
+    const ioParams = {
+        reconnectionAttempts: config.maxReconnectionAttempts,
+        reconnectionDelay: config.reconnectionDelay,
+        transports: config.socketioTransports,
+        path: config.relative_path + &#039;/socket.io&#039;,
+    };
+
+    window.socket = io(config.websocketAddress, ioParams);
+
+    const oEmit = socket.emit;
+    socket.emit = function (event, data, callback) {
+        if (typeof data === &#039;function&#039;) {
+            callback = data;
+            data = null;
+        }
+        if (typeof callback === &#039;function&#039;) {
+            oEmit.apply(socket, [event, data, callback]);
+            return;
+        }
+
+        return new Promise(function (resolve, reject) {
+            oEmit.apply(socket, [event, data, function (err, result) {
+                if (err) reject(err);
+                else resolve(result);
+            }]);
+        });
+    };
+
+    let hooks;
+    require([&#039;hooks&#039;], function (_hooks) {
+        hooks = _hooks;
+        if (parseInt(app.user.uid, 10) &gt;= 0) {
+            addHandlers();
+        }
+    });
+
+    window.app.reconnect = () =&gt; {
+        if (socket.connected) {
+            return;
+        }
+
+        const reconnectEl = $(&#039;#reconnect&#039;);
+        $(&#039;#reconnect-alert&#039;)
+            .removeClass(&#039;alert-danger pointer&#039;)
+            .addClass(&#039;alert-warning&#039;)
+            .find(&#039;p&#039;)
+            .translateText(`[[global:reconnecting-message, ${config.siteTitle}]]`);
+
+        reconnectEl.html(&#039;&lt;i class=&quot;fa fa-spinner fa-spin&quot;&gt;&lt;/i&gt;&#039;);
+        socket.connect();
+    };
+
+    function addHandlers() {
+        socket.on(&#039;connect&#039;, onConnect);
+
+        socket.on(&#039;disconnect&#039;, onDisconnect);
+
+        socket.io.on(&#039;reconnect_failed&#039;, function () {
+            const reconnectEl = $(&#039;#reconnect&#039;);
+            reconnectEl.html(&#039;&lt;i class=&quot;fa fa-plug text-danger&quot;&gt;&lt;/i&gt;&#039;);
+
+            $(&#039;#reconnect-alert&#039;)
+                .removeClass(&#039;alert-warning&#039;)
+                .addClass(&#039;alert-danger pointer&#039;)
+                .find(&#039;p&#039;)
+                .translateText(&#039;[[error:socket-reconnect-failed]]&#039;)
+                .one(&#039;click&#039;, app.reconnect);
+
+            $(window).one(&#039;focus&#039;, app.reconnect);
+        });
+
+        socket.on(&#039;checkSession&#039;, function (uid) {
+            if (parseInt(uid, 10) !== parseInt(app.user.uid, 10)) {
+                handleSessionMismatch();
+            }
+        });
+        socket.on(&#039;event:invalid_session&#039;, () =&gt; {
+            handleInvalidSession();
+        });
+
+        socket.on(&#039;setHostname&#039;, function (hostname) {
+            app.upstreamHost = hostname;
+        });
+
+        socket.on(&#039;event:banned&#039;, onEventBanned);
+        socket.on(&#039;event:unbanned&#039;, onEventUnbanned);
+        socket.on(&#039;event:logout&#039;, function () {
+            require([&#039;logout&#039;], function (logout) {
+                logout();
+            });
+        });
+        socket.on(&#039;event:alert&#039;, function (params) {
+            require([&#039;alerts&#039;], function (alerts) {
+                alerts.alert(params);
+            });
+        });
+        socket.on(&#039;event:deprecated_call&#039;, function (data) {
+            console.warn(&#039;[socket.io] &#039;, data.eventName, &#039;is now deprecated in favour of&#039;, data.replacement);
+        });
+
+        socket.removeAllListeners(&#039;event:nodebb.ready&#039;);
+        socket.on(&#039;event:nodebb.ready&#039;, function (data) {
+            if ((data.hostname === app.upstreamHost) &amp;&amp; (!app.cacheBuster || app.cacheBuster !== data[&#039;cache-buster&#039;])) {
+                app.cacheBuster = data[&#039;cache-buster&#039;];
+                require([&#039;alerts&#039;], function (alerts) {
+                    alerts.alert({
+                        alert_id: &#039;forum_updated&#039;,
+                        title: &#039;[[global:updated.title]]&#039;,
+                        message: &#039;[[global:updated.message]]&#039;,
+                        clickfn: function () {
+                            window.location.reload();
+                        },
+                        type: &#039;warning&#039;,
+                    });
+                });
+            }
+        });
+        socket.on(&#039;event:livereload&#039;, function () {
+            if (app.user.isAdmin &amp;&amp; !ajaxify.currentPage.match(/admin/)) {
+                window.location.reload();
+            }
+        });
+    }
+
+    function handleInvalidSession() {
+        socket.disconnect();
+        require([&#039;messages&#039;, &#039;logout&#039;], function (messages, logout) {
+            logout(false);
+            messages.showInvalidSession();
+        });
+    }
+
+    function handleSessionMismatch() {
+        if (app.flags._login || app.flags._logout) {
+            return;
+        }
+
+        socket.disconnect();
+        require([&#039;messages&#039;], function (messages) {
+            messages.showSessionMismatch();
+        });
+    }
+
+    function onConnect() {
+        if (!reconnecting) {
+            hooks.fire(&#039;action:connected&#039;);
+        }
+
+        if (reconnecting) {
+            const reconnectEl = $(&#039;#reconnect&#039;);
+            const reconnectAlert = $(&#039;#reconnect-alert&#039;);
+
+            reconnectEl.tooltip(&#039;destroy&#039;);
+            reconnectEl.html(&#039;&lt;i class=&quot;fa fa-check text-success&quot;&gt;&lt;/i&gt;&#039;);
+            reconnectAlert.addClass(&#039;hide&#039;);
+            reconnecting = false;
+
+            reJoinCurrentRoom();
+
+            socket.emit(&#039;meta.reconnected&#039;);
+
+            hooks.fire(&#039;action:reconnected&#039;);
+
+            setTimeout(function () {
+                reconnectEl.removeClass(&#039;active&#039;).addClass(&#039;hide&#039;);
+            }, 3000);
+        }
+    }
+
+    function reJoinCurrentRoom() {
+        if (app.currentRoom) {
+            const current = app.currentRoom;
+            app.currentRoom = &#039;&#039;;
+            app.enterRoom(current);
+        }
+    }
+
+    function onReconnecting() {
+        reconnecting = true;
+        const reconnectEl = $(&#039;#reconnect&#039;);
+        const reconnectAlert = $(&#039;#reconnect-alert&#039;);
+
+        if (!reconnectEl.hasClass(&#039;active&#039;)) {
+            reconnectEl.html(&#039;&lt;i class=&quot;fa fa-spinner fa-spin&quot;&gt;&lt;/i&gt;&#039;);
+            reconnectAlert.removeClass(&#039;hide&#039;);
+        }
+
+        reconnectEl.addClass(&#039;active&#039;).removeClass(&#039;hide&#039;).tooltip({
+            placement: &#039;bottom&#039;,
+        });
+    }
+
+    function onDisconnect() {
+        setTimeout(function () {
+            if (socket.disconnected) {
+                onReconnecting();
+            }
+        }, 2000);
+
+        hooks.fire(&#039;action:disconnected&#039;);
+    }
+
+    function onEventBanned(data) {
+        require([&#039;bootbox&#039;, &#039;translator&#039;], function (bootbox, translator) {
+            const message = data.until ?
+                translator.compile(&#039;error:user-banned-reason-until&#039;, (new Date(data.until).toLocaleString()), data.reason) :
+                &#039;[[error:user-banned-reason, &#039; + data.reason + &#039;]]&#039;;
+            translator.translate(message, function (message) {
+                bootbox.alert({
+                    title: &#039;[[error:user-banned]]&#039;,
+                    message: message,
+                    closeButton: false,
+                    callback: function () {
+                        window.location.href = config.relative_path + &#039;/&#039;;
+                    },
+                });
+            });
+        });
+    }
+
+    function onEventUnbanned() {
+        require([&#039;bootbox&#039;], function (bootbox) {
+            bootbox.alert({
+                title: &#039;[[global:alert.unbanned]]&#039;,
+                message: &#039;[[global:alert.unbanned.message]]&#039;,
+                closeButton: false,
+                callback: function () {
+                    window.location.href = config.relative_path + &#039;/&#039;;
+                },
+            });
+        });
+    }
+
+    if (
+        config.socketioOrigins &amp;&amp;
+        config.socketioOrigins !== &#039;*:*&#039; &amp;&amp;
+        config.socketioOrigins.indexOf(location.hostname) === -1
+    ) {
+        console.error(
+            &#039;You are accessing the forum from an unknown origin. This will likely result in websockets failing to connect. \n&#039; +
+            &#039;To fix this, set the `&quot;url&quot;` value in `config.json` to the URL at which you access the site. \n&#039; +
+            &#039;For more information, see this FAQ topic: https://community.nodebb.org/topic/13388&#039;
+        );
+    }
+}());</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

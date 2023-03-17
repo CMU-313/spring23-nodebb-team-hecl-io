@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/persona/quickreply.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/persona/quickreply.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.81</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">97</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">18.09</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.84</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;persona/quickreply&#039;, [
+    &#039;components&#039;, &#039;composer&#039;, &#039;composer/autocomplete&#039;, &#039;api&#039;,
+    &#039;alerts&#039;, &#039;uploadHelpers&#039;, &#039;mousetrap&#039;,
+], function (
+    components, composer, autocomplete, api,
+    alerts, uploadHelpers, mousetrap
+) {
+    var QuickReply = {};
+
+    QuickReply.init = function () {
+        var element = components.get(&#039;topic/quickreply/text&#039;);
+        var data = {
+            element: element,
+            strategies: [],
+            options: {
+                style: {
+                    &#039;z-index&#039;: 100,
+                },
+            },
+        };
+
+        $(window).trigger(&#039;composer:autocomplete:init&#039;, data);
+        autocomplete._active.persona_qr = autocomplete.setup(data);
+        // data.element.textcomplete(data.strategies, data.options);
+        // $(&#039;.textcomplete-wrapper&#039;).css(&#039;height&#039;, &#039;100%&#039;).find(&#039;textarea&#039;).css(&#039;height&#039;, &#039;100%&#039;);
+
+        mousetrap.bind(&#039;ctrl+return&#039;, (e) =&gt; {
+            if (e.target === element.get(0)) {
+                components.get(&#039;topic/quickreply/button&#039;).get(0).click();
+            }
+        });
+
+        uploadHelpers.init({
+            dragDropAreaEl: $(&#039;[component=&quot;topic/quickreply/container&quot;] .quickreply-message&#039;),
+            pasteEl: element,
+            uploadFormEl: $(&#039;[component=&quot;topic/quickreply/upload&quot;]&#039;),
+            inputEl: element,
+            route: &#039;/api/post/upload&#039;,
+            callback: function (uploads) {
+                let text = element.val();
+                uploads.forEach((upload) =&gt; {
+                    text = text + (text ? &#039;\n&#039; : &#039;&#039;) + (upload.isImage ? &#039;!&#039; : &#039;&#039;) + `[${upload.filename}](${upload.url})`;
+                });
+                element.val(text);
+            },
+        });
+
+        var ready = true;
+        components.get(&#039;topic/quickreply/button&#039;).on(&#039;click&#039;, function (e) {
+            e.preventDefault();
+            if (!ready) {
+                return;
+            }
+
+            var replyMsg = components.get(&#039;topic/quickreply/text&#039;).val();
+            var replyData = {
+                tid: ajaxify.data.tid,
+                handle: undefined,
+                content: replyMsg,
+            };
+
+            ready = false;
+            api.post(`/topics/${ajaxify.data.tid}`, replyData, function (err, data) {
+                ready = true;
+                if (err) {
+                    return alerts.error(err);
+                }
+                if (data &amp;&amp; data.queued) {
+                    alerts.alert({
+                        type: &#039;success&#039;,
+                        title: &#039;[[global:alert.success]]&#039;,
+                        message: data.message,
+                        timeout: 10000,
+                        clickfn: function () {
+                            ajaxify.go(`/post-queue/${data.id}`);
+                        },
+                    });
+                }
+
+                components.get(&#039;topic/quickreply/text&#039;).val(&#039;&#039;);
+                autocomplete._active.persona_qr.hide();
+            });
+        });
+
+        components.get(&#039;topic/quickreply/expand&#039;).on(&#039;click&#039;, (e) =&gt; {
+            e.preventDefault();
+
+            const textEl = components.get(&#039;topic/quickreply/text&#039;);
+            composer.newReply(ajaxify.data.tid, undefined, ajaxify.data.title, utils.escapeHTML(textEl.val()));
+            textEl.val(&#039;&#039;);
+        });
+    };
+
+    return QuickReply;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/flags/list.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/flags/list.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.60</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">231</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">26.46</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.31</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;forum/flags/list&#039;, [
+    &#039;components&#039;, &#039;Chart&#039;, &#039;categoryFilter&#039;, &#039;autocomplete&#039;, &#039;api&#039;, &#039;alerts&#039;,
+], function (components, Chart, categoryFilter, autocomplete, api, alerts) {
+    const Flags = {};
+
+    let selectedCids;
+
+    Flags.init = function () {
+        Flags.enableFilterForm();
+        Flags.enableCheckboxes();
+        Flags.handleBulkActions();
+
+        selectedCids = [];
+        if (ajaxify.data.filters.hasOwnProperty(&#039;cid&#039;)) {
+            selectedCids = Array.isArray(ajaxify.data.filters.cid) ?
+                ajaxify.data.filters.cid : [ajaxify.data.filters.cid];
+        }
+
+        categoryFilter.init($(&#039;[component=&quot;category/dropdown&quot;]&#039;), {
+            privilege: &#039;moderate&#039;,
+            selectedCids: selectedCids,
+            onHidden: function (data) {
+                selectedCids = data.selectedCids;
+            },
+        });
+
+        components.get(&#039;flags/list&#039;)
+            .on(&#039;click&#039;, &#039;[data-flag-id]&#039;, function (e) {
+                if ([&#039;BUTTON&#039;, &#039;A&#039;].includes(e.target.nodeName)) {
+                    return;
+                }
+
+                const flagId = this.getAttribute(&#039;data-flag-id&#039;);
+                ajaxify.go(&#039;flags/&#039; + flagId);
+            });
+
+        $(&#039;#flags-daily-wrapper&#039;).one(&#039;shown.bs.collapse&#039;, function () {
+            Flags.handleGraphs();
+        });
+
+        autocomplete.user($(&#039;#filter-assignee, #filter-targetUid, #filter-reporterId&#039;), (ev, ui) =&gt; {
+            setTimeout(() =&gt; { ev.target.value = ui.item.user.uid; });
+        });
+    };
+
+    Flags.enableFilterForm = function () {
+        const $filtersEl = components.get(&#039;flags/filters&#039;);
+
+        // Parse ajaxify data to set form values to reflect current filters
+        for (const filter in ajaxify.data.filters) {
+            if (ajaxify.data.filters.hasOwnProperty(filter)) {
+                $filtersEl.find(&#039;[name=&quot;&#039; + filter + &#039;&quot;]&#039;).val(ajaxify.data.filters[filter]);
+            }
+        }
+        $filtersEl.find(&#039;[name=&quot;sort&quot;]&#039;).val(ajaxify.data.sort);
+
+        document.getElementById(&#039;apply-filters&#039;).addEventListener(&#039;click&#039;, function () {
+            const payload = $filtersEl.serializeArray();
+            // cid is special comes from categoryFilter module
+            selectedCids.forEach(function (cid) {
+                payload.push({ name: &#039;cid&#039;, value: cid });
+            });
+
+            ajaxify.go(&#039;flags?&#039; + (payload.length ? $.param(payload) : &#039;reset=1&#039;));
+        });
+
+        $filtersEl.find(&#039;button[data-target=&quot;#more-filters&quot;]&#039;).click((ev) =&gt; {
+            const textVariant = ev.target.getAttribute(&#039;data-text-variant&#039;);
+            if (!textVariant) {
+                return;
+            }
+            ev.target.setAttribute(&#039;data-text-variant&#039;, ev.target.textContent);
+            ev.target.firstChild.textContent = textVariant;
+        });
+    };
+
+    Flags.enableCheckboxes = function () {
+        const flagsList = document.querySelector(&#039;[component=&quot;flags/list&quot;]&#039;);
+        const checkboxes = flagsList.querySelectorAll(&#039;[data-flag-id] input[type=&quot;checkbox&quot;]&#039;);
+        const bulkEl = document.querySelector(&#039;[component=&quot;flags/bulk-actions&quot;] button&#039;);
+        let lastClicked;
+
+        document.querySelector(&#039;[data-action=&quot;toggle-all&quot;]&#039;).addEventListener(&#039;click&#039;, function () {
+            const state = this.checked;
+
+            checkboxes.forEach(function (el) {
+                el.checked = state;
+            });
+            bulkEl.disabled = !state;
+        });
+
+        flagsList.addEventListener(&#039;click&#039;, function (e) {
+            const subselector = e.target.closest(&#039;input[type=&quot;checkbox&quot;]&#039;);
+            if (subselector) {
+                // Stop checkbox clicks from going into the flag details
+                e.stopImmediatePropagation();
+
+                if (lastClicked &amp;&amp; e.shiftKey &amp;&amp; lastClicked !== subselector) {
+                    // Select all the checkboxes in between
+                    const state = subselector.checked;
+                    let started = false;
+
+                    checkboxes.forEach(function (el) {
+                        if ([subselector, lastClicked].some(function (ref) {
+                            return ref === el;
+                        })) {
+                            started = !started;
+                        }
+
+                        if (started) {
+                            el.checked = state;
+                        }
+                    });
+                }
+
+                // (De)activate bulk actions button based on checkboxes&#039; state
+                bulkEl.disabled = !Array.prototype.some.call(checkboxes, function (el) {
+                    return el.checked;
+                });
+
+                lastClicked = subselector;
+            }
+
+            // If you miss the checkbox, don&#039;t descend into the flag details, either
+            if (e.target.querySelector(&#039;input[type=&quot;checkbox&quot;]&#039;)) {
+                e.stopImmediatePropagation();
+            }
+        });
+    };
+
+    Flags.handleBulkActions = function () {
+        document.querySelector(&#039;[component=&quot;flags/bulk-actions&quot;]&#039;).addEventListener(&#039;click&#039;, function (e) {
+            const subselector = e.target.closest(&#039;[data-action]&#039;);
+            if (subselector) {
+                const action = subselector.getAttribute(&#039;data-action&#039;);
+                const flagIds = Flags.getSelected();
+                const promises = flagIds.map((flagId) =&gt; {
+                    const data = {};
+                    if (action === &#039;bulk-assign&#039;) {
+                        data.assignee = app.user.uid;
+                    } else if (action === &#039;bulk-mark-resolved&#039;) {
+                        data.state = &#039;resolved&#039;;
+                    }
+                    return api.put(`/flags/${flagId}`, data);
+                });
+
+                Promise.allSettled(promises).then(function (results) {
+                    const fulfilled = results.filter(function (res) {
+                        return res.status === &#039;fulfilled&#039;;
+                    }).length;
+                    const errors = results.filter(function (res) {
+                        return res.status === &#039;rejected&#039;;
+                    });
+                    if (fulfilled) {
+                        alerts.success(&#039;[[flags:bulk-success, &#039; + fulfilled + &#039;]]&#039;);
+                        ajaxify.refresh();
+                    }
+
+                    errors.forEach(function (res) {
+                        alerts.error(res.reason);
+                    });
+                });
+            }
+        });
+    };
+
+    Flags.getSelected = function () {
+        const checkboxes = document.querySelectorAll(&#039;[component=&quot;flags/list&quot;] [data-flag-id] input[type=&quot;checkbox&quot;]&#039;);
+        const payload = [];
+        checkboxes.forEach(function (el) {
+            if (el.checked) {
+                payload.push(el.closest(&#039;[data-flag-id]&#039;).getAttribute(&#039;data-flag-id&#039;));
+            }
+        });
+
+        return payload;
+    };
+
+    Flags.handleGraphs = function () {
+        const dailyCanvas = document.getElementById(&#039;flags:daily&#039;);
+        const dailyLabels = utils.getDaysArray().map(function (text, idx) {
+            return idx % 3 ? &#039;&#039; : text;
+        });
+
+        if (utils.isMobile()) {
+            Chart.defaults.global.tooltips.enabled = false;
+        }
+        const data = {
+            &#039;flags:daily&#039;: {
+                labels: dailyLabels,
+                datasets: [
+                    {
+                        label: &#039;&#039;,
+                        backgroundColor: &#039;rgba(151,187,205,0.2)&#039;,
+                        borderColor: &#039;rgba(151,187,205,1)&#039;,
+                        pointBackgroundColor: &#039;rgba(151,187,205,1)&#039;,
+                        pointHoverBackgroundColor: &#039;#fff&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;rgba(151,187,205,1)&#039;,
+                        data: ajaxify.data.analytics,
+                    },
+                ],
+            },
+        };
+
+        dailyCanvas.width = $(dailyCanvas).parent().width();
+        new Chart(dailyCanvas.getContext(&#039;2d&#039;), {
+            type: &#039;line&#039;,
+            data: data[&#039;flags:daily&#039;],
+            options: {
+                responsive: true,
+                animation: false,
+                legend: {
+                    display: false,
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            precision: 0,
+                        },
+                    }],
+                },
+            },
+        });
+    };
+
+    return Flags;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

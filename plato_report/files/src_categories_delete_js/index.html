@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/categories/delete.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/categories/delete.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">75.03</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">91</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">16.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.90</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const db = require(&#039;../database&#039;);
+const batch = require(&#039;../batch&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const topics = require(&#039;../topics&#039;);
+const groups = require(&#039;../groups&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const cache = require(&#039;../cache&#039;);
+
+module.exports = function (Categories) {
+    Categories.purge = async function (cid, uid) {
+        await batch.processSortedSet(`cid:${cid}:tids`, async (tids) =&gt; {
+            await async.eachLimit(tids, 10, async (tid) =&gt; {
+                await topics.purgePostsAndTopic(tid, uid);
+            });
+        }, { alwaysStartAt: 0 });
+
+        const pinnedTids = await db.getSortedSetRevRange(`cid:${cid}:tids:pinned`, 0, -1);
+        await async.eachLimit(pinnedTids, 10, async (tid) =&gt; {
+            await topics.purgePostsAndTopic(tid, uid);
+        });
+        const categoryData = await Categories.getCategoryData(cid);
+        await purgeCategory(cid, categoryData);
+        plugins.hooks.fire(&#039;action:category.delete&#039;, { cid: cid, uid: uid, category: categoryData });
+    };
+
+    async function purgeCategory(cid, categoryData) {
+        const bulkRemove = [[&#039;categories:cid&#039;, cid]];
+        if (categoryData &amp;&amp; categoryData.name) {
+            bulkRemove.push([&#039;categories:name&#039;, `${categoryData.name.slice(0, 200).toLowerCase()}:${cid}`]);
+        }
+        await db.sortedSetRemoveBulk(bulkRemove);
+
+        await removeFromParent(cid);
+        await deleteTags(cid);
+        await db.deleteAll([
+            `cid:${cid}:tids`,
+            `cid:${cid}:tids:pinned`,
+            `cid:${cid}:tids:posts`,
+            `cid:${cid}:tids:votes`,
+            `cid:${cid}:tids:views`,
+            `cid:${cid}:tids:lastposttime`,
+            `cid:${cid}:recent_tids`,
+            `cid:${cid}:pids`,
+            `cid:${cid}:read_by_uid`,
+            `cid:${cid}:uid:watch:state`,
+            `cid:${cid}:children`,
+            `cid:${cid}:tag:whitelist`,
+            `category:${cid}`,
+        ]);
+        const privilegeList = await privileges.categories.getPrivilegeList();
+        await groups.destroy(privilegeList.map(privilege =&gt; `cid:${cid}:privileges:${privilege}`));
+    }
+
+    async function removeFromParent(cid) {
+        const [parentCid, children] = await Promise.all([
+            Categories.getCategoryField(cid, &#039;parentCid&#039;),
+            db.getSortedSetRange(`cid:${cid}:children`, 0, -1),
+        ]);
+
+        const bulkAdd = [];
+        const childrenKeys = children.map((cid) =&gt; {
+            bulkAdd.push([&#039;cid:0:children&#039;, cid, cid]);
+            return `category:${cid}`;
+        });
+
+        await Promise.all([
+            db.sortedSetRemove(`cid:${parentCid}:children`, cid),
+            db.setObjectField(childrenKeys, &#039;parentCid&#039;, 0),
+            db.sortedSetAddBulk(bulkAdd),
+        ]);
+
+        cache.del([
+            &#039;categories:cid&#039;,
+            &#039;cid:0:children&#039;,
+            `cid:${parentCid}:children`,
+            `cid:${parentCid}:children:all`,
+            `cid:${cid}:children`,
+            `cid:${cid}:children:all`,
+            `cid:${cid}:tag:whitelist`,
+        ]);
+    }
+
+    async function deleteTags(cid) {
+        const tags = await db.getSortedSetMembers(`cid:${cid}:tags`);
+        await db.deleteAll(tags.map(tag =&gt; `cid:${cid}:tag:${tag}:topics`));
+        await db.delete(`cid:${cid}:tags`);
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

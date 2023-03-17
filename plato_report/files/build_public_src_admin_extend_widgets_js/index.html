@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/extend/widgets.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/extend/widgets.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.07</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">282</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.40</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.36</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;admin/extend/widgets&#039;, [
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+    &#039;jquery-ui/widgets/sortable&#039;,
+    &#039;jquery-ui/widgets/draggable&#039;,
+    &#039;jquery-ui/widgets/droppable&#039;,
+    &#039;jquery-ui/widgets/datepicker&#039;,
+], function (bootbox, alerts) {
+    const Widgets = {};
+
+    Widgets.init = function () {
+        $(&#039;#widgets .nav-pills .dropdown-menu a&#039;).on(&#039;click&#039;, function (ev) {
+            const $this = $(this);
+            $(&#039;#widgets .tab-pane&#039;).removeClass(&#039;active&#039;);
+            const templateName = $this.attr(&#039;data-template&#039;);
+            $(&#039;#widgets .tab-pane[data-template=&quot;&#039; + templateName + &#039;&quot;]&#039;).addClass(&#039;active&#039;);
+            $(&#039;#widgets .selected-template&#039;).text(templateName);
+            $(&#039;#widgets .nav-pills .dropdown&#039;).trigger(&#039;click&#039;);
+            ev.preventDefault();
+            return false;
+        });
+
+        $(&#039;#widget-selector&#039;).on(&#039;change&#039;, function () {
+            $(&#039;.available-widgets [data-widget]&#039;).addClass(&#039;hide&#039;);
+            $(&#039;.available-widgets [data-widget=&quot;&#039; + $(this).val() + &#039;&quot;]&#039;).removeClass(&#039;hide&#039;);
+        });
+
+        $(&#039;#widget-selector&#039;).trigger(&#039;change&#039;);
+
+        loadWidgetData();
+        setupCloneButton();
+    };
+
+    function prepareWidgets() {
+        $(&#039;[data-location=&quot;drafts&quot;]&#039;).insertAfter($(&#039;[data-location=&quot;drafts&quot;]&#039;).closest(&#039;.tab-content&#039;));
+
+        $(&#039;#widgets .available-widgets .widget-panel&#039;).draggable({
+            helper: function (e) {
+                return $(e.target).parents(&#039;.widget-panel&#039;).clone();
+            },
+            distance: 10,
+            connectToSortable: &#039;.widget-area&#039;,
+        });
+
+        $(&#039;#widgets .available-containers .containers &gt; [data-container-html]&#039;)
+            .draggable({
+                helper: function (e) {
+                    let target = $(e.target);
+                    target = target.attr(&#039;data-container-html&#039;) ? target : target.parents(&#039;[data-container-html]&#039;);
+
+                    return target.clone().addClass(&#039;block&#039;).width(target.width()).css(&#039;opacity&#039;, &#039;0.5&#039;);
+                },
+                distance: 10,
+            })
+            .each(function () {
+                $(this).attr(&#039;data-container-html&#039;, $(this).attr(&#039;data-container-html&#039;).replace(/\\\{([\s\S]*?)\\\}/g, &#039;{$1}&#039;));
+            });
+
+        $(&#039;#widgets .widget-area&#039;).sortable({
+            update: function (event, ui) {
+                createDatePicker(ui.item);
+                appendToggle(ui.item);
+            },
+            connectWith: &#039;div&#039;,
+        }).on(&#039;click&#039;, &#039;.delete-widget&#039;, function () {
+            const panel = $(this).parents(&#039;.widget-panel&#039;);
+
+            bootbox.confirm(&#039;[[admin/extend/widgets:alert.confirm-delete]]&#039;, function (confirm) {
+                if (confirm) {
+                    panel.remove();
+                }
+            });
+        }).on(&#039;mouseup&#039;, &#039;&gt; .panel &gt; .panel-heading&#039;, function (evt) {
+            if (!($(this).parent().is(&#039;.ui-sortable-helper&#039;) || $(evt.target).closest(&#039;.delete-widget&#039;).length)) {
+                $(this).parent().children(&#039;.panel-body&#039;).toggleClass(&#039;hidden&#039;);
+            }
+        });
+
+        $(&#039;#save&#039;).on(&#039;click&#039;, saveWidgets);
+
+        function saveWidgets() {
+            const saveData = [];
+            $(&#039;#widgets [data-template][data-location]&#039;).each(function (i, el) {
+                el = $(el);
+
+                const template = el.attr(&#039;data-template&#039;);
+                const location = el.attr(&#039;data-location&#039;);
+                const area = el.children(&#039;.widget-area&#039;);
+                const widgets = [];
+
+                area.find(&#039;.widget-panel[data-widget]&#039;).each(function () {
+                    const widgetData = {};
+                    const data = $(this).find(&#039;form&#039;).serializeArray();
+
+                    for (const d in data) {
+                        if (data.hasOwnProperty(d)) {
+                            if (data[d].name) {
+                                if (widgetData[data[d].name]) {
+                                    if (!Array.isArray(widgetData[data[d].name])) {
+                                        widgetData[data[d].name] = [
+                                            widgetData[data[d].name],
+                                        ];
+                                    }
+                                    widgetData[data[d].name].push(data[d].value);
+                                } else {
+                                    widgetData[data[d].name] = data[d].value;
+                                }
+                            }
+                        }
+                    }
+
+                    widgets.push({
+                        widget: $(this).attr(&#039;data-widget&#039;),
+                        data: widgetData,
+                    });
+                });
+
+                saveData.push({
+                    template: template,
+                    location: location,
+                    widgets: widgets,
+                });
+            });
+
+            socket.emit(&#039;admin.widgets.set&#039;, saveData, function (err) {
+                if (err) {
+                    alerts.error(err);
+                }
+
+                alerts.alert({
+                    alert_id: &#039;admin:widgets&#039;,
+                    type: &#039;success&#039;,
+                    title: &#039;[[admin/extend/widgets:alert.updated]]&#039;,
+                    message: &#039;[[admin/extend/widgets:alert.update-success]]&#039;,
+                    timeout: 2500,
+                });
+            });
+        }
+
+        $(&#039;.color-selector&#039;).on(&#039;click&#039;, &#039;.btn&#039;, function () {
+            const btn = $(this);
+            const selector = btn.parents(&#039;.color-selector&#039;);
+            const container = selector.parents(&#039;[data-container-html]&#039;);
+            const classList = [];
+
+            selector.children().each(function () {
+                classList.push($(this).attr(&#039;data-class&#039;));
+            });
+
+            container
+                .removeClass(classList.join(&#039; &#039;))
+                .addClass(btn.attr(&#039;data-class&#039;));
+
+            container.attr(&#039;data-container-html&#039;, container.attr(&#039;data-container-html&#039;)
+                .replace(/class=&quot;[a-zA-Z0-9-\s]+&quot;/, &#039;class=&quot;&#039; + container[0].className.replace(&#039; pointer ui-draggable ui-draggable-handle&#039;, &#039;&#039;) + &#039;&quot;&#039;));
+        });
+    }
+
+    function createDatePicker(el) {
+        const currentYear = new Date().getFullYear();
+        el.find(&#039;.date-selector&#039;).datepicker({
+            changeMonth: true,
+            changeYear: true,
+            yearRange: currentYear + &#039;:&#039; + (currentYear + 100),
+        });
+    }
+
+    function appendToggle(el) {
+        if (!el.hasClass(&#039;block&#039;)) {
+            el.addClass(&#039;block&#039;).css(&#039;width&#039;, &#039;&#039;).css(&#039;height&#039;, &#039;&#039;)
+                .droppable({
+                    accept: &#039;[data-container-html]&#039;,
+                    drop: function (event, ui) {
+                        const el = $(this);
+
+                        el.find(&#039;.panel-body .container-html&#039;).val(ui.draggable.attr(&#039;data-container-html&#039;));
+                        el.find(&#039;.panel-body&#039;).removeClass(&#039;hidden&#039;);
+                    },
+                    hoverClass: &#039;panel-info&#039;,
+                })
+                .children(&#039;.panel-heading&#039;)
+                .append(&#039;&lt;div class=&quot;pull-right pointer&quot;&gt;&lt;span class=&quot;delete-widget&quot;&gt;&lt;i class=&quot;fa fa-times-circle&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;pull-left pointer&quot;&gt;&lt;span class=&quot;toggle-widget&quot;&gt;&lt;i class=&quot;fa fa-chevron-circle-down&quot;&gt;&lt;/i&gt;&lt;/span&gt;&amp;nbsp;&lt;/div&gt;&#039;)
+                .children(&#039;small&#039;)
+                .html(&#039;&#039;);
+        }
+    }
+
+    function loadWidgetData() {
+        function populateWidget(widget, data) {
+            if (data.title) {
+                const title = widget.find(&#039;.panel-heading strong&#039;);
+                title.text(title.text() + &#039; - &#039; + data.title);
+            }
+
+            widget.find(&#039;input, textarea, select&#039;).each(function () {
+                const input = $(this);
+                const value = data[input.attr(&#039;name&#039;)];
+
+                if (input.attr(&#039;type&#039;) === &#039;checkbox&#039;) {
+                    input.prop(&#039;checked&#039;, !!value).trigger(&#039;change&#039;);
+                } else {
+                    input.val(value);
+                }
+            });
+
+            return widget;
+        }
+
+        $.get(config.relative_path + &#039;/api/admin/extend/widgets&#039;, function (data) {
+            const areas = data.areas;
+
+            for (let i = 0; i &lt; areas.length; i += 1) {
+                const area = areas[i];
+                const widgetArea = $(&#039;#widgets .area[data-template=&quot;&#039; + area.template + &#039;&quot;][data-location=&quot;&#039; + area.location + &#039;&quot;]&#039;).find(&#039;.widget-area&#039;);
+
+                widgetArea.html(&#039;&#039;);
+
+                for (let k = 0; k &lt; area.data.length; k += 1) {
+                    const widgetData = area.data[k];
+                    const widgetEl = $(&#039;.available-widgets [data-widget=&quot;&#039; + widgetData.widget + &#039;&quot;]&#039;).clone(true).removeClass(&#039;hide&#039;);
+
+                    widgetArea.append(populateWidget(widgetEl, widgetData.data));
+                    appendToggle(widgetEl);
+                    createDatePicker(widgetEl);
+                }
+            }
+
+            prepareWidgets();
+        });
+    }
+
+    function setupCloneButton() {
+        const clone = $(&#039;[component=&quot;clone&quot;]&#039;);
+        const cloneBtn = $(&#039;[component=&quot;clone/button&quot;]&#039;);
+
+        clone.find(&#039;.dropdown-menu li&#039;).on(&#039;click&#039;, function () {
+            const template = $(this).find(&#039;a&#039;).text();
+            cloneBtn.translateHtml(&#039;[[admin/extend/widgets:clone-from]] &lt;strong&gt;&#039; + template + &#039;&lt;/strong&gt;&#039;);
+            cloneBtn.attr(&#039;data-template&#039;, template);
+        });
+
+        cloneBtn.on(&#039;click&#039;, function () {
+            const template = cloneBtn.attr(&#039;data-template&#039;);
+            if (!template) {
+                return alerts.error(&#039;[[admin/extend/widgets:error.select-clone]]&#039;);
+            }
+
+            const currentTemplate = $(&#039;#active-widgets .active.tab-pane[data-template] .area&#039;);
+            const templateToClone = $(&#039;#active-widgets .tab-pane[data-template=&quot;&#039; + template + &#039;&quot;] .area&#039;);
+
+            const currentAreas = currentTemplate.map(function () {
+                return $(this).attr(&#039;data-location&#039;);
+            }).get();
+
+            const areasToClone = templateToClone.map(function () {
+                const location = $(this).attr(&#039;data-location&#039;);
+                return currentAreas.indexOf(location) !== -1 ? location : undefined;
+            }).get().filter(function (i) { return i; });
+
+            function clone(location) {
+                $(&#039;#active-widgets .tab-pane[data-template=&quot;&#039; + template + &#039;&quot;] [data-location=&quot;&#039; + location + &#039;&quot;]&#039;).each(function () {
+                    $(this).find(&#039;[data-widget]&#039;).each(function () {
+                        const widget = $(this).clone(true);
+                        $(&#039;#active-widgets .active.tab-pane[data-template]:not([data-template=&quot;global&quot;]) [data-location=&quot;&#039; + location + &#039;&quot;] .widget-area&#039;).append(widget);
+                    });
+                });
+            }
+
+            for (let i = 0, ii = areasToClone.length; i &lt; ii; i++) {
+                const location = areasToClone[i];
+                clone(location);
+            }
+
+            alerts.success(&#039;[[admin/extend/widgets:alert.clone-success]]&#039;);
+        });
+    }
+
+    return Widgets;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

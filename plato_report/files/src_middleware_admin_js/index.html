@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/middleware/admin.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/middleware/admin.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">57.63</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">176</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">39.06</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.44</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const jsesc = require(&#039;jsesc&#039;);
+const nconf = require(&#039;nconf&#039;);
+const semver = require(&#039;semver&#039;);
+
+const user = require(&#039;../user&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const utils = require(&#039;../utils&#039;);
+const versions = require(&#039;../admin/versions&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const controllers = {
+    api: require(&#039;../controllers/api&#039;),
+    helpers: require(&#039;../controllers/helpers&#039;),
+};
+
+const middleware = module.exports;
+
+middleware.buildHeader = helpers.try(async (req, res, next) =&gt; {
+    res.locals.renderAdminHeader = true;
+    if (req.method === &#039;GET&#039;) {
+        await require(&#039;./index&#039;).applyCSRFasync(req, res);
+    }
+
+    res.locals.config = await controllers.api.loadConfig(req);
+    next();
+});
+
+middleware.renderHeader = async (req, res, data) =&gt; {
+    const custom_header = {
+        plugins: [],
+        authentication: [],
+    };
+    res.locals.config = res.locals.config || {};
+
+    const results = await utils.promiseParallel({
+        userData: user.getUserFields(req.uid, [&#039;username&#039;, &#039;userslug&#039;, &#039;email&#039;, &#039;picture&#039;, &#039;email:confirmed&#039;]),
+        scripts: getAdminScripts(),
+        custom_header: plugins.hooks.fire(&#039;filter:admin.header.build&#039;, custom_header),
+        configs: meta.configs.list(),
+        latestVersion: getLatestVersion(),
+        privileges: privileges.admin.get(req.uid),
+        tags: meta.tags.parse(req, {}, [], []),
+    });
+
+    const { userData } = results;
+    userData.uid = req.uid;
+    userData[&#039;email:confirmed&#039;] = userData[&#039;email:confirmed&#039;] === 1;
+    userData.privileges = results.privileges;
+
+    let acpPath = req.path.slice(1).split(&#039;/&#039;);
+    acpPath.forEach((path, i) =&gt; {
+        acpPath[i] = path.charAt(0).toUpperCase() + path.slice(1);
+    });
+    acpPath = acpPath.join(&#039; &gt; &#039;);
+
+    const version = nconf.get(&#039;version&#039;);
+
+    res.locals.config.userLang = res.locals.config.acpLang || res.locals.config.userLang;
+    let templateValues = {
+        config: res.locals.config,
+        configJSON: jsesc(JSON.stringify(res.locals.config), { isScriptContext: true }),
+        relative_path: res.locals.config.relative_path,
+        adminConfigJSON: encodeURIComponent(JSON.stringify(results.configs)),
+        metaTags: results.tags.meta,
+        linkTags: results.tags.link,
+        user: userData,
+        userJSON: jsesc(JSON.stringify(userData), { isScriptContext: true }),
+        plugins: results.custom_header.plugins,
+        authentication: results.custom_header.authentication,
+        scripts: results.scripts,
+        &#039;cache-buster&#039;: meta.config[&#039;cache-buster&#039;] || &#039;&#039;,
+        env: !!process.env.NODE_ENV,
+        title: `${acpPath || &#039;Dashboard&#039;} | NodeBB Admin Control Panel`,
+        bodyClass: data.bodyClass,
+        version: version,
+        latestVersion: results.latestVersion,
+        upgradeAvailable: results.latestVersion &amp;&amp; semver.gt(results.latestVersion, version),
+        showManageMenu: results.privileges.superadmin || [&#039;categories&#039;, &#039;privileges&#039;, &#039;users&#039;, &#039;admins-mods&#039;, &#039;groups&#039;, &#039;tags&#039;, &#039;settings&#039;].some(priv =&gt; results.privileges[`admin:${priv}`]),
+    };
+
+    templateValues.template = { name: res.locals.template };
+    templateValues.template[res.locals.template] = true;
+    ({ templateData: templateValues } = await plugins.hooks.fire(&#039;filter:middleware.renderAdminHeader&#039;, {
+        req,
+        res,
+        templateData: templateValues,
+        data,
+    }));
+
+    return await req.app.renderAsync(&#039;admin/header&#039;, templateValues);
+};
+
+async function getAdminScripts() {
+    const scripts = await plugins.hooks.fire(&#039;filter:admin.scripts.get&#039;, []);
+    return scripts.map(script =&gt; ({ src: script }));
+}
+
+async function getLatestVersion() {
+    try {
+        const result = await versions.getLatestVersion();
+        return result;
+    } catch (err) {
+        winston.error(`[acp] Failed to fetch latest version${err.stack}`);
+    }
+    return null;
+}
+
+middleware.renderFooter = async function (req, res, data) {
+    return await req.app.renderAsync(&#039;admin/footer&#039;, data);
+};
+
+middleware.checkPrivileges = helpers.try(async (req, res, next) =&gt; {
+    // Kick out guests, obviously
+    if (req.uid &lt;= 0) {
+        return controllers.helpers.notAllowed(req, res);
+    }
+
+    // Otherwise, check for privilege based on page (if not in mapping, deny access)
+    const path = req.path.replace(/^(\/api)?(\/v3)?\/admin\/?/g, &#039;&#039;);
+    if (path) {
+        const privilege = privileges.admin.resolve(path);
+        if (!await privileges.admin.can(privilege, req.uid)) {
+            return controllers.helpers.notAllowed(req, res);
+        }
+    } else {
+        // If accessing /admin, check for any valid admin privs
+        const privilegeSet = await privileges.admin.get(req.uid);
+        if (!Object.values(privilegeSet).some(Boolean)) {
+            return controllers.helpers.notAllowed(req, res);
+        }
+    }
+
+    // If user does not have password
+    const hasPassword = await user.hasPassword(req.uid);
+    if (!hasPassword) {
+        return next();
+    }
+
+    // Reject if they need to re-login (due to ACP timeout), otherwise extend logout timer
+    const loginTime = req.session.meta ? req.session.meta.datetime : 0;
+    const adminReloginDuration = meta.config.adminReloginDuration * 60000;
+    const disabled = meta.config.adminReloginDuration === 0;
+    if (disabled || (loginTime &amp;&amp; parseInt(loginTime, 10) &gt; Date.now() - adminReloginDuration)) {
+        const timeLeft = parseInt(loginTime, 10) - (Date.now() - adminReloginDuration);
+        if (req.session.meta &amp;&amp; timeLeft &lt; Math.min(60000, adminReloginDuration)) {
+            req.session.meta.datetime += Math.min(60000, adminReloginDuration);
+        }
+
+        return next();
+    }
+
+    let returnTo = req.path;
+    if (nconf.get(&#039;relative_path&#039;)) {
+        returnTo = req.path.replace(new RegExp(`^${nconf.get(&#039;relative_path&#039;)}`), &#039;&#039;);
+    }
+    returnTo = returnTo.replace(/^\/api/, &#039;&#039;);
+
+    req.session.returnTo = returnTo;
+    req.session.forceLogin = 1;
+
+    await plugins.hooks.fire(&#039;response:auth.relogin&#039;, { req, res });
+    if (res.headersSent) {
+        return;
+    }
+
+    if (res.locals.isAPI) {
+        res.status(401).json({});
+    } else {
+        res.redirect(`${nconf.get(&#039;relative_path&#039;)}/login?local=1`);
+    }
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

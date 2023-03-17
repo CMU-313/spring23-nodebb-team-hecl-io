@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/iconSelect.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/iconSelect.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.46</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">125</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.82</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.25</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;iconSelect&#039;, [&#039;benchpress&#039;, &#039;bootbox&#039;], function (Benchpress, bootbox) {
+    const iconSelect = {};
+
+    iconSelect.init = function (el, onModified) {
+        onModified = onModified || function () {};
+        const doubleSize = el.hasClass(&#039;fa-2x&#039;);
+        let selected = el.attr(&#039;class&#039;).replace(&#039;fa-2x&#039;, &#039;&#039;).replace(&#039;fa&#039;, &#039;&#039;).replace(/\s+/g, &#039;&#039;);
+
+        $(&#039;#icons .selected&#039;).removeClass(&#039;selected&#039;);
+
+        if (selected) {
+            try {
+                $(&#039;#icons .fa-icons .fa.&#039; + selected).addClass(&#039;selected&#039;);
+            } catch (err) {
+                selected = &#039;&#039;;
+            }
+        }
+
+        Benchpress.render(&#039;partials/fontawesome&#039;, {}).then(function (html) {
+            html = $(html);
+            html.find(&#039;.fa-icons&#039;).prepend($(&#039;&lt;i class=&quot;fa fa-nbb-none&quot;&gt;&lt;/i&gt;&#039;));
+
+            const picker = bootbox.dialog({
+                onEscape: true,
+                backdrop: true,
+                show: false,
+                message: html,
+                title: &#039;Select an Icon&#039;,
+                buttons: {
+                    noIcon: {
+                        label: &#039;No Icon&#039;,
+                        className: &#039;btn-default&#039;,
+                        callback: function () {
+                            el.attr(&#039;class&#039;, &#039;fa &#039; + (doubleSize ? &#039;fa-2x &#039; : &#039;&#039;));
+                            el.val(&#039;&#039;);
+                            el.attr(&#039;value&#039;, &#039;&#039;);
+
+                            onModified(el);
+                        },
+                    },
+                    success: {
+                        label: &#039;Select&#039;,
+                        className: &#039;btn-primary&#039;,
+                        callback: function () {
+                            const iconClass = $(&#039;.bootbox .selected&#039;).attr(&#039;class&#039;) || `fa fa-${$(&#039;.bootbox #fa-filter&#039;).val()}`;
+                            const categoryIconClass = $(&#039;&lt;div&gt;&lt;/div&gt;&#039;).addClass(iconClass).removeClass(&#039;fa&#039;).removeClass(&#039;selected&#039;)
+                                .attr(&#039;class&#039;);
+                            const searchElVal = picker.find(&#039;input&#039;).val();
+
+                            if (categoryIconClass) {
+                                el.attr(&#039;class&#039;, &#039;fa &#039; + (doubleSize ? &#039;fa-2x &#039; : &#039;&#039;) + categoryIconClass);
+                                el.val(categoryIconClass);
+                                el.attr(&#039;value&#039;, categoryIconClass);
+                            } else if (searchElVal) {
+                                el.attr(&#039;class&#039;, searchElVal);
+                                el.val(searchElVal);
+                                el.attr(&#039;value&#039;, searchElVal);
+                            }
+
+                            onModified(el);
+                        },
+                    },
+                },
+            });
+
+            picker.on(&#039;show.bs.modal&#039;, function () {
+                const modalEl = $(this);
+                const searchEl = modalEl.find(&#039;input&#039;);
+
+                if (selected) {
+                    modalEl.find(&#039;.&#039; + selected).addClass(&#039;selected&#039;);
+                    searchEl.val(selected.replace(&#039;fa-&#039;, &#039;&#039;));
+                }
+            }).modal(&#039;show&#039;);
+
+            picker.on(&#039;shown.bs.modal&#039;, function () {
+                const modalEl = $(this);
+                const searchEl = modalEl.find(&#039;input&#039;);
+                const icons = modalEl.find(&#039;.fa-icons i&#039;);
+                const submitEl = modalEl.find(&#039;button.btn-primary&#039;);
+
+                function changeSelection(newSelection) {
+                    modalEl.find(&#039;i.selected&#039;).removeClass(&#039;selected&#039;);
+                    if (newSelection) {
+                        newSelection.addClass(&#039;selected&#039;);
+                    } else if (searchEl.val().length === 0) {
+                        if (selected) {
+                            modalEl.find(&#039;.&#039; + selected).addClass(&#039;selected&#039;);
+                        }
+                    } else {
+                        modalEl.find(&#039;i:visible&#039;).first().addClass(&#039;selected&#039;);
+                    }
+                }
+
+                // Focus on the input box
+                searchEl.selectRange(0, searchEl.val().length);
+
+                modalEl.find(&#039;.icon-container&#039;).on(&#039;click&#039;, &#039;i&#039;, function () {
+                    searchEl.val($(this).attr(&#039;class&#039;).replace(&#039;fa fa-&#039;, &#039;&#039;).replace(&#039;selected&#039;, &#039;&#039;));
+                    changeSelection($(this));
+                });
+
+                searchEl.on(&#039;keyup&#039;, function (e) {
+                    if (e.keyCode !== 13) {
+                        // Filter
+                        icons.show();
+                        icons.each(function (idx, el) {
+                            if (!el.className.match(new RegExp(&#039;^fa fa-.*&#039; + searchEl.val() + &#039;.*$&#039;))) {
+                                $(el).hide();
+                            }
+                        });
+                        changeSelection();
+                    } else {
+                        submitEl.click();
+                    }
+                });
+            });
+        });
+    };
+
+    return iconSelect;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

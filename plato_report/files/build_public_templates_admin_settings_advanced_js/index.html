@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/settings/advanced.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/settings/advanced.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">75.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">34</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">24.97</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.35</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;settings\&quot;&gt;\n    &lt;div class=\&quot;row\&quot;&gt;\n        &lt;div class=\&quot;col-sm-2 col-xs-12 content-header\&quot;&gt;\n            [[admin/admin:settings-header-contents]]\n        &lt;/div&gt;\n        &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n            &lt;nav class=\&quot;section-content\&quot;&gt;\n                &lt;ul&gt;&lt;/ul&gt;\n            &lt;/nav&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:maintenance-mode]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;maintenanceMode\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:maintenance-mode]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;p class=\&quot;help-block\&quot;&gt;\n                [[admin/settings/advanced:maintenance-mode.help]]\n            &lt;/p&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maintenanceModeStatus\&quot;&gt;[[admin/settings/advanced:maintenance-mode.status]]&lt;/label&gt;\n                &lt;input id=\&quot;maintenanceModeStatus\&quot; class=\&quot;form-control\&quot; type=\&quot;text\&quot; data-field=\&quot;maintenanceModeStatus\&quot;&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maintenanceModeMessage\&quot;&gt;[[admin/settings/advanced:maintenance-mode.message]]&lt;/label&gt;\n                &lt;textarea id=\&quot;maintenanceModeMessage\&quot; class=\&quot;form-control\&quot; data-field=\&quot;maintenanceModeMessage\&quot;&gt;&lt;/textarea&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;groupsExemptFromMaintenanceMode\&quot;&gt;[[admin/settings/advanced:maintenance-mode.groups-exempt-from-maintenance-mode]]&lt;/label&gt;\n                &lt;select id=\&quot;groupsExemptFromMaintenanceMode\&quot; class=\&quot;form-control\&quot; multiple data-field=\&quot;groupsExemptFromMaintenanceMode\&quot;&gt;\n                    &quot; + 
+      compiled.blocks[&#039;groupsExemptFromMaintenanceMode&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                &lt;/select&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:headers]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;csp-frame-ancestors\&quot;&gt;[[admin/settings/advanced:headers.csp-frame-ancestors]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;csp-frame-ancestors\&quot; type=\&quot;text\&quot; placeholder=\&quot;https://a.example.com https://b.example.com\&quot; data-field=\&quot;csp-frame-ancestors\&quot; /&gt;&lt;br /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:headers.csp-frame-ancestors-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;powered-by\&quot;&gt;[[admin/settings/advanced:headers.powered-by]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;powered-by\&quot; type=\&quot;text\&quot; placeholder=\&quot;NodeBB\&quot; data-field=\&quot;powered-by\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;access-control-allow-origin\&quot;&gt;[[admin/settings/advanced:headers.acao]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;access-control-allow-origin\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; value=\&quot;\&quot; data-field=\&quot;access-control-allow-origin\&quot; /&gt;&lt;br /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:headers.acao-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;access-control-allow-origin-regex\&quot;&gt;[[admin/settings/advanced:headers.acao-regex]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;access-control-allow-origin-regex\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; value=\&quot;\&quot; data-field=\&quot;access-control-allow-origin-regex\&quot; /&gt;&lt;br /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:headers.acao-regex-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;access-control-allow-credentials\&quot;&gt;[[admin/settings/advanced:headers.acac]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;access-control-allow-credentials\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; value=\&quot;\&quot; data-field=\&quot;access-control-allow-credentials\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;access-control-allow-methods\&quot;&gt;[[admin/settings/advanced:headers.acam]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;access-control-allow-methods\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; data-field=\&quot;access-control-allow-methods\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;access-control-allow-headers\&quot;&gt;[[admin/settings/advanced:headers.acah]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;access-control-allow-headers\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; data-field=\&quot;access-control-allow-headers\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;cross-origin-embedder-policy\&quot; id=\&quot;cross-origin-embedder-policy\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:headers.coep]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/advanced:headers.coep-help]]&lt;/p&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;cross-origin-resource-policy\&quot;&gt;[[admin/settings/advanced:headers.coop]]&lt;/label&gt;\n                &lt;select class=\&quot;form-control\&quot; id=\&quot;cross-origin-opener-policy\&quot; data-field=\&quot;cross-origin-opener-policy\&quot;&gt;\n                    &lt;option value=\&quot;same-origin\&quot;&gt;same-origin&lt;/option&gt;\n                    &lt;option value=\&quot;same-origin-allow-popups\&quot;&gt;same-origin-allow-popups&lt;/option&gt;\n                    &lt;option value=\&quot;unsafe-none\&quot;&gt;unsafe-none&lt;/option&gt;\n                &lt;/select&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;cross-origin-resource-policy\&quot;&gt;[[admin/settings/advanced:headers.corp]]&lt;/label&gt;\n                &lt;select class=\&quot;form-control\&quot; id=\&quot;cross-origin-resource-policy\&quot; data-field=\&quot;cross-origin-resource-policy\&quot;&gt;\n                    &lt;option value=\&quot;same-site\&quot;&gt;same-site&lt;/option&gt;\n                    &lt;option value=\&quot;same-origin\&quot;&gt;same-origin&lt;/option&gt;\n                    &lt;option value=\&quot;cross-origin\&quot;&gt;cross-origin&lt;/option&gt;\n                &lt;/select&gt;\n                &lt;br /&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;permissions-policy\&quot;&gt;[[admin/settings/advanced:headers.permissions-policy]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;permissions-policy\&quot; type=\&quot;text\&quot; placeholder=\&quot;\&quot; data-field=\&quot;permissions-policy\&quot;  &gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/advanced:headers.permissions-policy-help]]&lt;/p&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:hsts]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;hsts-enabled\&quot; checked&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:hsts.enabled]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;hsts-maxage\&quot;&gt;[[admin/settings/advanced:hsts.maxAge]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;hsts-maxage\&quot; type=\&quot;number\&quot; placeholder=\&quot;31536000\&quot; data-field=\&quot;hsts-maxage\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;hsts-subdomains\&quot; checked&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:hsts.subdomains]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;hsts-preload\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:hsts.preload]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;p class=\&quot;help-block\&quot;&gt;\n                [[admin/settings/advanced:hsts.help, https:\\/\\/hstspreload.org\\/]]\n            &lt;/p&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:traffic-management]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;p class=\&quot;help-block\&quot;&gt;\n            [[admin/settings/advanced:traffic.help]]\n        &lt;/p&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot; for=\&quot;eventLoopCheckEnabled\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; id=\&quot;eventLoopCheckEnabled\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;eventLoopCheckEnabled\&quot; checked /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/advanced:traffic.enable]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;eventLoopLagThreshold\&quot;&gt;[[admin/settings/advanced:traffic.event-lag]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;eventLoopLagThreshold\&quot; type=\&quot;number\&quot; data-field=\&quot;eventLoopLagThreshold\&quot; placeholder=\&quot;Default: 70\&quot; step=\&quot;10\&quot; min=\&quot;10\&quot; value=\&quot;70\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:traffic.event-lag-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;eventLoopInterval\&quot;&gt;[[admin/settings/advanced:traffic.lag-check-interval]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;eventLoopInterval\&quot; type=\&quot;number\&quot; data-field=\&quot;eventLoopInterval\&quot; placeholder=\&quot;Default: 500\&quot; value=\&quot;500\&quot; step=\&quot;50\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:traffic.lag-check-interval-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:sockets.settings]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maxReconnectionAttempts\&quot;&gt;[[admin/settings/advanced:sockets.max-attempts]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;maxReconnectionAttempts\&quot; type=\&quot;text\&quot; value=\&quot;5\&quot; placeholder=\&quot;[[admin/settings/advanced:sockets.default-placeholder, 5]]\&quot; data-field=\&quot;maxReconnectionAttempts\&quot; /&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;reconnectionDelay\&quot;&gt;[[admin/settings/advanced:sockets.delay]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;reconnectionDelay\&quot; type=\&quot;text\&quot; value=\&quot;1500\&quot; placeholder=\&quot;[[admin/settings/advanced:sockets.default-placeholder, 1500]]\&quot; data-field=\&quot;reconnectionDelay\&quot; /&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:analytics.settings]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;analytics:maxCache\&quot;&gt;[[admin/settings/advanced:analytics.max-cache]]&lt;/label&gt;\n                &lt;input class=\&quot;form-control\&quot; id=\&quot;analytics:maxCache\&quot; type=\&quot;text\&quot; value=\&quot;500\&quot; placeholder=\&quot;500\&quot; data-field=\&quot;analytics:maxCache\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:analytics.max-cache-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/advanced:compression.settings]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/advanced:compression.help]]\n                &lt;/p&gt;\n                &lt;div class=\&quot;checkbox\&quot;&gt;\n                    &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                        &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;useCompression\&quot;&gt;\n                        &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/advanced:compression.enable]]&lt;/strong&gt;&lt;/span&gt;\n                    &lt;/label&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;\n\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;groupsExemptFromMaintenanceMode&#039;: function groupsExemptFromMaintenanceMode(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;groupsExemptFromMaintenanceMode&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;option value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;groupsExemptFromMaintenanceMode&#039;] != null &amp;&amp; context[&#039;groupsExemptFromMaintenanceMode&#039;][key0] != null) ? context[&#039;groupsExemptFromMaintenanceMode&#039;][key0][&#039;displayName&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;groupsExemptFromMaintenanceMode&#039;] != null &amp;&amp; context[&#039;groupsExemptFromMaintenanceMode&#039;][key0] != null) ? context[&#039;groupsExemptFromMaintenanceMode&#039;][key0][&#039;displayName&#039;] : null)) + 
+          &quot;&lt;/option&gt;\n                    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

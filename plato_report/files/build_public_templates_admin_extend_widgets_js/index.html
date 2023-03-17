@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/extend/widgets.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/extend/widgets.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">75.44</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">122</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">52.05</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.23</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div id=\&quot;widgets\&quot; class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-md-8\&quot; id=\&quot;active-widgets\&quot;&gt;\n        &lt;ul class=\&quot;nav nav-pills\&quot;&gt;\n\n            &lt;li role=\&quot;presentation\&quot; class=\&quot;dropdown\&quot;&gt;\n                &lt;a class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; href=\&quot;#\&quot; role=\&quot;button\&quot; aria-haspopup=\&quot;true\&quot; aria-expanded=\&quot;false\&quot;&gt;\n                &lt;span class=\&quot;selected-template\&quot;&gt;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][&#039;0&#039;] != null) ? context[&#039;templates&#039;][&#039;0&#039;][&#039;template&#039;] : null)) + 
+      &quot;&lt;/span&gt; &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n                &lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot;&gt;\n                    &quot; + 
+      compiled.blocks[&#039;templates&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n        &lt;/ul&gt;\n\n        &lt;div class=\&quot;row\&quot;&gt;\n            &lt;div class=\&quot;col-xs-12\&quot;&gt;\n                &lt;div class=\&quot;tab-content\&quot;&gt;\n                &quot; + 
+      iter(guard((context != null) ? context[&#039;templates&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;div class=\&quot;tab-pane &quot; + 
+          (index === 0 ?
+            &quot;active&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; data-template=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                    &quot; + 
+          iter(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;areas&#039;] : null), function each(key1, index, length, value) {
+            var key = key1;
+            return &quot;\n                        &lt;div class=\&quot;area\&quot; data-template=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+              &quot;\&quot; data-location=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;][key1] != null) ? context[&#039;templates&#039;][key0][&#039;areas&#039;][key1][&#039;location&#039;] : null)) + 
+              &quot;\&quot;&gt;\n                            &lt;h4&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;][key1] != null) ? context[&#039;templates&#039;][key0][&#039;areas&#039;][key1][&#039;name&#039;] : null)) + 
+              &quot; &lt;small&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+              &quot; / &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0][&#039;areas&#039;][key1] != null) ? context[&#039;templates&#039;][key0][&#039;areas&#039;][key1][&#039;location&#039;] : null)) + 
+              &quot;&lt;/small&gt;&lt;/h4&gt;\n                            &lt;div class=\&quot;well widget-area\&quot;&gt;\n\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                    &quot;;
+          }, function alt() {
+            return &quot;&quot;;
+          }) + 
+          &quot;\n                    &lt;/div&gt;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      }) + 
+      &quot;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n\n    &lt;div class=\&quot;col-md-4\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;[[admin/extend/widgets:available]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;div class=\&quot;available-widgets\&quot;&gt;\n                    &lt;p&gt;[[admin/extend/widgets:explanation]]&lt;/p&gt;\n                    &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null) ? context[&#039;availableWidgets&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n                    &lt;div class=\&quot;alert alert-info\&quot;&gt;[[admin/extend/widgets:none-installed, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/plugins]]&lt;/div&gt;\n                    &quot;) + 
+      &quot;\n                    &lt;p&gt;\n                        &lt;select id=\&quot;widget-selector\&quot; class=\&quot;form-control\&quot;&gt;\n                            &quot; + 
+      compiled.blocks[&#039;availableWidgets&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                        &lt;/select&gt;\n                    &lt;/p&gt;\n                    &lt;div class=\&quot;row\&quot;&gt;\n                        &quot; + 
+      iter(guard((context != null) ? context[&#039;availableWidgets&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                        &lt;div class=\&quot;col-xs-12\&quot;&gt;\n                            &lt;div data-widget=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;widget&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;panel widget-panel panel-default pointer hide\&quot;&gt;\n                                &lt;div class=\&quot;panel-heading\&quot;&gt;\n                                    &lt;strong&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/strong&gt;\n                                    &lt;small&gt;&lt;br /&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;description&#039;] : null)) + 
+          &quot;&lt;/small&gt;\n                                &lt;/div&gt;\n                                &lt;div class=\&quot;panel-body hidden\&quot;&gt;\n                                    &lt;form&gt;\n                                        &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;content&#039;] : null)) + 
+          &quot;\n                                    &lt;/form&gt;\n                                &lt;/div&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                        &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      }) + 
+      &quot;\n                    &lt;/div&gt;\n\n                    &lt;div class=\&quot;btn-group\&quot; component=\&quot;clone\&quot;&gt;\n                        &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-primary\&quot; component=\&quot;clone/button\&quot;&gt;[[admin/extend/widgets:clone-from]] ...&lt;/button&gt;\n                        &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-primary dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot;&gt;\n                            &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n                        &lt;/button&gt;\n                        &lt;ul class=\&quot;dropdown-menu pull-right\&quot;&gt;\n                            &quot; + 
+      iter(guard((context != null) ? context[&#039;templates&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                            &quot; + 
+          (index === 0 ?
+            &quot;&quot; :
+            &quot;\n                            &lt;li&gt;&lt;a href=\&quot;#\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+              &quot;&lt;/a&gt;&lt;/li&gt;\n                            &quot;) + 
+          &quot;\n                            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      }) + 
+      &quot;\n                        &lt;/ul&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;[[admin/extend/widgets:containers.available]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;p&gt;[[admin/extend/widgets:containers.explanation]]&lt;/p&gt;\n                &lt;div class=\&quot;available-containers\&quot;&gt;\n                    &lt;div class=\&quot;containers\&quot;&gt;\n                        &lt;div class=\&quot;pointer\&quot; style=\&quot;padding: 20px; border: 1px dotted #dedede; margin-bottom: 20px;\&quot; data-container-html=\&quot; \&quot;&gt;\n                            [[admin/extend/widgets:containers.none]]\n                        &lt;/div&gt;\n                        &lt;div class=\&quot;well pointer\&quot; data-container-html=&#039;&lt;div class=\&quot;well\&quot;&gt;&quot; + 
+      &quot;{{body}}&lt;/div&gt;&#039;&gt;\n                            [[admin/extend/widgets:container.well]]\n                        &lt;/div&gt;\n                        &lt;div class=\&quot;jumbotron pointer\&quot; data-container-html=&#039;&lt;div class=\&quot;jumbotron\&quot;&gt;&quot; + 
+      &quot;{{body}}&lt;/div&gt;&#039;&gt;\n                            [[admin/extend/widgets:container.jumbotron]]\n                        &lt;/div&gt;\n                        &lt;div class=\&quot;panel\&quot; data-container-html=&#039;&lt;div class=\&quot;panel panel-default\&quot;&gt;&lt;div class=\&quot;panel-body\&quot;&gt;&quot; + 
+      &quot;{{body}}&lt;/div&gt;&lt;/div&gt;&#039;&gt;\n                            &lt;div class=\&quot;panel-body pointer\&quot;&gt;\n                                [[admin/extend/widgets:container.panel]]\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                        &lt;div class=\&quot;panel panel-default pointer\&quot; data-container-html=&#039;&lt;div class=\&quot;panel panel-default\&quot;&gt;&lt;div class=\&quot;panel-heading\&quot;&gt;&lt;h3 class=\&quot;panel-title\&quot;&gt;&quot; + 
+      &quot;{{title}}&lt;/h3&gt;&lt;/div&gt;&lt;div class=\&quot;panel-body\&quot;&gt;&quot; + 
+      &quot;{{body}}&lt;/div&gt;&lt;/div&gt;&#039;&gt;\n                            &lt;div class=\&quot;panel-heading\&quot;&gt;\n                                [[admin/extend/widgets:container.panel-header]]\n                                &lt;div class=\&quot;pull-right color-selector\&quot;&gt;\n                                    &lt;button data-class=\&quot;panel-default\&quot; class=\&quot;btn btn-xs\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                    &lt;button data-class=\&quot;panel-primary\&quot; class=\&quot;btn btn-xs btn-primary\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                    &lt;button data-class=\&quot;panel-success\&quot; class=\&quot;btn btn-xs btn-success\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                    &lt;button data-class=\&quot;panel-info\&quot; class=\&quot;btn btn-xs btn-info\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                    &lt;button data-class=\&quot;panel-warning\&quot; class=\&quot;btn btn-xs btn-warning\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                    &lt;button data-class=\&quot;panel-danger\&quot; class=\&quot;btn btn-xs btn-danger\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                &lt;/div&gt;\n                            &lt;/div&gt;\n                            &lt;div class=\&quot;panel-body\&quot;&gt;\n                                [[admin/extend/widgets:container.panel-body]]\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n\n                        &lt;div class=\&quot;alert alert-info pointer\&quot; data-container-html=&#039;&lt;div class=\&quot;alert alert-info\&quot;&gt;&quot; + 
+      &quot;{{body}}&lt;/div&gt;&#039;&gt;\n                            [[admin/extend/widgets:container.alert]]\n                            &lt;div class=\&quot;pull-right color-selector\&quot;&gt;\n                                &lt;button data-class=\&quot;alert-success\&quot; class=\&quot;btn btn-xs btn-success\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                &lt;button data-class=\&quot;alert-info\&quot; class=\&quot;btn btn-xs btn-info\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                &lt;button data-class=\&quot;alert-warning\&quot; class=\&quot;btn btn-xs btn-warning\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                                &lt;button data-class=\&quot;alert-danger\&quot; class=\&quot;btn btn-xs btn-danger\&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/button&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;templates&#039;: function templates(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;templates&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;li&gt;&lt;a href=\&quot;#\&quot; data-template=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+          &quot;\&quot; data-toggle=\&quot;pill\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;templates&#039;] != null &amp;&amp; context[&#039;templates&#039;][key0] != null) ? context[&#039;templates&#039;][key0][&#039;template&#039;] : null)) + 
+          &quot;&lt;/a&gt;&lt;/li&gt;\n                    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;availableWidgets&#039;: function availableWidgets(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;availableWidgets&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                            &lt;option value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;widget&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;availableWidgets&#039;] != null &amp;&amp; context[&#039;availableWidgets&#039;][key0] != null) ? context[&#039;availableWidgets&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/option&gt;\n                            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

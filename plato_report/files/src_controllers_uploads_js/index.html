@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/uploads.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/uploads.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">62.54</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">203</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">47.15</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.12</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+
+const user = require(&#039;../user&#039;);
+const meta = require(&#039;../meta&#039;);
+const file = require(&#039;../file&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const image = require(&#039;../image&#039;);
+const privileges = require(&#039;../privileges&#039;);
+
+const helpers = require(&#039;./helpers&#039;);
+
+const uploadsController = module.exports;
+
+uploadsController.upload = async function (req, res, filesIterator) {
+    let files;
+    try {
+        files = req.files.files;
+    } catch (e) {
+        return helpers.formatApiResponse(400, res);
+    }
+
+    // These checks added because of odd behaviour by request: https://github.com/request/request/issues/2445
+    if (!Array.isArray(files)) {
+        return helpers.formatApiResponse(500, res, new Error(&#039;[[error:invalid-file]]&#039;));
+    }
+    if (Array.isArray(files[0])) {
+        files = files[0];
+    }
+
+    try {
+        const images = [];
+        for (const fileObj of files) {
+            /* eslint-disable no-await-in-loop */
+            images.push(await filesIterator(fileObj));
+        }
+
+        helpers.formatApiResponse(200, res, { images });
+
+        return images;
+    } catch (err) {
+        return helpers.formatApiResponse(500, res, err);
+    } finally {
+        deleteTempFiles(files);
+    }
+};
+
+uploadsController.uploadPost = async function (req, res) {
+    await uploadsController.upload(req, res, async (uploadedFile) =&gt; {
+        const isImage = uploadedFile.type.match(/image./);
+        if (isImage) {
+            return await uploadAsImage(req, uploadedFile);
+        }
+        return await uploadAsFile(req, uploadedFile);
+    });
+};
+
+async function uploadAsImage(req, uploadedFile) {
+    const canUpload = await privileges.global.can(&#039;upload:post:image&#039;, req.uid);
+    if (!canUpload) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    await image.checkDimensions(uploadedFile.path);
+    await image.stripEXIF(uploadedFile.path);
+
+    if (plugins.hooks.hasListeners(&#039;filter:uploadImage&#039;)) {
+        return await plugins.hooks.fire(&#039;filter:uploadImage&#039;, {
+            image: uploadedFile,
+            uid: req.uid,
+            folder: &#039;files&#039;,
+        });
+    }
+    await image.isFileTypeAllowed(uploadedFile.path);
+
+    let fileObj = await uploadsController.uploadFile(req.uid, uploadedFile);
+    // sharp can&#039;t save svgs skip resize for them
+    const isSVG = uploadedFile.type === &#039;image/svg+xml&#039;;
+    if (isSVG || meta.config.resizeImageWidth === 0 || meta.config.resizeImageWidthThreshold === 0) {
+        return fileObj;
+    }
+
+    fileObj = await resizeImage(fileObj);
+    return { url: fileObj.url };
+}
+
+async function uploadAsFile(req, uploadedFile) {
+    const canUpload = await privileges.global.can(&#039;upload:post:file&#039;, req.uid);
+    if (!canUpload) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    const fileObj = await uploadsController.uploadFile(req.uid, uploadedFile);
+    return {
+        url: fileObj.url,
+        name: fileObj.name,
+    };
+}
+
+async function resizeImage(fileObj) {
+    const imageData = await image.size(fileObj.path);
+    if (
+        imageData.width &lt; meta.config.resizeImageWidthThreshold ||
+        meta.config.resizeImageWidth &gt; meta.config.resizeImageWidthThreshold
+    ) {
+        return fileObj;
+    }
+
+    await image.resizeImage({
+        path: fileObj.path,
+        target: file.appendToFileName(fileObj.path, &#039;-resized&#039;),
+        width: meta.config.resizeImageWidth,
+        quality: meta.config.resizeImageQuality,
+    });
+    // Return the resized version to the composer/postData
+    fileObj.url = file.appendToFileName(fileObj.url, &#039;-resized&#039;);
+
+    return fileObj;
+}
+
+uploadsController.uploadThumb = async function (req, res) {
+    if (!meta.config.allowTopicsThumbnail) {
+        deleteTempFiles(req.files.files);
+        return helpers.formatApiResponse(503, res, new Error(&#039;[[error:topic-thumbnails-are-disabled]]&#039;));
+    }
+
+    return await uploadsController.upload(req, res, async (uploadedFile) =&gt; {
+        if (!uploadedFile.type.match(/image./)) {
+            throw new Error(&#039;[[error:invalid-file]]&#039;);
+        }
+        await image.isFileTypeAllowed(uploadedFile.path);
+        const dimensions = await image.checkDimensions(uploadedFile.path);
+
+        if (dimensions.width &gt; parseInt(meta.config.topicThumbSize, 10)) {
+            await image.resizeImage({
+                path: uploadedFile.path,
+                width: meta.config.topicThumbSize,
+            });
+        }
+        if (plugins.hooks.hasListeners(&#039;filter:uploadImage&#039;)) {
+            return await plugins.hooks.fire(&#039;filter:uploadImage&#039;, {
+                image: uploadedFile,
+                uid: req.uid,
+                folder: &#039;files&#039;,
+            });
+        }
+
+        return await uploadsController.uploadFile(req.uid, uploadedFile);
+    });
+};
+
+uploadsController.uploadFile = async function (uid, uploadedFile) {
+    if (plugins.hooks.hasListeners(&#039;filter:uploadFile&#039;)) {
+        return await plugins.hooks.fire(&#039;filter:uploadFile&#039;, {
+            file: uploadedFile,
+            uid: uid,
+            folder: &#039;files&#039;,
+        });
+    }
+
+    if (!uploadedFile) {
+        throw new Error(&#039;[[error:invalid-file]]&#039;);
+    }
+
+    if (uploadedFile.size &gt; meta.config.maximumFileSize * 1024) {
+        throw new Error(`[[error:file-too-big, ${meta.config.maximumFileSize}]]`);
+    }
+
+    const allowed = file.allowedExtensions();
+
+    const extension = path.extname(uploadedFile.name).toLowerCase();
+    if (allowed.length &gt; 0 &amp;&amp; (!extension || extension === &#039;.&#039; || !allowed.includes(extension))) {
+        throw new Error(`[[error:invalid-file-type, ${allowed.join(&#039;&amp;#44; &#039;)}]]`);
+    }
+
+    return await saveFileToLocal(uid, &#039;files&#039;, uploadedFile);
+};
+
+async function saveFileToLocal(uid, folder, uploadedFile) {
+    const name = uploadedFile.name || &#039;upload&#039;;
+    const extension = path.extname(name) || &#039;&#039;;
+
+    const filename = `${Date.now()}-${validator.escape(name.slice(0, -extension.length)).slice(0, 255)}${extension}`;
+
+    const upload = await file.saveFileToLocal(filename, folder, uploadedFile.path);
+    const storedFile = {
+        url: nconf.get(&#039;relative_path&#039;) + upload.url,
+        path: upload.path,
+        name: uploadedFile.name,
+    };
+
+    await user.associateUpload(uid, upload.url.replace(`${nconf.get(&#039;upload_url&#039;)}/`, &#039;&#039;));
+    const data = await plugins.hooks.fire(&#039;filter:uploadStored&#039;, { uid: uid, uploadedFile: uploadedFile, storedFile: storedFile });
+    return data.storedFile;
+}
+
+function deleteTempFiles(files) {
+    files.forEach(fileObj =&gt; file.delete(fileObj.path));
+}
+
+require(&#039;../promisify&#039;)(uploadsController, [&#039;upload&#039;, &#039;uploadPost&#039;, &#039;uploadThumb&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

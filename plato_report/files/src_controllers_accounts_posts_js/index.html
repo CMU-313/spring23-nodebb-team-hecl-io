@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/accounts/posts.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/accounts/posts.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">254</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">40.32</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.38</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const db = require(&#039;../../database&#039;);
+const user = require(&#039;../../user&#039;);
+const posts = require(&#039;../../posts&#039;);
+const topics = require(&#039;../../topics&#039;);
+const categories = require(&#039;../../categories&#039;);
+const privileges = require(&#039;../../privileges&#039;);
+const pagination = require(&#039;../../pagination&#039;);
+const helpers = require(&#039;../helpers&#039;);
+const accountHelpers = require(&#039;./helpers&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const utils = require(&#039;../../utils&#039;);
+
+const postsController = module.exports;
+
+const templateToData = {
+    &#039;account/bookmarks&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[topic:bookmarks.has_no_bookmarks]]&#039;,
+        crumb: &#039;[[user:bookmarks]]&#039;,
+        getSets: function (callerUid, userData) {
+            return `uid:${userData.uid}:bookmarks`;
+        },
+    },
+    &#039;account/posts&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_posts]]&#039;,
+        crumb: &#039;[[global:posts]]&#039;,
+        getSets: async function (callerUid, userData) {
+            const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, callerUid, &#039;topics:read&#039;);
+            return cids.map(c =&gt; `cid:${c}:uid:${userData.uid}:pids`);
+        },
+    },
+    &#039;account/upvoted&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_upvoted_posts]]&#039;,
+        crumb: &#039;[[global:upvoted]]&#039;,
+        getSets: function (callerUid, userData) {
+            return `uid:${userData.uid}:upvote`;
+        },
+    },
+    &#039;account/downvoted&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_downvoted_posts]]&#039;,
+        crumb: &#039;[[global:downvoted]]&#039;,
+        getSets: function (callerUid, userData) {
+            return `uid:${userData.uid}:downvote`;
+        },
+    },
+    &#039;account/best&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_best_posts]]&#039;,
+        crumb: &#039;[[global:best]]&#039;,
+        getSets: async function (callerUid, userData) {
+            const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, callerUid, &#039;topics:read&#039;);
+            return cids.map(c =&gt; `cid:${c}:uid:${userData.uid}:pids:votes`);
+        },
+        getTopics: async (sets, req, start, stop) =&gt; {
+            let pids = await db.getSortedSetRevRangeByScore(sets, start, stop - start + 1, &#039;+inf&#039;, 1);
+            pids = await privileges.posts.filter(&#039;topics:read&#039;, pids, req.uid);
+            const postObjs = await posts.getPostSummaryByPids(pids, req.uid, { stripTags: false });
+            return { posts: postObjs, nextStart: stop + 1 };
+        },
+        getItemCount: async (sets) =&gt; {
+            const counts = await Promise.all(sets.map(set =&gt; db.sortedSetCount(set, 1, &#039;+inf&#039;)));
+            return counts.reduce((acc, val) =&gt; acc + val, 0);
+        },
+    },
+    &#039;account/controversial&#039;: {
+        type: &#039;posts&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_controversial_posts]]&#039;,
+        crumb: &#039;[[global:controversial]]&#039;,
+        getSets: async function (callerUid, userData) {
+            const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, callerUid, &#039;topics:read&#039;);
+            return cids.map(c =&gt; `cid:${c}:uid:${userData.uid}:pids:votes`);
+        },
+        getTopics: async (sets, req, start, stop) =&gt; {
+            let pids = await db.getSortedSetRangeByScore(sets, start, stop - start + 1, &#039;-inf&#039;, -1);
+            pids = await privileges.posts.filter(&#039;topics:read&#039;, pids, req.uid);
+            const postObjs = await posts.getPostSummaryByPids(pids, req.uid, { stripTags: false });
+            return { posts: postObjs, nextStart: stop + 1 };
+        },
+        getItemCount: async (sets) =&gt; {
+            const counts = await Promise.all(sets.map(set =&gt; db.sortedSetCount(set, &#039;-inf&#039;, -1)));
+            return counts.reduce((acc, val) =&gt; acc + val, 0);
+        },
+    },
+    &#039;account/watched&#039;: {
+        type: &#039;topics&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_watched_topics]]&#039;,
+        crumb: &#039;[[user:watched]]&#039;,
+        getSets: function (callerUid, userData) {
+            return `uid:${userData.uid}:followed_tids`;
+        },
+        getTopics: async function (set, req, start, stop) {
+            const { sort } = req.query;
+            const map = {
+                votes: &#039;topics:votes&#039;,
+                posts: &#039;topics:posts&#039;,
+                views: &#039;topics:views&#039;,
+                lastpost: &#039;topics:recent&#039;,
+                firstpost: &#039;topics:tid&#039;,
+            };
+
+            if (!sort || !map[sort]) {
+                return await topics.getTopicsFromSet(set, req.uid, start, stop);
+            }
+            const sortSet = map[sort];
+            let tids = await db.getSortedSetRevRange(set, 0, -1);
+            const scores = await db.sortedSetScores(sortSet, tids);
+            tids = tids.map((tid, i) =&gt; ({ tid: tid, score: scores[i] }))
+                .sort((a, b) =&gt; b.score - a.score)
+                .slice(start, stop + 1)
+                .map(t =&gt; t.tid);
+
+            const topicsData = await topics.getTopics(tids, req.uid);
+            topics.calculateTopicIndices(topicsData, start);
+            return { topics: topicsData, nextStart: stop + 1 };
+        },
+    },
+    &#039;account/ignored&#039;: {
+        type: &#039;topics&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_ignored_topics]]&#039;,
+        crumb: &#039;[[user:ignored]]&#039;,
+        getSets: function (callerUid, userData) {
+            return `uid:${userData.uid}:ignored_tids`;
+        },
+    },
+    &#039;account/topics&#039;: {
+        type: &#039;topics&#039;,
+        noItemsFoundKey: &#039;[[user:has_no_topics]]&#039;,
+        crumb: &#039;[[global:topics]]&#039;,
+        getSets: async function (callerUid, userData) {
+            const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, callerUid, &#039;topics:read&#039;);
+            return cids.map(c =&gt; `cid:${c}:uid:${userData.uid}:tids`);
+        },
+    },
+};
+
+postsController.getBookmarks = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/bookmarks&#039;, req, res, next);
+};
+
+postsController.getPosts = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/posts&#039;, req, res, next);
+};
+
+postsController.getUpVotedPosts = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/upvoted&#039;, req, res, next);
+};
+
+postsController.getDownVotedPosts = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/downvoted&#039;, req, res, next);
+};
+
+postsController.getBestPosts = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/best&#039;, req, res, next);
+};
+
+postsController.getControversialPosts = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/controversial&#039;, req, res, next);
+};
+
+postsController.getWatchedTopics = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/watched&#039;, req, res, next);
+};
+
+postsController.getIgnoredTopics = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/ignored&#039;, req, res, next);
+};
+
+postsController.getTopics = async function (req, res, next) {
+    await getPostsFromUserSet(&#039;account/topics&#039;, req, res, next);
+};
+
+async function getPostsFromUserSet(template, req, res, next) {
+    const data = templateToData[template];
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
+    const [userData, settings] = await Promise.all([
+        accountHelpers.getUserDataByUserSlug(req.params.userslug, req.uid, req.query),
+        user.getSettings(req.uid),
+    ]);
+
+    if (!userData) {
+        return next();
+    }
+    const itemsPerPage = data.type === &#039;topics&#039; ? settings.topicsPerPage : settings.postsPerPage;
+    const start = (page - 1) * itemsPerPage;
+    const stop = start + itemsPerPage - 1;
+    const sets = await data.getSets(req.uid, userData);
+    let result;
+    if (plugins.hooks.hasListeners(&#039;filter:account.getPostsFromUserSet&#039;)) {
+        result = await plugins.hooks.fire(&#039;filter:account.getPostsFromUserSet&#039;, {
+            req: req,
+            template: template,
+            userData: userData,
+            settings: settings,
+            data: data,
+            start: start,
+            stop: stop,
+            itemCount: 0,
+            itemData: [],
+        });
+    } else {
+        result = await utils.promiseParallel({
+            itemCount: getItemCount(sets, data, settings),
+            itemData: getItemData(sets, data, req, start, stop),
+        });
+    }
+    const { itemCount, itemData } = result;
+    userData[data.type] = itemData[data.type];
+    userData.nextStart = itemData.nextStart;
+
+    const pageCount = Math.ceil(itemCount / itemsPerPage);
+    userData.pagination = pagination.create(page, pageCount, req.query);
+
+    userData.noItemsFoundKey = data.noItemsFoundKey;
+    userData.title = `[[pages:${template}, ${userData.username}]]`;
+    userData.breadcrumbs = helpers.buildBreadcrumbs([{ text: userData.username, url: `/user/${userData.userslug}` }, { text: data.crumb }]);
+    userData.showSort = template === &#039;account/watched&#039;;
+    const baseUrl = (req.baseUrl + req.path.replace(/^\/api/, &#039;&#039;));
+    userData.sortOptions = [
+        { url: `${baseUrl}?sort=votes`, name: &#039;[[global:votes]]&#039; },
+        { url: `${baseUrl}?sort=posts`, name: &#039;[[global:posts]]&#039; },
+        { url: `${baseUrl}?sort=views`, name: &#039;[[global:views]]&#039; },
+        { url: `${baseUrl}?sort=lastpost`, name: &#039;[[global:lastpost]]&#039; },
+        { url: `${baseUrl}?sort=firstpost`, name: &#039;[[global:firstpost]]&#039; },
+    ];
+    userData.sortOptions.forEach((option) =&gt; {
+        option.selected = option.url.includes(`sort=${req.query.sort}`);
+    });
+
+    res.render(template, userData);
+}
+
+async function getItemData(sets, data, req, start, stop) {
+    if (data.getTopics) {
+        return await data.getTopics(sets, req, start, stop);
+    }
+    const method = data.type === &#039;topics&#039; ? topics.getTopicsFromSet : posts.getPostSummariesFromSet;
+    return await method(sets, req.uid, start, stop);
+}
+
+async function getItemCount(sets, data, settings) {
+    if (!settings.usePagination) {
+        return 0;
+    }
+    if (data.getItemCount) {
+        return await data.getItemCount(sets);
+    }
+    return await db.sortedSetsCardSum(sets);
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

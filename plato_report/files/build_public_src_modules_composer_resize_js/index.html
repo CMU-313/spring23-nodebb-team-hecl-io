@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/composer/resize.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/composer/resize.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.16</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">193</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.16</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.75</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;composer/resize&#039;, [&#039;taskbar&#039;], function (taskbar) {
+	var resize = {};
+	var oldRatio = 0;
+	var minimumRatio = 0.3;
+	var snapMargin = 0.05;
+	var mediumMin = 992;
+
+	var $body = $(&#039;body&#039;);
+	var $window = $(window);
+	var $headerMenu = $(&#039;[component=&quot;navbar&quot;]&#039;);
+
+	var body = document.body;
+	var header = $headerMenu[0];
+
+	function getSavedRatio() {
+		return localStorage.getItem(&#039;composer:resizeRatio&#039;) || 0.5;
+	}
+
+	function saveRatio(ratio) {
+		localStorage.setItem(&#039;composer:resizeRatio&#039;, Math.min(ratio, 1));
+	}
+
+	function getBounds() {
+		var headerRect;
+		if (header) {
+			headerRect = header.getBoundingClientRect();
+		} else {
+			// Mock data
+			headerRect = { bottom: 0 };
+		}
+
+		var headerBottom = Math.max(headerRect.bottom, 0);
+
+		var rect = {
+			top: 0,
+			left: 0,
+			right: window.innerWidth,
+			bottom: window.innerHeight,
+		};
+
+		rect.width = rect.right;
+		rect.height = rect.bottom;
+
+		rect.boundedTop = headerBottom;
+		rect.boundedHeight = rect.bottom - headerBottom;
+
+		return rect;
+	}
+
+	function doResize(postContainer, ratio) {
+		var bounds = getBounds();
+		var elem = postContainer[0];
+		var style = window.getComputedStyle(elem);
+
+		// Adjust minimumRatio for shorter viewports
+		var minHeight = parseInt(style.getPropertyValue(&#039;min-height&#039;), 10);
+		var adjustedMinimum = Math.max(minHeight / window.innerHeight, minimumRatio);
+
+		if (bounds.width &gt;= mediumMin) {
+			const boundedDifference = (bounds.height - bounds.boundedHeight) / bounds.height;
+			ratio = Math.min(Math.max(ratio, adjustedMinimum + boundedDifference), 1);
+
+			var top = ratio * bounds.boundedHeight / bounds.height;
+			elem.style.top = ((1 - top) * 100).toString() + &#039;%&#039;;
+
+			// Add some extra space at the bottom of the body so that
+			// the user can still scroll to the last post w/ composer open
+			var rect = elem.getBoundingClientRect();
+			body.style.paddingBottom = (rect.bottom - rect.top).toString() + &#039;px&#039;;
+		} else {
+			postContainer.removeAttr(&#039;style&#039;);
+			body.style.paddingBottom = 0;
+		}
+
+		postContainer.ratio = ratio;
+		elem.style.visibility = &#039;visible&#039;;
+
+		taskbar.updateActive(postContainer.attr(&#039;data-uuid&#039;));
+	}
+
+	var resizeIt = doResize;
+	var raf = window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame;
+
+	if (raf) {
+		resizeIt = function (postContainer, ratio) {
+			raf(function () {
+				doResize(postContainer, ratio);
+
+				setTimeout(function () {
+					$window.trigger(&#039;action:composer.resize&#039;);
+					postContainer.trigger(&#039;action:composer.resize&#039;);
+				}, 0);
+			});
+		};
+	}
+
+	resize.reposition = function (postContainer) {
+		var ratio = getSavedRatio();
+
+		if (ratio &gt;= 1 - snapMargin) {
+			ratio = 1;
+			postContainer.addClass(&#039;maximized&#039;);
+		}
+
+		resizeIt(postContainer, ratio);
+	};
+
+	resize.maximize = function (postContainer, state) {
+		if (state) {
+			resizeIt(postContainer, 1);
+		} else {
+			resize.reposition(postContainer);
+		}
+	};
+
+	resize.handleResize = function (postContainer) {
+		var resizeOffset = 0;
+		var resizeBegin = 0;
+		var resizeEnd = 0;
+		var $resizer = postContainer.find(&#039;.resizer&#039;);
+		var resizer = $resizer[0];
+
+		function resizeStart(e) {
+			var resizeRect = resizer.getBoundingClientRect();
+			var resizeCenterY = (resizeRect.top + resizeRect.bottom) / 2;
+
+			resizeOffset = (resizeCenterY - e.clientY) / 2;
+			resizeBegin = e.clientY;
+
+			$window.on(&#039;mousemove&#039;, resizeAction);
+			$window.on(&#039;mouseup&#039;, resizeStop);
+			$body.on(&#039;touchmove&#039;, resizeTouchAction);
+		}
+
+		function resizeAction(e) {
+			var position = e.clientY - resizeOffset;
+			var bounds = getBounds();
+			var ratio = (bounds.height - position) / (bounds.boundedHeight);
+
+			resizeIt(postContainer, ratio);
+		}
+
+		function resizeStop(e) {
+			e.preventDefault();
+			resizeEnd = e.clientY;
+
+			postContainer.find(&#039;textarea&#039;).focus();
+			$window.off(&#039;mousemove&#039;, resizeAction);
+			$window.off(&#039;mouseup&#039;, resizeStop);
+			$body.off(&#039;touchmove&#039;, resizeTouchAction);
+
+			var position = resizeEnd - resizeOffset;
+			var bounds = getBounds();
+			var ratio = (bounds.height - position) / (bounds.boundedHeight);
+
+			if (resizeEnd - resizeBegin === 0 &amp;&amp; postContainer.hasClass(&#039;maximized&#039;)) {
+				postContainer.removeClass(&#039;maximized&#039;);
+				ratio = (!oldRatio || oldRatio &gt;= 1 - snapMargin) ? 0.5 : oldRatio;
+				resizeIt(postContainer, ratio);
+			} else if (resizeEnd - resizeBegin === 0 || ratio &gt;= 1 - snapMargin) {
+				resizeIt(postContainer, 1);
+				postContainer.addClass(&#039;maximized&#039;);
+				oldRatio = ratio;
+			} else {
+				postContainer.removeClass(&#039;maximized&#039;);
+			}
+
+			saveRatio(ratio);
+		}
+
+		function resizeTouchAction(e) {
+			e.preventDefault();
+			resizeAction(e.touches[0]);
+		}
+
+		$resizer
+			.on(&#039;mousedown&#039;, function (e) {
+				e.preventDefault();
+				resizeStart(e);
+			})
+			.on(&#039;touchstart&#039;, function (e) {
+				e.preventDefault();
+				resizeStart(e.touches[0]);
+			})
+			.on(&#039;touchend&#039;, resizeStop);
+	};
+
+	return resize;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

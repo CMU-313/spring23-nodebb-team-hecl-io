@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/messaging/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/messaging/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">306</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">53.95</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.74</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+const validator = require(&#039;validator&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const meta = require(&#039;../meta&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const Messaging = module.exports;
+
+require(&#039;./data&#039;)(Messaging);
+require(&#039;./create&#039;)(Messaging);
+require(&#039;./delete&#039;)(Messaging);
+require(&#039;./edit&#039;)(Messaging);
+require(&#039;./rooms&#039;)(Messaging);
+require(&#039;./unread&#039;)(Messaging);
+require(&#039;./notifications&#039;)(Messaging);
+
+Messaging.messageExists = async mid =&gt; db.exists(`message:${mid}`);
+
+Messaging.getMessages = async (params) =&gt; {
+    const isNew = params.isNew || false;
+    const start = params.hasOwnProperty(&#039;start&#039;) ? params.start : 0;
+    const stop = parseInt(start, 10) + ((params.count || 50) - 1);
+
+    const indices = {};
+    const ok = await canGet(&#039;filter:messaging.canGetMessages&#039;, params.callerUid, params.uid);
+    if (!ok) {
+        return;
+    }
+
+    const mids = await db.getSortedSetRevRange(`uid:${params.uid}:chat:room:${params.roomId}:mids`, start, stop);
+    if (!mids.length) {
+        return [];
+    }
+    mids.forEach((mid, index) =&gt; {
+        indices[mid] = start + index;
+    });
+    mids.reverse();
+
+    const messageData = await Messaging.getMessagesData(mids, params.uid, params.roomId, isNew);
+    messageData.forEach((messageData) =&gt; {
+        messageData.index = indices[messageData.messageId.toString()];
+        messageData.isOwner = messageData.fromuid === parseInt(params.uid, 10);
+        if (messageData.deleted &amp;&amp; !messageData.isOwner) {
+            messageData.content = &#039;[[modules:chat.message-deleted]]&#039;;
+            messageData.cleanedContent = messageData.content;
+        }
+    });
+
+    return messageData;
+};
+
+async function canGet(hook, callerUid, uid) {
+    const data = await plugins.hooks.fire(hook, {
+        callerUid: callerUid,
+        uid: uid,
+        canGet: parseInt(callerUid, 10) === parseInt(uid, 10),
+    });
+
+    return data ? data.canGet : false;
+}
+
+Messaging.parse = async (message, fromuid, uid, roomId, isNew) =&gt; {
+    const parsed = await plugins.hooks.fire(&#039;filter:parse.raw&#039;, String(message || &#039;&#039;));
+    let messageData = {
+        message: message,
+        parsed: parsed,
+        fromuid: fromuid,
+        uid: uid,
+        roomId: roomId,
+        isNew: isNew,
+        parsedMessage: parsed,
+    };
+
+    messageData = await plugins.hooks.fire(&#039;filter:messaging.parse&#039;, messageData);
+    return messageData ? messageData.parsedMessage : &#039;&#039;;
+};
+
+Messaging.isNewSet = async (uid, roomId, timestamp) =&gt; {
+    const setKey = `uid:${uid}:chat:room:${roomId}:mids`;
+    const messages = await db.getSortedSetRevRangeWithScores(setKey, 0, 0);
+    if (messages &amp;&amp; messages.length) {
+        return parseInt(timestamp, 10) &gt; parseInt(messages[0].score, 10) + Messaging.newMessageCutoff;
+    }
+    return true;
+};
+
+Messaging.getRecentChats = async (callerUid, uid, start, stop) =&gt; {
+    const ok = await canGet(&#039;filter:messaging.canGetRecentChats&#039;, callerUid, uid);
+    if (!ok) {
+        return null;
+    }
+
+    const roomIds = await db.getSortedSetRevRange(`uid:${uid}:chat:rooms`, start, stop);
+    const results = await utils.promiseParallel({
+        roomData: Messaging.getRoomsData(roomIds),
+        unread: db.isSortedSetMembers(`uid:${uid}:chat:rooms:unread`, roomIds),
+        users: Promise.all(roomIds.map(async (roomId) =&gt; {
+            let uids = await db.getSortedSetRevRange(`chat:room:${roomId}:uids`, 0, 9);
+            uids = uids.filter(_uid =&gt; _uid &amp;&amp; parseInt(_uid, 10) !== parseInt(uid, 10));
+            return await user.getUsersFields(uids, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;, &#039;status&#039;, &#039;lastonline&#039;]);
+        })),
+        teasers: Promise.all(roomIds.map(async roomId =&gt; Messaging.getTeaser(uid, roomId))),
+    });
+
+    results.roomData.forEach((room, index) =&gt; {
+        if (room) {
+            room.users = results.users[index];
+            room.groupChat = room.hasOwnProperty(&#039;groupChat&#039;) ? room.groupChat : room.users.length &gt; 2;
+            room.unread = results.unread[index];
+            room.teaser = results.teasers[index];
+
+            room.users.forEach((userData) =&gt; {
+                if (userData &amp;&amp; parseInt(userData.uid, 10)) {
+                    userData.status = user.getStatus(userData);
+                }
+            });
+            room.users = room.users.filter(user =&gt; user &amp;&amp; parseInt(user.uid, 10));
+            room.lastUser = room.users[0];
+
+            room.usernames = Messaging.generateUsernames(room.users, uid);
+        }
+    });
+
+    results.roomData = results.roomData.filter(Boolean);
+    const ref = { rooms: results.roomData, nextStart: stop + 1 };
+    return await plugins.hooks.fire(&#039;filter:messaging.getRecentChats&#039;, {
+        rooms: ref.rooms,
+        nextStart: ref.nextStart,
+        uid: uid,
+        callerUid: callerUid,
+    });
+};
+
+Messaging.generateUsernames = (users, excludeUid) =&gt; users.filter(user =&gt; user &amp;&amp; parseInt(user.uid, 10) !== excludeUid)
+    .map(user =&gt; user.username).join(&#039;, &#039;);
+
+Messaging.getTeaser = async (uid, roomId) =&gt; {
+    const mid = await Messaging.getLatestUndeletedMessage(uid, roomId);
+    if (!mid) {
+        return null;
+    }
+    const teaser = await Messaging.getMessageFields(mid, [&#039;fromuid&#039;, &#039;content&#039;, &#039;timestamp&#039;]);
+    if (!teaser.fromuid) {
+        return null;
+    }
+    const blocked = await user.blocks.is(teaser.fromuid, uid);
+    if (blocked) {
+        return null;
+    }
+
+    teaser.user = await user.getUserFields(teaser.fromuid, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;, &#039;status&#039;, &#039;lastonline&#039;]);
+    if (teaser.content) {
+        teaser.content = utils.stripHTMLTags(utils.decodeHTMLEntities(teaser.content));
+        teaser.content = validator.escape(String(teaser.content));
+    }
+
+    const payload = await plugins.hooks.fire(&#039;filter:messaging.getTeaser&#039;, { teaser: teaser });
+    return payload.teaser;
+};
+
+Messaging.getLatestUndeletedMessage = async (uid, roomId) =&gt; {
+    let done = false;
+    let latestMid = null;
+    let index = 0;
+    let mids;
+
+    while (!done) {
+        /* eslint-disable no-await-in-loop */
+        mids = await db.getSortedSetRevRange(`uid:${uid}:chat:room:${roomId}:mids`, index, index);
+        if (mids.length) {
+            const states = await Messaging.getMessageFields(mids[0], [&#039;deleted&#039;, &#039;system&#039;]);
+            done = !states.deleted &amp;&amp; !states.system;
+            if (done) {
+                latestMid = mids[0];
+            }
+            index += 1;
+        } else {
+            done = true;
+        }
+    }
+
+    return latestMid;
+};
+
+Messaging.canMessageUser = async (uid, toUid) =&gt; {
+    if (meta.config.disableChat || uid &lt;= 0) {
+        throw new Error(&#039;[[error:chat-disabled]]&#039;);
+    }
+
+    if (parseInt(uid, 10) === parseInt(toUid, 10)) {
+        throw new Error(&#039;[[error:cant-chat-with-yourself]]&#039;);
+    }
+    const [exists, canChat] = await Promise.all([
+        user.exists(toUid),
+        privileges.global.can(&#039;chat&#039;, uid),
+        checkReputation(uid),
+    ]);
+
+    if (!exists) {
+        throw new Error(&#039;[[error:no-user]]&#039;);
+    }
+
+    if (!canChat) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    const [settings, isAdmin, isModerator, isFollowing, isBlocked] = await Promise.all([
+        user.getSettings(toUid),
+        user.isAdministrator(uid),
+        user.isModeratorOfAnyCategory(uid),
+        user.isFollowing(toUid, uid),
+        user.blocks.is(uid, toUid),
+    ]);
+
+    if (isBlocked || (settings.restrictChat &amp;&amp; !isAdmin &amp;&amp; !isModerator &amp;&amp; !isFollowing)) {
+        throw new Error(&#039;[[error:chat-restricted]]&#039;);
+    }
+
+    await plugins.hooks.fire(&#039;static:messaging.canMessageUser&#039;, {
+        uid: uid,
+        toUid: toUid,
+    });
+};
+
+Messaging.canMessageRoom = async (uid, roomId) =&gt; {
+    if (meta.config.disableChat || uid &lt;= 0) {
+        throw new Error(&#039;[[error:chat-disabled]]&#039;);
+    }
+
+    const [inRoom, canChat] = await Promise.all([
+        Messaging.isUserInRoom(uid, roomId),
+        privileges.global.can(&#039;chat&#039;, uid),
+        checkReputation(uid),
+    ]);
+
+    if (!inRoom) {
+        throw new Error(&#039;[[error:not-in-room]]&#039;);
+    }
+
+    if (!canChat) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    await plugins.hooks.fire(&#039;static:messaging.canMessageRoom&#039;, {
+        uid: uid,
+        roomId: roomId,
+    });
+};
+
+async function checkReputation(uid) {
+    if (meta.config[&#039;min:rep:chat&#039;] &gt; 0) {
+        const reputation = await user.getUserField(uid, &#039;reputation&#039;);
+        if (meta.config[&#039;min:rep:chat&#039;] &gt; reputation) {
+            throw new Error(`[[error:not-enough-reputation-to-chat, ${meta.config[&#039;min:rep:chat&#039;]}]]`);
+        }
+    }
+}
+
+Messaging.hasPrivateChat = async (uid, withUid) =&gt; {
+    if (parseInt(uid, 10) === parseInt(withUid, 10)) {
+        return 0;
+    }
+
+    const results = await utils.promiseParallel({
+        myRooms: db.getSortedSetRevRange(`uid:${uid}:chat:rooms`, 0, -1),
+        theirRooms: db.getSortedSetRevRange(`uid:${withUid}:chat:rooms`, 0, -1),
+    });
+    const roomIds = results.myRooms.filter(roomId =&gt; roomId &amp;&amp; results.theirRooms.includes(roomId));
+
+    if (!roomIds.length) {
+        return 0;
+    }
+
+    let index = 0;
+    let roomId = 0;
+    while (index &lt; roomIds.length &amp;&amp; !roomId) {
+        /* eslint-disable no-await-in-loop */
+        const count = await Messaging.getUserCountInRoom(roomIds[index]);
+        if (count === 2) {
+            roomId = roomIds[index];
+        } else {
+            index += 1;
+        }
+    }
+
+    return roomId;
+};
+
+Messaging.canViewMessage = async (mids, roomId, uid) =&gt; {
+    let single = false;
+    if (!Array.isArray(mids) &amp;&amp; isFinite(mids)) {
+        mids = [mids];
+        single = true;
+    }
+
+    const canView = await db.isSortedSetMembers(`uid:${uid}:chat:room:${roomId}:mids`, mids);
+    return single ? canView.pop() : canView;
+};
+
+require(&#039;../promisify&#039;)(Messaging);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

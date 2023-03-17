@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/write/topics.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/write/topics.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.53</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">293</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">80.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.20</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&quot;use strict&quot;;
+var __importDefault = (this &amp;&amp; this.__importDefault) || function (mod) {
+    return (mod &amp;&amp; mod.__esModule) ? mod : { &quot;default&quot;: mod };
+};
+Object.defineProperty(exports, &quot;__esModule&quot;, { value: true });
+exports.deleteEvent = exports.getEvents = exports.reorderThumbs = exports.deleteThumb = exports.migrateThumbs = exports.addThumb = exports.getThumbs = exports.deleteTags = exports.addTags = exports.unfollow = exports.ignore = exports.follow = exports.unlock = exports.lock = exports.unresolve = exports.resolve = exports.unpin = exports.pin = exports.purge = exports.restore = exports.delete = exports.del = exports.reply = exports.create = exports.get = void 0;
+const validator_1 = __importDefault(require(&quot;validator&quot;));
+const database_1 = __importDefault(require(&quot;../../database&quot;));
+const api_1 = __importDefault(require(&quot;../../api&quot;));
+const topics_1 = __importDefault(require(&quot;../../topics&quot;));
+const privileges_1 = __importDefault(require(&quot;../../privileges&quot;));
+const helpers_1 = __importDefault(require(&quot;../helpers&quot;));
+const middleware_1 = __importDefault(require(&quot;../../middleware&quot;));
+const uploads_1 = __importDefault(require(&quot;../uploads&quot;));
+const get = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await helpers_1.default.formatApiResponse(200, res, await api_1.default.topics.get(req, req.params));
+};
+exports.get = get;
+async function lockPosting(req, error) {
+    const id = req.uid &gt; 0 ? req.uid : req.sessionID;
+    const value = `posting${id}`;
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    const count = await database_1.default.incrObjectField(&#039;locks&#039;, value);
+    if (count &gt; 1) {
+        throw new Error(error);
+    }
+    return value;
+}
+const create = async (req, res) =&gt; {
+    const id = await lockPosting(req, &#039;[[error:already-posting]]&#039;);
+    try {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const payload = await api_1.default.topics.create(req, req.body);
+        if (payload.queued) {
+            await helpers_1.default.formatApiResponse(202, res, payload);
+        }
+        else {
+            await helpers_1.default.formatApiResponse(200, res, payload);
+        }
+    }
+    finally {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.deleteObjectField(&#039;locks&#039;, id);
+    }
+};
+exports.create = create;
+const reply = async (req, res) =&gt; {
+    const id = await lockPosting(req, &#039;[[error:already-posting]]&#039;);
+    try {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const payload = await api_1.default.topics.reply(req, Object.assign(Object.assign({}, req.body), { tid: req.params.tid }));
+        await helpers_1.default.formatApiResponse(200, res, payload);
+    }
+    finally {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.deleteObjectField(&#039;locks&#039;, id);
+    }
+};
+exports.reply = reply;
+const del = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.delete(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.del = del;
+exports.delete = exports.del;
+const restore = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.restore(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.restore = restore;
+const purge = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.purge(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.purge = purge;
+const pin = async (req, res) =&gt; {
+    // Pin expiry was not available w/ sockets hence not included in api lib method
+    if (req.body.expiry) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await topics_1.default.tools.setPinExpiry(req.params.tid, req.body.expiry, req.uid);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.pin(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.pin = pin;
+const unpin = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.unpin(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.unpin = unpin;
+const resolve = async (req, res) =&gt; {
+    await api_1.default.topics.resolve(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.resolve = resolve;
+const unresolve = async (req, res) =&gt; {
+    await api_1.default.topics.unresolve(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.unresolve = unresolve;
+const lock = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.lock(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.lock = lock;
+const unlock = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.unlock(req, { tids: [req.params.tid] });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.unlock = unlock;
+const follow = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.follow(req, req.params);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.follow = follow;
+const ignore = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.ignore(req, req.params);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.ignore = ignore;
+const unfollow = async (req, res) =&gt; {
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await api_1.default.topics.unfollow(req, req.params);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.unfollow = unfollow;
+const addTags = async (req, res) =&gt; {
+    if (!await privileges_1.default.topics.canEdit(req.params.tid, req.user.uid)) {
+        return helpers_1.default.formatApiResponse(403, res);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    const cid = await topics_1.default.getTopicField(req.params.tid, &#039;cid&#039;);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await topics_1.default.validateTags(req.body.tags, cid, req.user.uid, req.params.tid);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    const tags = await topics_1.default.filterTags(req.body.tags);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await topics_1.default.addTags(tags, [req.params.tid]);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.addTags = addTags;
+const deleteTags = async (req, res) =&gt; {
+    if (!await privileges_1.default.topics.canEdit(req.params.tid, req.user.uid)) {
+        return helpers_1.default.formatApiResponse(403, res);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await topics_1.default.deleteTopicTags(req.params.tid);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.deleteTags = deleteTags;
+const getThumbs = async (req, res) =&gt; {
+    // post_uuids can be passed in occasionally, in that case no checks are necessary
+    if (isFinite(parseInt(req.params.tid, 10))) {
+        const [exists, canRead] = await Promise.all([
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            topics_1.default.exists(req.params.tid),
+            privileges_1.default.topics.can(&#039;topics:read&#039;, req.params.tid, req.uid),
+        ]);
+        if (!exists || !canRead) {
+            return helpers_1.default.formatApiResponse(403, res);
+        }
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await helpers_1.default.formatApiResponse(200, res, await topics_1.default.thumbs.get(req.params.tid));
+};
+exports.getThumbs = getThumbs;
+async function checkThumbPrivileges({ tid, uid, res }) {
+    // req.params.tid could be either a tid (pushing a new thumb to an existing topic)
+    // or a post UUID (a new topic being composed)
+    const isUUID = validator_1.default.isUUID(tid);
+    // Sanity-check the tid if it&#039;s strictly not a uuid
+    if (!isUUID &amp;&amp; (isNaN(parseInt(tid, 10)) || !await topics_1.default.exists(tid))) {
+        return helpers_1.default.formatApiResponse(404, res, new Error(&#039;[[error:no-topic]]&#039;));
+    }
+    // While drafts are not protected, tids are
+    if (!isUUID &amp;&amp; !await privileges_1.default.topics.canEdit(tid, uid)) {
+        return helpers_1.default.formatApiResponse(403, res, new Error(&#039;[[error:no-privileges]]&#039;));
+    }
+}
+const addThumb = async (req, res) =&gt; {
+    await checkThumbPrivileges({ tid: req.params.tid, uid: req.user.uid, res });
+    if (res.headersSent) {
+        return;
+    }
+    const files = await uploads_1.default.uploadThumb(req, res); // response is handled here
+    // Add uploaded files to topic zset
+    if (files &amp;&amp; files.length) {
+        await Promise.all(files.map(async (fileObj) =&gt; {
+            await topics_1.default.thumbs.associate({
+                id: req.params.tid,
+                path: fileObj.path || fileObj.url,
+            });
+        }));
+    }
+};
+exports.addThumb = addThumb;
+const migrateThumbs = async (req, res) =&gt; {
+    await Promise.all([
+        checkThumbPrivileges({ tid: req.params.tid, uid: req.user.uid, res }),
+        checkThumbPrivileges({ tid: req.body.tid, uid: req.user.uid, res }),
+    ]);
+    if (res.headersSent) {
+        return;
+    }
+    await topics_1.default.thumbs.migrate(req.params.tid, req.body.tid);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.migrateThumbs = migrateThumbs;
+const deleteThumb = async (req, res) =&gt; {
+    if (!req.body.path.startsWith(&#039;http&#039;)) {
+        middleware_1.default.assert.path(req, res, () =&gt; { console.log(&#039;complete&#039;); });
+        if (res.headersSent) {
+            return;
+        }
+    }
+    await checkThumbPrivileges({ tid: req.params.tid, uid: req.user.uid, res });
+    if (res.headersSent) {
+        return;
+    }
+    await topics_1.default.thumbs.delete(req.params.tid, req.body.path);
+    await helpers_1.default.formatApiResponse(200, res, await topics_1.default.thumbs.get(req.params.tid));
+};
+exports.deleteThumb = deleteThumb;
+const reorderThumbs = async (req, res) =&gt; {
+    await checkThumbPrivileges({ tid: req.params.tid, uid: req.user.uid, res });
+    if (res.headersSent) {
+        return;
+    }
+    const exists = await topics_1.default.thumbs.exists(req.params.tid, req.body.path);
+    if (!exists) {
+        return helpers_1.default.formatApiResponse(404, res);
+    }
+    await topics_1.default.thumbs.associate({
+        id: req.params.tid,
+        path: req.body.path,
+        score: req.body.order,
+    });
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.reorderThumbs = reorderThumbs;
+const getEvents = async (req, res) =&gt; {
+    if (!await privileges_1.default.topics.can(&#039;topics:read&#039;, req.params.tid, req.uid)) {
+        return helpers_1.default.formatApiResponse(403, res);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await helpers_1.default.formatApiResponse(200, res, await topics_1.default.events.get(req.params.tid, req.uid));
+};
+exports.getEvents = getEvents;
+const deleteEvent = async (req, res) =&gt; {
+    if (!await privileges_1.default.topics.isAdminOrMod(req.params.tid, req.uid)) {
+        return helpers_1.default.formatApiResponse(403, res);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    await topics_1.default.events.purge(req.params.tid, [req.params.eventId]);
+    await helpers_1.default.formatApiResponse(200, res);
+};
+exports.deleteEvent = deleteEvent;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

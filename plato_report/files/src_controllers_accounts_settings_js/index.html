@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/accounts/settings.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/accounts/settings.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">60.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">243</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.71</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.03</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+const _ = require(&#039;lodash&#039;);
+const jwt = require(&#039;jsonwebtoken&#039;);
+const util = require(&#039;util&#039;);
+
+const user = require(&#039;../../user&#039;);
+const languages = require(&#039;../../languages&#039;);
+const meta = require(&#039;../../meta&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const notifications = require(&#039;../../notifications&#039;);
+const db = require(&#039;../../database&#039;);
+const helpers = require(&#039;../helpers&#039;);
+const accountHelpers = require(&#039;./helpers&#039;);
+
+const settingsController = module.exports;
+
+settingsController.get = async function (req, res, next) {
+    const userData = await accountHelpers.getUserDataByUserSlug(req.params.userslug, req.uid, req.query);
+    if (!userData) {
+        return next();
+    }
+    const [settings, languagesData] = await Promise.all([
+        user.getSettings(userData.uid),
+        languages.list(),
+    ]);
+
+    userData.settings = settings;
+    userData.languages = languagesData;
+    if (userData.isAdmin &amp;&amp; userData.isSelf) {
+        userData.acpLanguages = _.cloneDeep(languagesData);
+    }
+
+    const data = await plugins.hooks.fire(&#039;filter:user.customSettings&#039;, {
+        settings: settings,
+        customSettings: [],
+        uid: req.uid,
+    });
+
+    const [notificationSettings, routes] = await Promise.all([
+        getNotificationSettings(userData),
+        getHomePageRoutes(userData),
+    ]);
+
+    userData.customSettings = data.customSettings;
+    userData.homePageRoutes = routes;
+    userData.notificationSettings = notificationSettings;
+    userData.disableEmailSubscriptions = meta.config.disableEmailSubscriptions;
+
+    userData.dailyDigestFreqOptions = [
+        { value: &#039;off&#039;, name: &#039;[[user:digest_off]]&#039;, selected: userData.settings.dailyDigestFreq === &#039;off&#039; },
+        { value: &#039;day&#039;, name: &#039;[[user:digest_daily]]&#039;, selected: userData.settings.dailyDigestFreq === &#039;day&#039; },
+        { value: &#039;week&#039;, name: &#039;[[user:digest_weekly]]&#039;, selected: userData.settings.dailyDigestFreq === &#039;week&#039; },
+        { value: &#039;biweek&#039;, name: &#039;[[user:digest_biweekly]]&#039;, selected: userData.settings.dailyDigestFreq === &#039;biweek&#039; },
+        { value: &#039;month&#039;, name: &#039;[[user:digest_monthly]]&#039;, selected: userData.settings.dailyDigestFreq === &#039;month&#039; },
+    ];
+
+    userData.bootswatchSkinOptions = [
+        { name: &#039;Default&#039;, value: &#039;&#039; },
+        { name: &#039;Cerulean&#039;, value: &#039;cerulean&#039; },
+        { name: &#039;Cosmo&#039;, value: &#039;cosmo&#039; },
+        { name: &#039;Cyborg&#039;, value: &#039;cyborg&#039; },
+        { name: &#039;Darkly&#039;, value: &#039;darkly&#039; },
+        { name: &#039;Flatly&#039;, value: &#039;flatly&#039; },
+        { name: &#039;Journal&#039;, value: &#039;journal&#039; },
+        { name: &#039;Lumen&#039;, value: &#039;lumen&#039; },
+        { name: &#039;Paper&#039;, value: &#039;paper&#039; },
+        { name: &#039;Readable&#039;, value: &#039;readable&#039; },
+        { name: &#039;Sandstone&#039;, value: &#039;sandstone&#039; },
+        { name: &#039;Simplex&#039;, value: &#039;simplex&#039; },
+        { name: &#039;Slate&#039;, value: &#039;slate&#039; },
+        { name: &#039;Spacelab&#039;, value: &#039;spacelab&#039; },
+        { name: &#039;Superhero&#039;, value: &#039;superhero&#039; },
+        { name: &#039;United&#039;, value: &#039;united&#039; },
+        { name: &#039;Yeti&#039;, value: &#039;yeti&#039; },
+    ];
+
+    userData.bootswatchSkinOptions.forEach((skin) =&gt; {
+        skin.selected = skin.value === userData.settings.bootswatchSkin;
+    });
+
+    userData.languages.forEach((language) =&gt; {
+        language.selected = language.code === userData.settings.userLang;
+    });
+
+    if (userData.isAdmin &amp;&amp; userData.isSelf) {
+        userData.acpLanguages.forEach((language) =&gt; {
+            language.selected = language.code === userData.settings.acpLang;
+        });
+    }
+
+    const notifFreqOptions = [
+        &#039;all&#039;,
+        &#039;first&#039;,
+        &#039;everyTen&#039;,
+        &#039;threshold&#039;,
+        &#039;logarithmic&#039;,
+        &#039;disabled&#039;,
+    ];
+
+    userData.upvoteNotifFreq = notifFreqOptions.map(
+        name =&gt; ({ name: name, selected: name === userData.settings.upvoteNotifFreq })
+    );
+
+    userData.categoryWatchState = { [userData.settings.categoryWatchState]: true };
+
+    userData.disableCustomUserSkins = meta.config.disableCustomUserSkins || 0;
+
+    userData.allowUserHomePage = meta.config.allowUserHomePage === 1 ? 1 : 0;
+
+    userData.hideFullname = meta.config.hideFullname || 0;
+    userData.hideEmail = meta.config.hideEmail || 0;
+
+    userData.inTopicSearchAvailable = plugins.hooks.hasListeners(&#039;filter:topic.search&#039;);
+
+    userData.maxTopicsPerPage = meta.config.maxTopicsPerPage;
+    userData.maxPostsPerPage = meta.config.maxPostsPerPage;
+
+    userData.title = &#039;[[pages:account/settings]]&#039;;
+    userData.breadcrumbs = helpers.buildBreadcrumbs([{ text: userData.username, url: `/user/${userData.userslug}` }, { text: &#039;[[user:settings]]&#039; }]);
+
+    res.render(&#039;account/settings&#039;, userData);
+};
+
+const unsubscribable = [&#039;digest&#039;, &#039;notification&#039;];
+const jwtVerifyAsync = util.promisify((token, callback) =&gt; {
+    jwt.verify(token, nconf.get(&#039;secret&#039;), (err, payload) =&gt; callback(err, payload));
+});
+const doUnsubscribe = async (payload) =&gt; {
+    if (payload.template === &#039;digest&#039;) {
+        await Promise.all([
+            user.setSetting(payload.uid, &#039;dailyDigestFreq&#039;, &#039;off&#039;),
+            user.updateDigestSetting(payload.uid, &#039;off&#039;),
+        ]);
+    } else if (payload.template === &#039;notification&#039;) {
+        const current = await db.getObjectField(`user:${payload.uid}:settings`, `notificationType_${payload.type}`);
+        await user.setSetting(payload.uid, `notificationType_${payload.type}`, (current === &#039;notificationemail&#039; ? &#039;notification&#039; : &#039;none&#039;));
+    }
+    return true;
+};
+
+settingsController.unsubscribe = async (req, res) =&gt; {
+    try {
+        const payload = await jwtVerifyAsync(req.params.token);
+        if (!payload || !unsubscribable.includes(payload.template)) {
+            return;
+        }
+        await doUnsubscribe(payload);
+        res.render(&#039;unsubscribe&#039;, {
+            payload,
+        });
+    } catch (err) {
+        res.render(&#039;unsubscribe&#039;, {
+            error: err.message,
+        });
+    }
+};
+
+settingsController.unsubscribePost = async function (req, res) {
+    let payload;
+    try {
+        payload = await jwtVerifyAsync(req.params.token);
+        if (!payload || !unsubscribable.includes(payload.template)) {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        return res.sendStatus(403);
+    }
+    try {
+        await doUnsubscribe(payload);
+        res.sendStatus(200);
+    } catch (err) {
+        winston.error(`[settings/unsubscribe] One-click unsubscribe failed with error: ${err.message}`);
+        res.sendStatus(500);
+    }
+};
+
+async function getNotificationSettings(userData) {
+    const privilegedTypes = [];
+
+    const privileges = await user.getPrivileges(userData.uid);
+    if (privileges.isAdmin) {
+        privilegedTypes.push(&#039;notificationType_new-register&#039;);
+    }
+    if (privileges.isAdmin || privileges.isGlobalMod || privileges.isModeratorOfAnyCategory) {
+        privilegedTypes.push(&#039;notificationType_post-queue&#039;, &#039;notificationType_new-post-flag&#039;);
+    }
+    if (privileges.isAdmin || privileges.isGlobalMod) {
+        privilegedTypes.push(&#039;notificationType_new-user-flag&#039;);
+    }
+    const results = await plugins.hooks.fire(&#039;filter:user.notificationTypes&#039;, {
+        types: notifications.baseTypes.slice(),
+        privilegedTypes: privilegedTypes,
+    });
+
+    function modifyType(type) {
+        const setting = userData.settings[type];
+        return {
+            name: type,
+            label: `[[notifications:${type}]]`,
+            none: setting === &#039;none&#039;,
+            notification: setting === &#039;notification&#039;,
+            email: setting === &#039;email&#039;,
+            notificationemail: setting === &#039;notificationemail&#039;,
+        };
+    }
+
+    if (meta.config.disableChat) {
+        results.types = results.types.filter(type =&gt; type !== &#039;notificationType_new-chat&#039;);
+    }
+
+    return results.types.map(modifyType).concat(results.privilegedTypes.map(modifyType));
+}
+
+async function getHomePageRoutes(userData) {
+    let routes = await helpers.getHomePageRoutes(userData.uid);
+
+    // Set selected for each route
+    let customIdx;
+    let hasSelected = false;
+    routes = routes.map((route, idx) =&gt; {
+        if (route.route === userData.settings.homePageRoute) {
+            route.selected = true;
+            hasSelected = true;
+        } else {
+            route.selected = false;
+        }
+
+        if (route.route === &#039;custom&#039;) {
+            customIdx = idx;
+        }
+
+        return route;
+    });
+
+    if (!hasSelected &amp;&amp; customIdx &amp;&amp; userData.settings.homePageRoute !== &#039;none&#039;) {
+        routes[customIdx].selected = true;
+    }
+
+    return routes;
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

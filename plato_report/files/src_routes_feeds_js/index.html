@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/routes/feeds.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/routes/feeds.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">58.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">423</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">58.35</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.57</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const rss = require(&#039;rss&#039;);
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+
+const posts = require(&#039;../posts&#039;);
+const topics = require(&#039;../topics&#039;);
+const user = require(&#039;../user&#039;);
+const categories = require(&#039;../categories&#039;);
+const meta = require(&#039;../meta&#039;);
+const helpers = require(&#039;../controllers/helpers&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const db = require(&#039;../database&#039;);
+const utils = require(&#039;../utils&#039;);
+const controllers404 = require(&#039;../controllers/404&#039;);
+
+const terms = {
+    daily: &#039;day&#039;,
+    weekly: &#039;week&#039;,
+    monthly: &#039;month&#039;,
+    alltime: &#039;alltime&#039;,
+};
+
+module.exports = function (app, middleware) {
+    app.get(&#039;/topic/:topic_id.rss&#039;, middleware.maintenanceMode, generateForTopic);
+    app.get(&#039;/category/:category_id.rss&#039;, middleware.maintenanceMode, generateForCategory);
+    app.get(&#039;/topics.rss&#039;, middleware.maintenanceMode, generateForTopics);
+    app.get(&#039;/recent.rss&#039;, middleware.maintenanceMode, generateForRecent);
+    app.get(&#039;/top.rss&#039;, middleware.maintenanceMode, generateForTop);
+    app.get(&#039;/top/:term.rss&#039;, middleware.maintenanceMode, generateForTop);
+    app.get(&#039;/popular.rss&#039;, middleware.maintenanceMode, generateForPopular);
+    app.get(&#039;/popular/:term.rss&#039;, middleware.maintenanceMode, generateForPopular);
+    app.get(&#039;/recentposts.rss&#039;, middleware.maintenanceMode, generateForRecentPosts);
+    app.get(&#039;/category/:category_id/recentposts.rss&#039;, middleware.maintenanceMode, generateForCategoryRecentPosts);
+    app.get(&#039;/user/:userslug/topics.rss&#039;, middleware.maintenanceMode, generateForUserTopics);
+    app.get(&#039;/tags/:tag.rss&#039;, middleware.maintenanceMode, generateForTag);
+};
+
+async function validateTokenIfRequiresLogin(requiresLogin, cid, req, res) {
+    const uid = parseInt(req.query.uid, 10) || 0;
+    const { token } = req.query;
+
+    if (!requiresLogin) {
+        return true;
+    }
+
+    if (uid &lt;= 0 || !token) {
+        return helpers.notAllowed(req, res);
+    }
+    const userToken = await db.getObjectField(`user:${uid}`, &#039;rss_token&#039;);
+    if (userToken !== token) {
+        await user.auth.logAttempt(uid, req.ip);
+        return helpers.notAllowed(req, res);
+    }
+    const userPrivileges = await privileges.categories.get(cid, uid);
+    if (!userPrivileges.read) {
+        return helpers.notAllowed(req, res);
+    }
+    return true;
+}
+
+async function generateForTopic(req, res, next) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return next();
+    }
+
+    const tid = req.params.topic_id;
+
+    const [userPrivileges, topic] = await Promise.all([
+        privileges.topics.get(tid, req.uid),
+        topics.getTopicData(tid),
+    ]);
+
+    if (!privileges.topics.canViewDeletedScheduled(topic, userPrivileges)) {
+        return next();
+    }
+
+    if (await validateTokenIfRequiresLogin(!userPrivileges[&#039;topics:read&#039;], topic.cid, req, res)) {
+        const topicData = await topics.getTopicWithPosts(topic, `tid:${tid}:posts`, req.uid || req.query.uid || 0, 0, 24, true);
+
+        topics.modifyPostsByPrivilege(topicData, userPrivileges);
+
+        const feed = new rss({
+            title: utils.stripHTMLTags(topicData.title, utils.tags),
+            description: topicData.posts.length ? topicData.posts[0].content : &#039;&#039;,
+            feed_url: `${nconf.get(&#039;url&#039;)}/topic/${tid}.rss`,
+            site_url: `${nconf.get(&#039;url&#039;)}/topic/${topicData.slug}`,
+            image_url: topicData.posts.length ? topicData.posts[0].picture : &#039;&#039;,
+            author: topicData.posts.length ? topicData.posts[0].username : &#039;&#039;,
+            ttl: 60,
+        });
+
+        if (topicData.posts.length &gt; 0) {
+            feed.pubDate = new Date(parseInt(topicData.posts[0].timestamp, 10)).toUTCString();
+        }
+        const replies = topicData.posts.slice(1);
+        replies.forEach((postData) =&gt; {
+            if (!postData.deleted) {
+                const dateStamp = new Date(
+                    parseInt(parseInt(postData.edited, 10) === 0 ? postData.timestamp : postData.edited, 10)
+                ).toUTCString();
+
+                feed.item({
+                    title: `Reply to ${utils.stripHTMLTags(topicData.title, utils.tags)} on ${dateStamp}`,
+                    description: postData.content,
+                    url: `${nconf.get(&#039;url&#039;)}/post/${postData.pid}`,
+                    author: postData.user ? postData.user.username : &#039;&#039;,
+                    date: dateStamp,
+                });
+            }
+        });
+
+        sendFeed(feed, res);
+    }
+}
+
+async function generateForCategory(req, res, next) {
+    const cid = req.params.category_id;
+    if (meta.config[&#039;feeds:disableRSS&#039;] || !parseInt(cid, 10)) {
+        return next();
+    }
+    const uid = req.uid || req.query.uid || 0;
+    const [userPrivileges, category, tids] = await Promise.all([
+        privileges.categories.get(cid, req.uid),
+        categories.getCategoryData(cid),
+        db.getSortedSetRevIntersect({
+            sets: [&#039;topics:tid&#039;, `cid:${cid}:tids:lastposttime`],
+            start: 0,
+            stop: 25,
+            weights: [1, 0],
+        }),
+    ]);
+
+    if (!category || !category.name) {
+        return next();
+    }
+
+    if (await validateTokenIfRequiresLogin(!userPrivileges.read, cid, req, res)) {
+        let topicsData = await topics.getTopicsByTids(tids, uid);
+        topicsData = await user.blocks.filter(uid, topicsData);
+        const feed = await generateTopicsFeed({
+            uid: uid,
+            title: category.name,
+            description: category.description,
+            feed_url: `/category/${cid}.rss`,
+            site_url: `/category/${category.cid}`,
+        }, topicsData, &#039;timestamp&#039;);
+
+        sendFeed(feed, res);
+    }
+}
+
+async function generateForTopics(req, res, next) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return next();
+    }
+    let token = null;
+    if (req.query.token &amp;&amp; req.query.uid) {
+        token = await db.getObjectField(`user:${req.query.uid}`, &#039;rss_token&#039;);
+    }
+
+    await sendTopicsFeed({
+        uid: token &amp;&amp; token === req.query.token ? req.query.uid : req.uid,
+        title: &#039;Most recently created topics&#039;,
+        description: &#039;A list of topics that have been created recently&#039;,
+        feed_url: &#039;/topics.rss&#039;,
+        useMainPost: true,
+    }, &#039;topics:tid&#039;, res);
+}
+
+async function generateForRecent(req, res, next) {
+    await generateSorted({
+        title: &#039;Recently Active Topics&#039;,
+        description: &#039;A list of topics that have been active within the past 24 hours&#039;,
+        feed_url: &#039;/recent.rss&#039;,
+        site_url: &#039;/recent&#039;,
+        sort: &#039;recent&#039;,
+        timestampField: &#039;lastposttime&#039;,
+        term: &#039;alltime&#039;,
+    }, req, res, next);
+}
+
+async function generateForTop(req, res, next) {
+    await generateSorted({
+        title: &#039;Top Voted Topics&#039;,
+        description: &#039;A list of topics that have received the most votes&#039;,
+        feed_url: `/top/${req.params.term || &#039;daily&#039;}.rss`,
+        site_url: `/top/${req.params.term || &#039;daily&#039;}`,
+        sort: &#039;votes&#039;,
+        timestampField: &#039;timestamp&#039;,
+        term: &#039;day&#039;,
+    }, req, res, next);
+}
+
+async function generateForPopular(req, res, next) {
+    await generateSorted({
+        title: &#039;Popular Topics&#039;,
+        description: &#039;A list of topics that are sorted by post count&#039;,
+        feed_url: `/popular/${req.params.term || &#039;daily&#039;}.rss`,
+        site_url: `/popular/${req.params.term || &#039;daily&#039;}`,
+        sort: &#039;posts&#039;,
+        timestampField: &#039;timestamp&#039;,
+        term: &#039;day&#039;,
+    }, req, res, next);
+}
+
+async function generateSorted(options, req, res, next) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return next();
+    }
+
+    const term = terms[req.params.term] || options.term;
+
+    let token = null;
+    if (req.query.token &amp;&amp; req.query.uid) {
+        token = await db.getObjectField(`user:${req.query.uid}`, &#039;rss_token&#039;);
+    }
+
+    const uid = token &amp;&amp; token === req.query.token ? req.query.uid : req.uid;
+
+    const params = {
+        uid: uid,
+        start: 0,
+        stop: 19,
+        term: term,
+        sort: options.sort,
+    };
+
+    const { cid } = req.query;
+    if (cid) {
+        if (!await privileges.categories.can(&#039;topics:read&#039;, cid, uid)) {
+            return helpers.notAllowed(req, res);
+        }
+        params.cids = [cid];
+    }
+
+    const result = await topics.getSortedTopics(params);
+    const feed = await generateTopicsFeed({
+        uid: uid,
+        title: options.title,
+        description: options.description,
+        feed_url: options.feed_url,
+        site_url: options.site_url,
+    }, result.topics, options.timestampField);
+
+    sendFeed(feed, res);
+}
+
+async function sendTopicsFeed(options, set, res, timestampField) {
+    const start = options.hasOwnProperty(&#039;start&#039;) ? options.start : 0;
+    const stop = options.hasOwnProperty(&#039;stop&#039;) ? options.stop : 19;
+    const topicData = await topics.getTopicsFromSet(set, options.uid, start, stop);
+    const feed = await generateTopicsFeed(options, topicData.topics, timestampField);
+    sendFeed(feed, res);
+}
+
+async function generateTopicsFeed(feedOptions, feedTopics, timestampField) {
+    feedOptions.ttl = 60;
+    feedOptions.feed_url = nconf.get(&#039;url&#039;) + feedOptions.feed_url;
+    feedOptions.site_url = nconf.get(&#039;url&#039;) + feedOptions.site_url;
+
+    feedTopics = feedTopics.filter(Boolean);
+
+    const feed = new rss(feedOptions);
+
+    if (feedTopics.length &gt; 0) {
+        feed.pubDate = new Date(feedTopics[0][timestampField]).toUTCString();
+    }
+
+    async function addFeedItem(topicData) {
+        const feedItem = {
+            title: utils.stripHTMLTags(topicData.title, utils.tags),
+            url: `${nconf.get(&#039;url&#039;)}/topic/${topicData.slug}`,
+            date: new Date(topicData[timestampField]).toUTCString(),
+        };
+
+        if (topicData.deleted) {
+            return;
+        }
+
+        if (topicData.teaser &amp;&amp; topicData.teaser.user &amp;&amp; !feedOptions.useMainPost) {
+            feedItem.description = topicData.teaser.content;
+            feedItem.author = topicData.teaser.user.username;
+            feed.item(feedItem);
+            return;
+        }
+
+        const mainPost = await topics.getMainPost(topicData.tid, feedOptions.uid);
+        if (!mainPost) {
+            feed.item(feedItem);
+            return;
+        }
+        feedItem.description = mainPost.content;
+        feedItem.author = mainPost.user &amp;&amp; mainPost.user.username;
+        feed.item(feedItem);
+    }
+
+    for (const topicData of feedTopics) {
+        /* eslint-disable no-await-in-loop */
+        await addFeedItem(topicData);
+    }
+    return feed;
+}
+
+async function generateForRecentPosts(req, res, next) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return next();
+    }
+    const page = parseInt(req.query.page, 10) || 1;
+    const postsPerPage = 20;
+    const start = Math.max(0, (page - 1) * postsPerPage);
+    const stop = start + postsPerPage - 1;
+    const postData = await posts.getRecentPosts(req.uid, start, stop, &#039;month&#039;);
+    const feed = generateForPostsFeed({
+        title: &#039;Recent Posts&#039;,
+        description: &#039;A list of recent posts&#039;,
+        feed_url: &#039;/recentposts.rss&#039;,
+        site_url: &#039;/recentposts&#039;,
+    }, postData);
+
+    sendFeed(feed, res);
+}
+
+async function generateForCategoryRecentPosts(req, res) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return controllers404.handle404(req, res);
+    }
+    const cid = req.params.category_id;
+    const page = parseInt(req.query.page, 10) || 1;
+    const topicsPerPage = 20;
+    const start = Math.max(0, (page - 1) * topicsPerPage);
+    const stop = start + topicsPerPage - 1;
+    const [userPrivileges, category, postData] = await Promise.all([
+        privileges.categories.get(cid, req.uid),
+        categories.getCategoryData(cid),
+        categories.getRecentReplies(cid, req.uid || req.query.uid || 0, start, stop),
+    ]);
+
+    if (!category) {
+        return controllers404.handle404(req, res);
+    }
+
+    if (await validateTokenIfRequiresLogin(!userPrivileges.read, cid, req, res)) {
+        const feed = generateForPostsFeed({
+            title: `${category.name} Recent Posts`,
+            description: `A list of recent posts from ${category.name}`,
+            feed_url: `/category/${cid}/recentposts.rss`,
+            site_url: `/category/${cid}/recentposts`,
+        }, postData);
+
+        sendFeed(feed, res);
+    }
+}
+
+function generateForPostsFeed(feedOptions, posts) {
+    feedOptions.ttl = 60;
+    feedOptions.feed_url = nconf.get(&#039;url&#039;) + feedOptions.feed_url;
+    feedOptions.site_url = nconf.get(&#039;url&#039;) + feedOptions.site_url;
+
+    const feed = new rss(feedOptions);
+
+    if (posts.length &gt; 0) {
+        feed.pubDate = new Date(parseInt(posts[0].timestamp, 10)).toUTCString();
+    }
+
+    posts.forEach((postData) =&gt; {
+        feed.item({
+            title: postData.topic ? postData.topic.title : &#039;&#039;,
+            description: postData.content,
+            url: `${nconf.get(&#039;url&#039;)}/post/${postData.pid}`,
+            author: postData.user ? postData.user.username : &#039;&#039;,
+            date: new Date(parseInt(postData.timestamp, 10)).toUTCString(),
+        });
+    });
+
+    return feed;
+}
+
+async function generateForUserTopics(req, res, next) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return next();
+    }
+
+    const { userslug } = req.params;
+    const uid = await user.getUidByUserslug(userslug);
+    if (!uid) {
+        return next();
+    }
+    const userData = await user.getUserFields(uid, [&#039;uid&#039;, &#039;username&#039;]);
+    await sendTopicsFeed({
+        uid: req.uid,
+        title: `Topics by ${userData.username}`,
+        description: `A list of topics that are posted by ${userData.username}`,
+        feed_url: `/user/${userslug}/topics.rss`,
+        site_url: `/user/${userslug}/topics`,
+    }, `uid:${userData.uid}:topics`, res);
+}
+
+async function generateForTag(req, res) {
+    if (meta.config[&#039;feeds:disableRSS&#039;]) {
+        return controllers404.handle404(req, res);
+    }
+    const tag = validator.escape(String(req.params.tag));
+    const page = parseInt(req.query.page, 10) || 1;
+    const topicsPerPage = meta.config.topicsPerPage || 20;
+    const start = Math.max(0, (page - 1) * topicsPerPage);
+    const stop = start + topicsPerPage - 1;
+    await sendTopicsFeed({
+        uid: req.uid,
+        title: `Topics tagged with ${tag}`,
+        description: `A list of topics that have been tagged with ${tag}`,
+        feed_url: `/tags/${tag}.rss`,
+        site_url: `/tags/${tag}`,
+        start: start,
+        stop: stop,
+    }, `tag:${tag}:topics`, res);
+}
+
+function sendFeed(feed, res) {
+    const xml = feed.xml();
+    res.type(&#039;xml&#039;).set(&#039;Content-Length&#039;, Buffer.byteLength(xml)).send(xml);
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/events.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/events.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.51</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">173</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">20.63</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.42</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;./database&#039;);
+const batch = require(&#039;./batch&#039;);
+const user = require(&#039;./user&#039;);
+const utils = require(&#039;./utils&#039;);
+const plugins = require(&#039;./plugins&#039;);
+
+const events = module.exports;
+
+events.types = [
+    &#039;plugin-activate&#039;,
+    &#039;plugin-deactivate&#039;,
+    &#039;plugin-install&#039;,
+    &#039;plugin-uninstall&#039;,
+    &#039;restart&#039;,
+    &#039;build&#039;,
+    &#039;config-change&#039;,
+    &#039;settings-change&#039;,
+    &#039;category-purge&#039;,
+    &#039;privilege-change&#039;,
+    &#039;post-delete&#039;,
+    &#039;post-restore&#039;,
+    &#039;post-purge&#039;,
+    &#039;post-edit&#039;,
+    &#039;post-move&#039;,
+    &#039;post-change-owner&#039;,
+    &#039;post-queue-reply-accept&#039;,
+    &#039;post-queue-topic-accept&#039;,
+    &#039;post-queue-reply-reject&#039;,
+    &#039;post-queue-topic-reject&#039;,
+    &#039;topic-delete&#039;,
+    &#039;topic-restore&#039;,
+    &#039;topic-purge&#039;,
+    &#039;topic-rename&#039;,
+    &#039;topic-merge&#039;,
+    &#039;topic-fork&#039;,
+    &#039;topic-move&#039;,
+    &#039;topic-move-all&#039;,
+    &#039;password-reset&#039;,
+    &#039;user-makeAdmin&#039;,
+    &#039;user-removeAdmin&#039;,
+    &#039;user-ban&#039;,
+    &#039;user-unban&#039;,
+    &#039;user-mute&#039;,
+    &#039;user-unmute&#039;,
+    &#039;user-delete&#039;,
+    &#039;user-deleteAccount&#039;,
+    &#039;user-deleteContent&#039;,
+    &#039;password-change&#039;,
+    &#039;email-confirmation-sent&#039;,
+    &#039;email-change&#039;,
+    &#039;username-change&#039;,
+    &#039;ip-blacklist-save&#039;,
+    &#039;ip-blacklist-addRule&#039;,
+    &#039;registration-approved&#039;,
+    &#039;registration-rejected&#039;,
+    &#039;group-join&#039;,
+    &#039;group-request-membership&#039;,
+    &#039;group-add-member&#039;,
+    &#039;group-leave&#039;,
+    &#039;group-owner-grant&#039;,
+    &#039;group-owner-rescind&#039;,
+    &#039;group-accept-membership&#039;,
+    &#039;group-reject-membership&#039;,
+    &#039;group-invite&#039;,
+    &#039;group-invite-accept&#039;,
+    &#039;group-invite-reject&#039;,
+    &#039;group-kick&#039;,
+    &#039;theme-set&#039;,
+    &#039;export:uploads&#039;,
+    &#039;account-locked&#039;,
+    &#039;getUsersCSV&#039;,
+    // To add new types from plugins, just Array.push() to this array
+];
+
+/**
+ * Useful options in data: type, uid, ip, targetUid
+ * Everything else gets stringified and shown as pretty JSON string
+ */
+events.log = async function (data) {
+    const eid = await db.incrObjectField(&#039;global&#039;, &#039;nextEid&#039;);
+    data.timestamp = Date.now();
+    data.eid = eid;
+
+    await Promise.all([
+        db.sortedSetsAdd([
+            &#039;events:time&#039;,
+            `events:time:${data.type}`,
+        ], data.timestamp, eid),
+        db.setObject(`event:${eid}`, data),
+    ]);
+    plugins.hooks.fire(&#039;action:events.log&#039;, { data: data });
+};
+
+events.getEvents = async function (filter, start, stop, from, to) {
+    // from/to optional
+    if (from === undefined) {
+        from = 0;
+    }
+    if (to === undefined) {
+        to = Date.now();
+    }
+
+    const eids = await db.getSortedSetRevRangeByScore(`events:time${filter ? `:${filter}` : &#039;&#039;}`, start, stop - start + 1, to, from);
+    let eventsData = await db.getObjects(eids.map(eid =&gt; `event:${eid}`));
+    eventsData = eventsData.filter(Boolean);
+    await addUserData(eventsData, &#039;uid&#039;, &#039;user&#039;);
+    await addUserData(eventsData, &#039;targetUid&#039;, &#039;targetUser&#039;);
+    eventsData.forEach((event) =&gt; {
+        Object.keys(event).forEach((key) =&gt; {
+            if (typeof event[key] === &#039;string&#039;) {
+                event[key] = validator.escape(String(event[key] || &#039;&#039;));
+            }
+        });
+        const e = utils.merge(event);
+        e.eid = undefined;
+        e.uid = undefined;
+        e.type = undefined;
+        e.ip = undefined;
+        e.user = undefined;
+        event.jsonString = JSON.stringify(e, null, 4);
+        event.timestampISO = new Date(parseInt(event.timestamp, 10)).toUTCString();
+    });
+    return eventsData;
+};
+
+async function addUserData(eventsData, field, objectName) {
+    const uids = _.uniq(eventsData.map(event =&gt; event &amp;&amp; event[field]));
+
+    if (!uids.length) {
+        return eventsData;
+    }
+
+    const [isAdmin, userData] = await Promise.all([
+        user.isAdministrator(uids),
+        user.getUsersFields(uids, [&#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;]),
+    ]);
+
+    const map = {};
+    userData.forEach((user, index) =&gt; {
+        user.isAdmin = isAdmin[index];
+        map[user.uid] = user;
+    });
+
+    eventsData.forEach((event) =&gt; {
+        if (map[event[field]]) {
+            event[objectName] = map[event[field]];
+        }
+    });
+    return eventsData;
+}
+
+events.deleteEvents = async function (eids) {
+    const keys = eids.map(eid =&gt; `event:${eid}`);
+    const eventData = await db.getObjectsFields(keys, [&#039;type&#039;]);
+    const sets = _.uniq([&#039;events:time&#039;].concat(eventData.map(e =&gt; `events:time:${e.type}`)));
+    await Promise.all([
+        db.deleteAll(keys),
+        db.sortedSetRemove(sets, eids),
+    ]);
+};
+
+events.deleteAll = async function () {
+    await batch.processSortedSet(&#039;events:time&#039;, async (eids) =&gt; {
+        await events.deleteEvents(eids);
+    }, { alwaysStartAt: 0, batch: 500 });
+};
+
+require(&#039;./promisify&#039;)(events);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

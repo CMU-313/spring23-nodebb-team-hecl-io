@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/events.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/events.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.23</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">258</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">39.26</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.91</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&quot;use strict&quot;;
+var __importDefault = (this &amp;&amp; this.__importDefault) || function (mod) {
+    return (mod &amp;&amp; mod.__esModule) ? mod : { &quot;default&quot;: mod };
+};
+Object.defineProperty(exports, &quot;__esModule&quot;, { value: true });
+exports.purge = exports.log = exports.get = exports.init = exports._types = void 0;
+const lodash_1 = __importDefault(require(&quot;lodash&quot;));
+const database_1 = __importDefault(require(&quot;../database&quot;));
+const meta_1 = __importDefault(require(&quot;../meta&quot;));
+const user_1 = __importDefault(require(&quot;../user&quot;));
+const posts_1 = __importDefault(require(&quot;../posts&quot;));
+const categories_1 = __importDefault(require(&quot;../categories&quot;));
+const plugins_1 = __importDefault(require(&quot;../plugins&quot;));
+const translator_1 = __importDefault(require(&quot;../translator&quot;));
+const privileges_1 = __importDefault(require(&quot;../privileges&quot;));
+const _1 = __importDefault(require(&quot;.&quot;));
+/**
+ * Note: Plugins!
+ *
+ * You are able to define additional topic event types here.
+ * Register to hook `filter:topicEvents.init` and append your custom type to the `types` object.
+ * You can then log a custom topic event by calling `topics.events.log(tid, { type, uid });`
+ * `uid` is optional; if you pass in a valid uid in the payload,
+ * the user avatar/username will be rendered as part of the event text
+ *
+ */
+// _types must be mutable to allow plugins to modify it.
+// eslint-disable-next-line import/no-mutable-exports
+exports._types = {
+    pin: {
+        icon: &#039;fa-thumb-tack&#039;,
+        text: &#039;[[topic:pinned-by]]&#039;,
+    },
+    unpin: {
+        icon: &#039;fa-thumb-tack&#039;,
+        text: &#039;[[topic:unpinned-by]]&#039;,
+    },
+    resolve: {
+        icon: &#039;fa-check&#039;,
+        text: &#039;Resolved by&#039;,
+    },
+    unresolve: {
+        icon: &#039;fa-times&#039;,
+        text: &#039;Unresolved by&#039;,
+    },
+    lock: {
+        icon: &#039;fa-lock&#039;,
+        text: &#039;[[topic:locked-by]]&#039;,
+    },
+    unlock: {
+        icon: &#039;fa-unlock&#039;,
+        text: &#039;[[topic:unlocked-by]]&#039;,
+    },
+    delete: {
+        icon: &#039;fa-trash&#039;,
+        text: &#039;[[topic:deleted-by]]&#039;,
+    },
+    restore: {
+        icon: &#039;fa-trash-o&#039;,
+        text: &#039;[[topic:restored-by]]&#039;,
+    },
+    move: {
+        icon: &#039;fa-arrow-circle-right&#039;,
+        // text: &#039;[[topic:moved-from-by]]&#039;,
+    },
+    &#039;post-queue&#039;: {
+        icon: &#039;fa-history&#039;,
+        text: &#039;[[topic:queued-by]]&#039;,
+        href: &#039;/post-queue&#039;,
+    },
+    backlink: {
+        icon: &#039;fa-link&#039;,
+        text: &#039;[[topic:backlink]]&#039;,
+    },
+    fork: {
+        icon: &#039;fa-code-fork&#039;,
+        text: &#039;[[topic:forked-by]]&#039;,
+    },
+};
+async function init() {
+    // Allow plugins to define additional topic event types
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { types } = await plugins_1.default.hooks.fire(&#039;filter:topicEvents.init&#039;, { types: exports._types });
+    // No other way to safely extract types from plugins
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    exports._types = types;
+}
+exports.init = init;
+async function getCategoryInfo(cids) {
+    const uniqCids = lodash_1.default.uniq(cids);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    const catData = await categories_1.default.getCategoriesFields(uniqCids, [&#039;name&#039;, &#039;slug&#039;, &#039;icon&#039;, &#039;color&#039;, &#039;bgColor&#039;]);
+    return lodash_1.default.zipObject(uniqCids, catData);
+}
+async function getUserInfo(uids) {
+    uids = uids.filter((uid, idx) =&gt; !isNaN(parseInt(uid, 10)) &amp;&amp; uids.indexOf(uid) === idx);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    const userData = await user_1.default.getUsersFields(uids, [&#039;picture&#039;, &#039;username&#039;, &#039;userslug&#039;]);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const userMap = userData.reduce((memo, cur) =&gt; memo.set(cur.uid, cur), new Map());
+    userMap.set(&#039;system&#039;, {
+        system: true,
+    });
+    return userMap;
+}
+async function modifyEvent({ tid, uid, eventIds, timestamps, events }) {
+    // Add posts from post queue
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    const isPrivileged = await user_1.default.isPrivileged(uid);
+    if (isPrivileged) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const queuedPosts = await posts_1.default.getQueuedPosts({ tid }, { metadata: false });
+        events.push(...queuedPosts.map(item =&gt; ({
+            type: &#039;post-queue&#039;,
+            timestamp: item.data.timestamp || Date.now(),
+            uid: item.data.uid,
+        })));
+        queuedPosts.forEach((item) =&gt; {
+            timestamps.push(item.data.timestamp || Date.now());
+        });
+    }
+    const [users, fromCategories] = await Promise.all([
+        getUserInfo(events.map((event) =&gt; event.uid).filter(Boolean)),
+        getCategoryInfo(events.map((event) =&gt; event.fromCid).filter(Boolean)),
+    ]);
+    // Remove backlink events if backlinks are disabled
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    if (meta_1.default.config.topicBacklinks !== 1) {
+        events = events.filter((event) =&gt; event.type !== &#039;backlink&#039;);
+    }
+    else {
+        // remove backlinks that we dont have read permission
+        const backlinkPids = events.filter(e =&gt; e.type === &#039;backlink&#039;)
+            .map(e =&gt; e.href.split(&#039;/&#039;).pop());
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const pids = await privileges_1.default.posts.filter(&#039;topics:read&#039;, backlinkPids, uid);
+        events = events.filter(e =&gt; e.type !== &#039;backlink&#039; || pids.includes(e.href.split(&#039;/&#039;).pop()));
+    }
+    // Remove events whose types no longer exist (e.g. plugin uninstalled)
+    events = events.filter((event) =&gt; exports._types.hasOwnProperty(event.type));
+    // Add user &amp; metadata
+    events.forEach((event, idx) =&gt; {
+        event.id = parseInt(eventIds[idx], 10);
+        event.timestamp = timestamps[idx];
+        event.timestampISO = new Date(timestamps[idx]).toISOString();
+        if (event.hasOwnProperty(&#039;uid&#039;)) {
+            event.user = users.get(event.uid === &#039;system&#039; ? &#039;system&#039; : parseInt(event.uid, 10));
+        }
+        if (event.hasOwnProperty(&#039;fromCid&#039;)) {
+            event.fromCategory = fromCategories[event.fromCid];
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            event.text = translator_1.default.compile(&#039;topic:moved-from-by&#039;, event.fromCategory.name);
+        }
+        Object.assign(event, exports._types[event.type]);
+    });
+    // Sort events
+    events.sort((a, b) =&gt; a.timestamp - b.timestamp);
+    return events;
+}
+async function get(tid, uid, reverse = false) {
+    if (!await _1.default.exists(tid)) {
+        throw new Error(&#039;[[error:no-topic]]&#039;);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    const oldEventIds = await database_1.default.getSortedSetRangeWithScores(`topic:${tid}:events`, 0, -1);
+    const keys = oldEventIds.map((obj) =&gt; `topicEvent:${obj.value}`);
+    const timestamps = oldEventIds.map((obj) =&gt; obj.score);
+    const eventIds = oldEventIds.map((obj) =&gt; obj.value);
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    let events = await database_1.default.getObjects(keys);
+    events = await modifyEvent({ tid, uid, eventIds, timestamps, events });
+    if (reverse) {
+        events.reverse();
+    }
+    return events;
+}
+exports.get = get;
+async function log(tid, payload) {
+    const { type } = payload;
+    const timestamp = payload.timestamp || Date.now();
+    if (!exports._types.hasOwnProperty(type)) {
+        throw new Error(`[[error:topic-event-unrecognized, ${type}]]`);
+    }
+    else if (!await _1.default.exists(tid)) {
+        throw new Error(&#039;[[error:no-topic]]&#039;);
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    const eventId = await database_1.default.incrObjectField(&#039;global&#039;, &#039;nextTopicEventId&#039;);
+    await Promise.all([
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        database_1.default.setObject(`topicEvent:${eventId}`, payload),
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        database_1.default.sortedSetAdd(`topic:${tid}:events`, timestamp, eventId),
+    ]);
+    let events = await modifyEvent({
+        tid: tid,
+        uid: payload.uid,
+        eventIds: [eventId],
+        timestamps: [timestamp],
+        events: [payload],
+    });
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    ({ events } = await plugins_1.default.hooks.fire(&#039;filter:topic.events.log&#039;, { events }));
+    return events;
+}
+exports.log = log;
+async function purge(tid, eventIds = []) {
+    if (eventIds.length) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const isTopicEvent = await database_1.default.isSortedSetMembers(`topic:${tid}:events`, eventIds);
+        eventIds = eventIds.filter((id, index) =&gt; isTopicEvent[index]);
+        await Promise.all([
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            database_1.default.sortedSetRemove(`topic:${tid}:events`, eventIds),
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            database_1.default.deleteAll(eventIds.map(id =&gt; `topicEvent:${id}`)),
+        ]);
+    }
+    else {
+        const keys = [`topic:${tid}:events`];
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const eventIds = await database_1.default.getSortedSetRange(keys[0], 0, -1);
+        keys.push(...eventIds.map(id =&gt; `topicEvent:${id}`));
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.deleteAll(keys);
+    }
+}
+exports.purge = purge;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

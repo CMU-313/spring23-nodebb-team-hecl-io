@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/data.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/data.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.80</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">149</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.67</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&quot;use strict&quot;;
+var __importDefault = (this &amp;&amp; this.__importDefault) || function (mod) {
+    return (mod &amp;&amp; mod.__esModule) ? mod : { &quot;default&quot;: mod };
+};
+const validator_1 = __importDefault(require(&quot;validator&quot;));
+const database_1 = __importDefault(require(&quot;../database&quot;));
+const categories_1 = __importDefault(require(&quot;../categories&quot;));
+const utils_1 = __importDefault(require(&quot;../utils&quot;));
+const translator_1 = __importDefault(require(&quot;../translator&quot;));
+const plugins_1 = __importDefault(require(&quot;../plugins&quot;));
+const intFields = [
+    &#039;tid&#039;, &#039;cid&#039;, &#039;uid&#039;, &#039;mainPid&#039;, &#039;postcount&#039;,
+    &#039;viewcount&#039;, &#039;postercount&#039;, &#039;deleted&#039;, &#039;locked&#039;, &#039;pinned&#039;, &#039;resolved&#039;,
+    &#039;pinExpiry&#039;, &#039;timestamp&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;, &#039;lastposttime&#039;,
+    &#039;deleterUid&#039;,
+];
+function escapeTitle(topicData) {
+    if (topicData) {
+        if (topicData.title) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            const validator_escape_result = String(validator_1.default.escape(topicData.title));
+            const trans_escape_result = translator_1.default.escape(validator_escape_result);
+            topicData.title = trans_escape_result;
+        }
+        if (topicData.titleRaw) {
+            topicData.titleRaw = translator_1.default.escape(topicData.titleRaw);
+        }
+    }
+}
+function modifyTopic(topic, fields) {
+    if (!topic) {
+        return;
+    }
+    // The next line calls a function in a module that has not been updated to TS yet
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    database_1.default.parseIntFields(topic, intFields, fields);
+    if (topic.hasOwnProperty(&#039;title&#039;)) {
+        topic.titleRaw = topic.title;
+        topic.title = String(topic.title);
+    }
+    escapeTitle(topic);
+    if (topic.hasOwnProperty(&#039;timestamp&#039;)) {
+        topic.timestampISO = utils_1.default.toISOString(topic.timestamp);
+        if (!fields.length || fields.includes(&#039;scheduled&#039;)) {
+            topic.scheduled = topic.timestamp &gt; Date.now();
+        }
+    }
+    if (topic.hasOwnProperty(&#039;lastposttime&#039;)) {
+        topic.lastposttimeISO = utils_1.default.toISOString(topic.lastposttime);
+    }
+    if (topic.hasOwnProperty(&#039;pinExpiry&#039;)) {
+        topic.pinExpiryISO = utils_1.default.toISOString(topic.pinExpiry);
+    }
+    if (topic.hasOwnProperty(&#039;upvotes&#039;) &amp;&amp; topic.hasOwnProperty(&#039;downvotes&#039;)) {
+        topic.votes = topic.upvotes - topic.downvotes;
+    }
+    if (topic.hasOwnProperty(&#039;isAnon&#039;)) {
+        topic.isAnon = topic.isAnon === &#039;true&#039;;
+    }
+    // if (topic.hasOwnProperty(&#039;isPrivate&#039;)) {
+    //     topic.isPrivate = topic.isPrivate === &#039;true&#039;;
+    // }
+    if (fields.includes(&#039;teaserPid&#039;) || !fields.length) {
+        topic.teaserPid = topic.teaserPid || null;
+    }
+    if (fields.includes(&#039;tags&#039;) || !fields.length) {
+        const tags = String(topic.tags || &#039;&#039;);
+        topic.tags = tags.split(&#039;,&#039;).filter(Boolean).map((tag) =&gt; {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            const escaped = String(validator_1.default.escape(String(tag)));
+            return {
+                value: tag,
+                valueEscaped: escaped,
+                valueEncoded: encodeURIComponent(escaped),
+                // The next line calls a function in a module that has not been updated to TS yet
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+                class: escaped.replace(/\s/g, &#039;-&#039;),
+            };
+        });
+    }
+}
+module.exports = function (Topics) {
+    Topics.getTopicsFields = async function (tids, fields) {
+        if (!Array.isArray(tids) || !tids.length) {
+            return [];
+        }
+        // &quot;scheduled&quot; is derived from &quot;timestamp&quot;
+        if (fields.includes(&#039;scheduled&#039;) &amp;&amp; !fields.includes(&#039;timestamp&#039;)) {
+            fields.push(&#039;timestamp&#039;);
+        }
+        const keys = tids.map(tid =&gt; `topic:${tid}`);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const topics = await database_1.default.getObjects(keys, fields);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const result = await plugins_1.default.hooks.fire(&#039;filter:topic.getFields&#039;, {
+            tids: tids,
+            topics: topics,
+            fields: fields,
+            keys: keys,
+        });
+        result.topics.forEach(topic =&gt; modifyTopic(topic, fields));
+        return result.topics;
+    };
+    Topics.getTopicField = async function (tid, field) {
+        const topic = await Topics.getTopicFields(tid, [field]);
+        return topic ? topic[field] : null;
+    };
+    Topics.getTopicFields = async function (tid, fields) {
+        const topics = await Topics.getTopicsFields([tid], fields);
+        return topics ? topics[0] : null;
+    };
+    Topics.getTopicData = async function (tid) {
+        const topics = await Topics.getTopicsFields([tid], []);
+        return topics &amp;&amp; topics.length ? topics[0] : null;
+    };
+    Topics.getTopicsData = async function (tids) {
+        return await Topics.getTopicsFields(tids, []);
+    };
+    Topics.getCategoryData = async function (tid) {
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        return await categories_1.default.getCategoryData(cid);
+    };
+    Topics.setTopicField = async function (tid, field, value) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.setObjectField(`topic:${tid}`, field, value);
+    };
+    Topics.setTopicFields = async function (tid, data) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.setObject(`topic:${tid}`, data);
+    };
+    Topics.deleteTopicField = async function (tid, field) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.deleteObjectField(`topic:${tid}`, field);
+    };
+    Topics.deleteTopicFields = async function (tid, fields) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await database_1.default.deleteObjectFields(`topic:${tid}`, fields);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

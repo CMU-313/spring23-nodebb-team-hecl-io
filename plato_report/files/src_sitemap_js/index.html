@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/sitemap.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/sitemap.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.04</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">180</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">43.22</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.05</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const { SitemapStream, streamToPromise } = require(&#039;sitemap&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;./database&#039;);
+const categories = require(&#039;./categories&#039;);
+const topics = require(&#039;./topics&#039;);
+const privileges = require(&#039;./privileges&#039;);
+const meta = require(&#039;./meta&#039;);
+const plugins = require(&#039;./plugins&#039;);
+const utils = require(&#039;./utils&#039;);
+
+const sitemap = module.exports;
+sitemap.maps = {
+    topics: [],
+};
+
+sitemap.render = async function () {
+    const topicsPerPage = meta.config.sitemapTopics;
+    const returnData = {
+        url: nconf.get(&#039;url&#039;),
+        topics: [],
+    };
+    const [topicCount, categories, pages] = await Promise.all([
+        db.getObjectField(&#039;global&#039;, &#039;topicCount&#039;),
+        getSitemapCategories(),
+        getSitemapPages(),
+    ]);
+    returnData.categories = categories.length &gt; 0;
+    returnData.pages = pages.length &gt; 0;
+    const numPages = Math.ceil(Math.max(0, topicCount / topicsPerPage));
+    for (let x = 1; x &lt;= numPages; x += 1) {
+        returnData.topics.push(x);
+    }
+
+    return returnData;
+};
+
+async function getSitemapPages() {
+    const urls = [{
+        url: &#039;&#039;,
+        changefreq: &#039;weekly&#039;,
+        priority: 0.6,
+    }, {
+        url: `${nconf.get(&#039;relative_path&#039;)}/recent`,
+        changefreq: &#039;daily&#039;,
+        priority: 0.4,
+    }, {
+        url: `${nconf.get(&#039;relative_path&#039;)}/users`,
+        changefreq: &#039;daily&#039;,
+        priority: 0.4,
+    }, {
+        url: `${nconf.get(&#039;relative_path&#039;)}/groups`,
+        changefreq: &#039;daily&#039;,
+        priority: 0.4,
+    }];
+
+    const data = await plugins.hooks.fire(&#039;filter:sitemap.getPages&#039;, { urls: urls });
+    return data.urls;
+}
+
+sitemap.getPages = async function () {
+    if (sitemap.maps.pages &amp;&amp; Date.now() &lt; sitemap.maps.pagesCacheExpireTimestamp) {
+        return sitemap.maps.pages;
+    }
+
+    const urls = await getSitemapPages();
+    if (!urls.length) {
+        sitemap.maps.pages = &#039;&#039;;
+        sitemap.maps.pagesCacheExpireTimestamp = Date.now() + (1000 * 60 * 60 * 24);
+        return sitemap.maps.pages;
+    }
+
+    sitemap.maps.pages = await urlsToSitemap(urls);
+    sitemap.maps.pagesCacheExpireTimestamp = Date.now() + (1000 * 60 * 60 * 24);
+    return sitemap.maps.pages;
+};
+
+async function getSitemapCategories() {
+    const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, 0, &#039;find&#039;);
+    return await categories.getCategoriesFields(cids, [&#039;slug&#039;]);
+}
+
+sitemap.getCategories = async function () {
+    if (sitemap.maps.categories &amp;&amp; Date.now() &lt; sitemap.maps.categoriesCacheExpireTimestamp) {
+        return sitemap.maps.categories;
+    }
+
+    const categoryUrls = [];
+    const categoriesData = await getSitemapCategories();
+    categoriesData.forEach((category) =&gt; {
+        if (category) {
+            categoryUrls.push({
+                url: `${nconf.get(&#039;relative_path&#039;)}/category/${category.slug}`,
+                changefreq: &#039;weekly&#039;,
+                priority: 0.4,
+            });
+        }
+    });
+
+    if (!categoryUrls.length) {
+        sitemap.maps.categories = &#039;&#039;;
+        sitemap.maps.categoriesCacheExpireTimestamp = Date.now() + (1000 * 60 * 60 * 24);
+        return sitemap.maps.categories;
+    }
+
+    sitemap.maps.categories = await urlsToSitemap(categoryUrls);
+    sitemap.maps.categoriesCacheExpireTimestamp = Date.now() + (1000 * 60 * 60 * 24);
+    return sitemap.maps.categories;
+};
+
+sitemap.getTopicPage = async function (page) {
+    if (parseInt(page, 10) &lt;= 0) {
+        return;
+    }
+
+    const numTopics = meta.config.sitemapTopics;
+    const start = (parseInt(page, 10) - 1) * numTopics;
+    const stop = start + numTopics - 1;
+
+    if (sitemap.maps.topics[page - 1] &amp;&amp; Date.now() &lt; sitemap.maps.topics[page - 1].cacheExpireTimestamp) {
+        return sitemap.maps.topics[page - 1].sm;
+    }
+
+    const topicUrls = [];
+    let tids = await db.getSortedSetRange(&#039;topics:tid&#039;, start, stop);
+    tids = await privileges.topics.filterTids(&#039;topics:read&#039;, tids, 0);
+    const topicData = await topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;title&#039;, &#039;slug&#039;, &#039;lastposttime&#039;]);
+
+    if (!topicData.length) {
+        sitemap.maps.topics[page - 1] = {
+            sm: &#039;&#039;,
+            cacheExpireTimestamp: Date.now() + (1000 * 60 * 60 * 24),
+        };
+        return sitemap.maps.topics[page - 1].sm;
+    }
+
+    topicData.forEach((topic) =&gt; {
+        if (topic) {
+            topicUrls.push({
+                url: `${nconf.get(&#039;relative_path&#039;)}/topic/${topic.slug}`,
+                lastmodISO: utils.toISOString(topic.lastposttime),
+                changefreq: &#039;daily&#039;,
+                priority: 0.6,
+            });
+        }
+    });
+
+    sitemap.maps.topics[page - 1] = {
+        sm: await urlsToSitemap(topicUrls),
+        cacheExpireTimestamp: Date.now() + (1000 * 60 * 60 * 24),
+    };
+
+    return sitemap.maps.topics[page - 1].sm;
+};
+
+async function urlsToSitemap(urls) {
+    if (!urls.length) {
+        return &#039;&#039;;
+    }
+    const smStream = new SitemapStream({ hostname: nconf.get(&#039;url&#039;) });
+    urls.forEach(url =&gt; smStream.write(url));
+    smStream.end();
+    return (await streamToPromise(smStream)).toString();
+}
+
+sitemap.clearCache = function () {
+    if (sitemap.maps.pages) {
+        sitemap.maps.pagesCacheExpireTimestamp = 0;
+    }
+    if (sitemap.maps.categories) {
+        sitemap.maps.categoriesCacheExpireTimestamp = 0;
+    }
+    sitemap.maps.topics.forEach((topicMap) =&gt; {
+        topicMap.cacheExpireTimestamp = 0;
+    });
+};
+
+require(&#039;./promisify&#039;)(sitemap);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

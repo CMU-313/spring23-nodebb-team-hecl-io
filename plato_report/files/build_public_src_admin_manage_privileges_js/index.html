@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/manage/privileges.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/manage/privileges.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.31</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">501</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">56.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.53</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/manage/privileges&#039;, [
+    &#039;api&#039;,
+    &#039;autocomplete&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+    &#039;translator&#039;,
+    &#039;categorySelector&#039;,
+    &#039;mousetrap&#039;,
+    &#039;admin/modules/checkboxRowSelector&#039;,
+], function (api, autocomplete, bootbox, alerts, translator, categorySelector, mousetrap, checkboxRowSelector) {
+    const Privileges = {};
+
+    let cid;
+    // number of columns to skip in category privilege tables
+    const SKIP_PRIV_COLS = 3;
+
+    Privileges.init = function () {
+        cid = isNaN(parseInt(ajaxify.data.selectedCategory.cid, 10)) ? &#039;admin&#039; : ajaxify.data.selectedCategory.cid;
+
+        checkboxRowSelector.init(&#039;.privilege-table-container&#039;);
+
+        categorySelector.init($(&#039;[component=&quot;category-selector&quot;]&#039;), {
+            onSelect: function (category) {
+                cid = parseInt(category.cid, 10);
+                cid = isNaN(cid) ? &#039;admin&#039; : cid;
+                Privileges.refreshPrivilegeTable();
+                ajaxify.updateHistory(&#039;admin/manage/privileges/&#039; + (cid || &#039;&#039;));
+            },
+            localCategories: ajaxify.data.categories,
+            privilege: &#039;find&#039;,
+            showLinks: true,
+        });
+
+        Privileges.setupPrivilegeTable();
+
+        highlightRow();
+        $(&#039;.privilege-filters button:last-child&#039;).click();
+    };
+
+    Privileges.setupPrivilegeTable = function () {
+        $(&#039;.privilege-table-container&#039;).on(&#039;change&#039;, &#039;input[type=&quot;checkbox&quot;]:not(.checkbox-helper)&#039;, function () {
+            const $checkboxEl = $(this);
+            const $wrapperEl = $checkboxEl.parent();
+            const columnNo = $wrapperEl.index() + 1;
+            const privilege = $wrapperEl.attr(&#039;data-privilege&#039;);
+            const state = $checkboxEl.prop(&#039;checked&#039;);
+            const $rowEl = $checkboxEl.parents(&#039;tr&#039;);
+            const member = $rowEl.attr(&#039;data-group-name&#039;) || $rowEl.attr(&#039;data-uid&#039;);
+            const isPrivate = parseInt($rowEl.attr(&#039;data-private&#039;) || 0, 10);
+            const isGroup = $rowEl.attr(&#039;data-group-name&#039;) !== undefined;
+            const isBanned = (isGroup &amp;&amp; $rowEl.attr(&#039;data-group-name&#039;) === &#039;banned-users&#039;) || $rowEl.attr(&#039;data-banned&#039;) !== undefined;
+            const sourceGroupName = isBanned ? &#039;banned-users&#039; : &#039;registered-users&#039;;
+            const delta = $checkboxEl.prop(&#039;checked&#039;) === ($wrapperEl.attr(&#039;data-value&#039;) === &#039;true&#039;) ? null : state;
+
+            if (member) {
+                if (isGroup &amp;&amp; privilege === &#039;groups:moderate&#039; &amp;&amp; !isPrivate &amp;&amp; state) {
+                    bootbox.confirm(&#039;[[admin/manage/privileges:alert.confirm-moderate]]&#039;, function (confirm) {
+                        if (confirm) {
+                            $wrapperEl.attr(&#039;data-delta&#039;, delta);
+                            Privileges.exposeSingleAssumedPriv(columnNo, sourceGroupName);
+                        } else {
+                            $checkboxEl.prop(&#039;checked&#039;, !$checkboxEl.prop(&#039;checked&#039;));
+                        }
+                    });
+                } else if (privilege.endsWith(&#039;admin:admins-mods&#039;) &amp;&amp; state) {
+                    bootbox.confirm(&#039;[[admin/manage/privileges:alert.confirm-admins-mods]]&#039;, function (confirm) {
+                        if (confirm) {
+                            $wrapperEl.attr(&#039;data-delta&#039;, delta);
+                            Privileges.exposeSingleAssumedPriv(columnNo, sourceGroupName);
+                        } else {
+                            $checkboxEl.prop(&#039;checked&#039;, !$checkboxEl.prop(&#039;checked&#039;));
+                        }
+                    });
+                } else {
+                    $wrapperEl.attr(&#039;data-delta&#039;, delta);
+                    Privileges.exposeSingleAssumedPriv(columnNo, sourceGroupName);
+                }
+                checkboxRowSelector.updateState($checkboxEl);
+            } else {
+                alerts.error(&#039;[[error:invalid-data]]&#039;);
+            }
+        });
+
+        Privileges.exposeAssumedPrivileges();
+        checkboxRowSelector.updateAll();
+        Privileges.addEvents(); // events with confirmation modals
+    };
+
+    Privileges.addEvents = function () {
+        document.getElementById(&#039;save&#039;).addEventListener(&#039;click&#039;, function () {
+            throwConfirmModal(&#039;save&#039;, Privileges.commit);
+        });
+
+        document.getElementById(&#039;discard&#039;).addEventListener(&#039;click&#039;, function () {
+            throwConfirmModal(&#039;discard&#039;, Privileges.discard);
+        });
+
+        // Expose discard button as necessary
+        const containerEl = document.querySelector(&#039;.privilege-table-container&#039;);
+        containerEl.addEventListener(&#039;change&#039;, (e) =&gt; {
+            const subselector = e.target.closest(&#039;td[data-privilege] input&#039;);
+            if (subselector) {
+                document.getElementById(&#039;discard&#039;).style.display = containerEl.querySelectorAll(&#039;td[data-delta]&#039;).length ? &#039;unset&#039; : &#039;none&#039;;
+            }
+        });
+
+        const $privTableCon = $(&#039;.privilege-table-container&#039;);
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;search.user&quot;]&#039;, Privileges.addUserToPrivilegeTable);
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;search.group&quot;]&#039;, Privileges.addGroupToPrivilegeTable);
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyToChildren&quot;]&#039;, function () {
+            throwConfirmModal(&#039;copyToChildren&#039;, Privileges.copyPrivilegesToChildren.bind(null, cid, &#039;&#039;));
+        });
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyToChildrenGroup&quot;]&#039;, function () {
+            const groupName = $(this).parents(&#039;[data-group-name]&#039;).attr(&#039;data-group-name&#039;);
+            throwConfirmModal(&#039;copyToChildrenGroup&#039;, Privileges.copyPrivilegesToChildren.bind(null, cid, groupName));
+        });
+
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyPrivilegesFrom&quot;]&#039;, function () {
+            Privileges.copyPrivilegesFromCategory(cid, &#039;&#039;);
+        });
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyPrivilegesFromGroup&quot;]&#039;, function () {
+            const groupName = $(this).parents(&#039;[data-group-name]&#039;).attr(&#039;data-group-name&#039;);
+            Privileges.copyPrivilegesFromCategory(cid, groupName);
+        });
+
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyToAll&quot;]&#039;, function () {
+            throwConfirmModal(&#039;copyToAll&#039;, Privileges.copyPrivilegesToAllCategories.bind(null, cid, &#039;&#039;));
+        });
+        $privTableCon.on(&#039;click&#039;, &#039;[data-action=&quot;copyToAllGroup&quot;]&#039;, function () {
+            const groupName = $(this).parents(&#039;[data-group-name]&#039;).attr(&#039;data-group-name&#039;);
+            throwConfirmModal(&#039;copyToAllGroup&#039;, Privileges.copyPrivilegesToAllCategories.bind(null, cid, groupName));
+        });
+
+        $privTableCon.on(&#039;click&#039;, &#039;.privilege-filters &gt; button&#039;, filterPrivileges);
+
+        mousetrap.bind(&#039;ctrl+s&#039;, function (ev) {
+            throwConfirmModal(&#039;save&#039;, Privileges.commit);
+            ev.preventDefault();
+        });
+
+        function throwConfirmModal(method, onConfirm) {
+            const privilegeSubset = getPrivilegeSubset();
+            bootbox.confirm(`[[admin/manage/privileges:alert.confirm-${method}, ${privilegeSubset}]]&lt;br /&gt;&lt;br /&gt;[[admin/manage/privileges:alert.no-undo]]`, function (ok) {
+                if (ok) {
+                    onConfirm.call();
+                }
+            });
+        }
+    };
+
+    Privileges.commit = function () {
+        const tableEl = document.querySelector(&#039;.privilege-table-container&#039;);
+        const requests = $.map(tableEl.querySelectorAll(&#039;td[data-delta]&#039;), function (el) {
+            const privilege = el.getAttribute(&#039;data-privilege&#039;);
+            const rowEl = el.parentNode;
+            const member = rowEl.getAttribute(&#039;data-group-name&#039;) || rowEl.getAttribute(&#039;data-uid&#039;);
+            const state = el.getAttribute(&#039;data-delta&#039;) === &#039;true&#039; ? 1 : 0;
+
+            return Privileges.setPrivilege(member, privilege, state);
+        });
+
+        Promise.allSettled(requests).then((results) =&gt; {
+            Privileges.refreshPrivilegeTable();
+
+            const rejects = results.filter(r =&gt; r.status === &#039;rejected&#039;);
+            if (rejects.length) {
+                rejects.forEach((result) =&gt; {
+                    alerts.error(result.reason);
+                });
+            } else {
+                alerts.success(&#039;[[admin/manage/privileges:alert.saved]]&#039;);
+            }
+        });
+    };
+
+    Privileges.discard = function () {
+        Privileges.refreshPrivilegeTable();
+        alerts.success(&#039;[[admin/manage/privileges:alert.discarded]]&#039;);
+    };
+
+    Privileges.refreshPrivilegeTable = function (groupToHighlight) {
+        api.get(`/categories/${cid}/privileges`, {}).then((privileges) =&gt; {
+            ajaxify.data.privileges = { ...ajaxify.data.privileges, ...privileges };
+            const tpl = parseInt(cid, 10) ? &#039;admin/partials/privileges/category&#039; : &#039;admin/partials/privileges/global&#039;;
+            const isAdminPriv = ajaxify.currentPage.endsWith(&#039;admin/manage/privileges/admin&#039;);
+            app.parseAndTranslate(tpl, { privileges, isAdminPriv }).then((html) =&gt; {
+                // Get currently selected filters
+                const btnIndices = $(&#039;.privilege-filters button.btn-warning&#039;).map((idx, el) =&gt; $(el).index()).get();
+                $(&#039;.privilege-table-container&#039;).html(html);
+                Privileges.exposeAssumedPrivileges();
+                document.querySelectorAll(&#039;.privilege-filters&#039;).forEach((con, i) =&gt; {
+                    // Three buttons, placed in reverse order
+                    const lastIdx = $(&#039;.privilege-filters&#039;).first().find(&#039;button&#039;).length - 1;
+                    const idx = btnIndices[i] === undefined ? lastIdx : btnIndices[i];
+                    con.querySelectorAll(&#039;button&#039;)[idx].click();
+                });
+
+                hightlightRowByDataAttr(&#039;data-group-name&#039;, groupToHighlight);
+            });
+        }).catch(alert.error);
+    };
+
+    Privileges.exposeAssumedPrivileges = function () {
+        /*
+            If registered-users has a privilege enabled, then all users and groups of that privilege
+            should be assumed to have that privilege as well, even if not set in the db, so reflect
+            this arrangement in the table
+        */
+
+        // As such, individual banned users inherits privileges from banned-users group
+        const getBannedUsersInputSelector = (privs, i) =&gt; `.privilege-table tr[data-banned] td[data-privilege=&quot;${privs[i]}&quot;] input`;
+        const bannedUsersPrivs = getPrivilegesFromRow(&#039;banned-users&#039;);
+        applyPrivileges(bannedUsersPrivs, getBannedUsersInputSelector);
+
+        // For rest that inherits from registered-users
+        const getRegisteredUsersInputSelector = (privs, i) =&gt; `.privilege-table tr[data-group-name]:not([data-group-name=&quot;registered-users&quot;],[data-group-name=&quot;banned-users&quot;],[data-group-name=&quot;guests&quot;],[data-group-name=&quot;spiders&quot;]) td[data-privilege=&quot;${privs[i]}&quot;] input, .privilege-table tr[data-uid]:not([data-banned]) td[data-privilege=&quot;${privs[i]}&quot;] input`;
+        const registeredUsersPrivs = getPrivilegesFromRow(&#039;registered-users&#039;);
+        applyPrivileges(registeredUsersPrivs, getRegisteredUsersInputSelector);
+    };
+
+    Privileges.exposeSingleAssumedPriv = function (columnNo, sourceGroupName) {
+        let inputSelectorFn;
+        switch (sourceGroupName) {
+        case &#039;banned-users&#039;:
+            inputSelectorFn = () =&gt; `.privilege-table tr[data-banned] td[data-privilege]:nth-child(${columnNo}) input`;
+            break;
+        default:
+            inputSelectorFn = () =&gt; `.privilege-table tr[data-group-name]:not([data-group-name=&quot;registered-users&quot;],[data-group-name=&quot;banned-users&quot;],[data-group-name=&quot;guests&quot;],[data-group-name=&quot;spiders&quot;]) td[data-privilege]:nth-child(${columnNo}) input, .privilege-table tr[data-uid]:not([data-banned]) td[data-privilege]:nth-child(${columnNo}) input`;
+        }
+
+        const sourceChecked = getPrivilegeFromColumn(sourceGroupName, columnNo);
+        applyPrivilegesToColumn(inputSelectorFn, sourceChecked);
+    };
+
+    Privileges.setPrivilege = (member, privilege, state) =&gt; api[state ? &#039;put&#039; : &#039;delete&#039;](`/categories/${isNaN(cid) ? 0 : cid}/privileges/${encodeURIComponent(privilege)}`, { member });
+
+    Privileges.addUserToPrivilegeTable = function () {
+        const modal = bootbox.dialog({
+            title: &#039;[[admin/manage/categories:alert.find-user]]&#039;,
+            message: &#039;&lt;input class=&quot;form-control input-lg&quot; placeholder=&quot;[[admin/manage/categories:alert.user-search]]&quot; /&gt;&#039;,
+            show: true,
+        });
+
+        modal.on(&#039;shown.bs.modal&#039;, function () {
+            const inputEl = modal.find(&#039;input&#039;);
+            inputEl.focus();
+
+            autocomplete.user(inputEl, function (ev, ui) {
+                addUserToCategory(ui.item.user, function () {
+                    modal.modal(&#039;hide&#039;);
+                });
+            });
+        });
+    };
+
+    Privileges.addGroupToPrivilegeTable = function () {
+        const modal = bootbox.dialog({
+            title: &#039;[[admin/manage/categories:alert.find-group]]&#039;,
+            message: &#039;&lt;input class=&quot;form-control input-lg&quot; placeholder=&quot;[[admin/manage/categories:alert.group-search]]&quot; /&gt;&#039;,
+            show: true,
+        });
+
+        modal.on(&#039;shown.bs.modal&#039;, function () {
+            const inputEl = modal.find(&#039;input&#039;);
+            inputEl.focus();
+
+            autocomplete.group(inputEl, function (ev, ui) {
+                if (ui.item.group.name === &#039;administrators&#039;) {
+                    return alerts.alert({
+                        type: &#039;warning&#039;,
+                        message: &#039;[[admin/manage/privileges:alert.admin-warning]]&#039;,
+                    });
+                }
+                addGroupToCategory(ui.item.group.name, function () {
+                    modal.modal(&#039;hide&#039;);
+                });
+            });
+        });
+    };
+
+    Privileges.copyPrivilegesToChildren = function (cid, group) {
+        const filter = getPrivilegeFilter();
+        socket.emit(&#039;admin.categories.copyPrivilegesToChildren&#039;, { cid, group, filter }, function (err) {
+            if (err) {
+                return alerts.error(err.message);
+            }
+            alerts.success(&#039;[[admin/manage/categories:privileges.copy-success]]&#039;);
+        });
+    };
+
+    Privileges.copyPrivilegesFromCategory = function (cid, group) {
+        const privilegeSubset = getPrivilegeSubset();
+        const message = &#039;&lt;br&gt;&#039; +
+            (group ? `[[admin/manage/privileges:alert.copyPrivilegesFromGroup-warning, ${privilegeSubset}]]` :
+                `[[admin/manage/privileges:alert.copyPrivilegesFrom-warning, ${privilegeSubset}]]`) +
+            &#039;&lt;br&gt;&lt;br&gt;[[admin/manage/privileges:alert.no-undo]]&#039;;
+        categorySelector.modal({
+            title: &#039;[[admin/manage/privileges:alert.copyPrivilegesFrom-title]]&#039;,
+            message,
+            localCategories: [],
+            showLinks: true,
+            onSubmit: function (selectedCategory) {
+                socket.emit(&#039;admin.categories.copyPrivilegesFrom&#039;, {
+                    toCid: cid,
+                    filter: getPrivilegeFilter(),
+                    fromCid: selectedCategory.cid,
+                    group: group,
+                }, function (err) {
+                    if (err) {
+                        return alerts.error(err);
+                    }
+                    ajaxify.refresh();
+                });
+            },
+        });
+    };
+
+    Privileges.copyPrivilegesToAllCategories = function (cid, group) {
+        const filter = getPrivilegeFilter();
+        socket.emit(&#039;admin.categories.copyPrivilegesToAllCategories&#039;, { cid, group, filter }, function (err) {
+            if (err) {
+                return alerts.error(err);
+            }
+            alerts.success(&#039;[[admin/manage/categories:privileges.copy-success]]&#039;);
+        });
+    };
+
+    function getPrivilegesFromRow(sourceGroupName) {
+        const privs = [];
+        $(`.privilege-table tr[data-group-name=&quot;${sourceGroupName}&quot;] td input[type=&quot;checkbox&quot;]:not(.checkbox-helper)`)
+            .parent()
+            .each(function (idx, el) {
+                if ($(el).find(&#039;input&#039;).prop(&#039;checked&#039;)) {
+                    privs.push(el.getAttribute(&#039;data-privilege&#039;));
+                }
+            });
+
+        // Also apply to non-group privileges
+        return privs.concat(privs.map(function (priv) {
+            if (priv.startsWith(&#039;groups:&#039;)) {
+                return priv.slice(7);
+            }
+
+            return false;
+        })).filter(Boolean);
+    }
+
+    function getPrivilegeFromColumn(sourceGroupName, columnNo) {
+        return $(`.privilege-table tr[data-group-name=&quot;${sourceGroupName}&quot;] td:nth-child(${columnNo}) input[type=&quot;checkbox&quot;]`)[0].checked;
+    }
+
+    function applyPrivileges(privs, inputSelectorFn) {
+        for (let x = 0, numPrivs = privs.length; x &lt; numPrivs; x += 1) {
+            const inputs = $(inputSelectorFn(privs, x));
+            inputs.each(function (idx, el) {
+                if (!el.checked) {
+                    el.indeterminate = true;
+                }
+            });
+        }
+    }
+
+    function applyPrivilegesToColumn(inputSelectorFn, sourceChecked) {
+        const $inputs = $(inputSelectorFn());
+        $inputs.each((idx, el) =&gt; {
+            el.indeterminate = el.checked ? false : sourceChecked;
+        });
+    }
+
+    function hightlightRowByDataAttr(attrName, attrValue) {
+        if (attrValue) {
+            const $el = $(&#039;[&#039; + attrName + &#039;]&#039;).filter(function () {
+                return $(this).attr(attrName) === String(attrValue);
+            });
+
+            if ($el.length) {
+                $el.addClass(&#039;selected&#039;);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function highlightRow() {
+        if (ajaxify.data.group) {
+            if (hightlightRowByDataAttr(&#039;data-group-name&#039;, ajaxify.data.group)) {
+                return;
+            }
+            addGroupToCategory(ajaxify.data.group);
+        }
+    }
+
+    function addGroupToCategory(group, cb) {
+        cb = cb || function () {};
+        const groupRow = document.querySelector(&#039;.privilege-table [data-group-name=&quot;&#039; + group + &#039;&quot;]&#039;);
+        if (groupRow) {
+            hightlightRowByDataAttr(&#039;data-group-name&#039;, group);
+            return cb();
+        }
+        // Generate data for new row
+        const privilegeSet = ajaxify.data.privileges.keys.groups.reduce(function (memo, cur) {
+            memo[cur] = false;
+            return memo;
+        }, {});
+
+        app.parseAndTranslate(&#039;admin/partials/privileges/&#039; + ((isNaN(cid) || cid === 0) ? &#039;global&#039; : &#039;category&#039;), &#039;privileges.groups&#039;, {
+            privileges: {
+                groups: [
+                    {
+                        name: group,
+                        nameEscaped: translator.escape(group),
+                        privileges: privilegeSet,
+                    },
+                ],
+            },
+        }, function (html) {
+            const tbodyEl = document.querySelector(&#039;.privilege-table tbody&#039;);
+            const btnIdx = $(&#039;.privilege-filters&#039;).first().find(&#039;button.btn-warning&#039;).index();
+            tbodyEl.append(html.get(0));
+            Privileges.exposeAssumedPrivileges();
+            hightlightRowByDataAttr(&#039;data-group-name&#039;, group);
+            document.querySelector(&#039;.privilege-filters&#039;).querySelectorAll(&#039;button&#039;)[btnIdx].click();
+            cb();
+        });
+    }
+
+    async function addUserToCategory(user, cb) {
+        cb = cb || function () {};
+        const userRow = document.querySelector(&#039;.privilege-table [data-uid=&quot;&#039; + user.uid + &#039;&quot;]&#039;);
+        if (userRow) {
+            hightlightRowByDataAttr(&#039;data-uid&#039;, user.uid);
+            return cb();
+        }
+        // Generate data for new row
+        const privilegeSet = ajaxify.data.privileges.keys.users.reduce(function (memo, cur) {
+            memo[cur] = false;
+            return memo;
+        }, {});
+
+        const html = await app.parseAndTranslate(&#039;admin/partials/privileges/&#039; + (isNaN(cid) ? &#039;global&#039; : &#039;category&#039;), &#039;privileges.users&#039;, {
+            privileges: {
+                users: [
+                    {
+                        picture: user.picture,
+                        username: user.username,
+                        banned: user.banned,
+                        uid: user.uid,
+                        &#039;icon:text&#039;: user[&#039;icon:text&#039;],
+                        &#039;icon:bgColor&#039;: user[&#039;icon:bgColor&#039;],
+                        privileges: privilegeSet,
+                    },
+                ],
+            },
+        });
+
+        const tbodyEl = document.querySelectorAll(&#039;.privilege-table tbody&#039;);
+        const btnIdx = $(&#039;.privilege-filters&#039;).last().find(&#039;button.btn-warning&#039;).index();
+        tbodyEl[1].append(html.get(0));
+        Privileges.exposeAssumedPrivileges();
+        hightlightRowByDataAttr(&#039;data-uid&#039;, user.uid);
+        document.querySelectorAll(&#039;.privilege-filters&#039;)[1].querySelectorAll(&#039;button&#039;)[btnIdx].click();
+        cb();
+    }
+
+    function filterPrivileges(ev) {
+        const [startIdx, endIdx] = ev.target.getAttribute(&#039;data-filter&#039;).split(&#039;,&#039;).map(i =&gt; parseInt(i, 10));
+        const rows = $(ev.target).closest(&#039;table&#039;)[0].querySelectorAll(&#039;thead tr:last-child, tbody tr &#039;);
+        rows.forEach((tr) =&gt; {
+            tr.querySelectorAll(&#039;td, th&#039;).forEach((el, idx) =&gt; {
+                const offset = el.tagName.toUpperCase() === &#039;TH&#039; ? 1 : 0;
+                if (idx &lt; (SKIP_PRIV_COLS - offset)) {
+                    return;
+                }
+                el.classList.toggle(&#039;hidden&#039;, !(idx &gt;= (startIdx - offset) &amp;&amp; idx &lt;= (endIdx - offset)));
+            });
+        });
+        checkboxRowSelector.updateAll();
+        $(ev.target).siblings(&#039;button&#039;).toArray().forEach(btn =&gt; btn.classList.remove(&#039;btn-warning&#039;));
+        ev.target.classList.add(&#039;btn-warning&#039;);
+    }
+
+    function getPrivilegeFilter() {
+        const indices = document.querySelector(&#039;.privilege-filters .btn-warning&#039;)
+            .getAttribute(&#039;data-filter&#039;)
+            .split(&#039;,&#039;)
+            .map(i =&gt; parseInt(i, 10));
+        indices[0] -= SKIP_PRIV_COLS;
+        indices[1] = indices[1] - SKIP_PRIV_COLS + 1;
+        return indices;
+    }
+
+    function getPrivilegeSubset() {
+        const currentPrivFilter = document.querySelector(&#039;.privilege-filters .btn-warning&#039;);
+        const filterText = currentPrivFilter ? currentPrivFilter.textContent.toLocaleLowerCase() : &#039;&#039;;
+        return filterText.indexOf(&#039;privileges&#039;) &gt; -1 ? filterText : `${filterText} privileges`.trim();
+    }
+
+    return Privileges;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

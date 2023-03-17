@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/admin/categories.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/admin/categories.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">62.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">143</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">33.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.91</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const nconf = require(&#039;nconf&#039;);
+const categories = require(&#039;../../categories&#039;);
+const analytics = require(&#039;../../analytics&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const translator = require(&#039;../../translator&#039;);
+const meta = require(&#039;../../meta&#039;);
+const helpers = require(&#039;../helpers&#039;);
+const pagination = require(&#039;../../pagination&#039;);
+
+const categoriesController = module.exports;
+
+categoriesController.get = async function (req, res, next) {
+    const [categoryData, parent, selectedData] = await Promise.all([
+        categories.getCategories([req.params.category_id], req.uid),
+        categories.getParents([req.params.category_id]),
+        helpers.getSelectedCategory(req.params.category_id),
+    ]);
+
+    const category = categoryData[0];
+    if (!category) {
+        return next();
+    }
+
+    category.parent = parent[0];
+
+    const data = await plugins.hooks.fire(&#039;filter:admin.category.get&#039;, {
+        req: req,
+        res: res,
+        category: category,
+        customClasses: [],
+    });
+    data.category.name = translator.escape(String(data.category.name));
+    data.category.description = translator.escape(String(data.category.description));
+
+    res.render(&#039;admin/manage/category&#039;, {
+        category: data.category,
+        selectedCategory: selectedData.selectedCategory,
+        customClasses: data.customClasses,
+        postQueueEnabled: !!meta.config.postQueue,
+    });
+};
+
+categoriesController.getAll = async function (req, res) {
+    const rootCid = parseInt(req.query.cid, 10) || 0;
+    async function getRootAndChildren() {
+        const rootChildren = await categories.getAllCidsFromSet(`cid:${rootCid}:children`);
+        const childCids = _.flatten(await Promise.all(rootChildren.map(cid =&gt; categories.getChildrenCids(cid))));
+        return [rootCid].concat(rootChildren.concat(childCids));
+    }
+
+    // Categories list will be rendered on client side with recursion, etc.
+    const cids = await (rootCid ? getRootAndChildren() : categories.getAllCidsFromSet(&#039;categories:cid&#039;));
+
+    let rootParent = 0;
+    if (rootCid) {
+        rootParent = await categories.getCategoryField(rootCid, &#039;parentCid&#039;) || 0;
+    }
+
+    const fields = [
+        &#039;cid&#039;, &#039;name&#039;, &#039;icon&#039;, &#039;parentCid&#039;, &#039;disabled&#039;, &#039;link&#039;, &#039;order&#039;,
+        &#039;color&#039;, &#039;bgColor&#039;, &#039;backgroundImage&#039;, &#039;imageClass&#039;, &#039;subCategoriesPerPage&#039;,
+    ];
+    const categoriesData = await categories.getCategoriesFields(cids, fields);
+    const result = await plugins.hooks.fire(&#039;filter:admin.categories.get&#039;, { categories: categoriesData, fields: fields });
+    let tree = categories.getTree(result.categories, rootParent);
+    const cidsCount = rootCid &amp;&amp; tree[0] ? tree[0].children.length : tree.length;
+
+    const pageCount = Math.max(1, Math.ceil(cidsCount / meta.config.categoriesPerPage));
+    const page = Math.min(parseInt(req.query.page, 10) || 1, pageCount);
+    const start = Math.max(0, (page - 1) * meta.config.categoriesPerPage);
+    const stop = start + meta.config.categoriesPerPage;
+
+    function trim(c) {
+        if (c.children) {
+            c.subCategoriesLeft = Math.max(0, c.children.length - c.subCategoriesPerPage);
+            c.hasMoreSubCategories = c.children.length &gt; c.subCategoriesPerPage;
+            c.showMorePage = Math.ceil(c.subCategoriesPerPage / meta.config.categoriesPerPage);
+            c.children = c.children.slice(0, c.subCategoriesPerPage);
+            c.children.forEach(c =&gt; trim(c));
+        }
+    }
+    if (rootCid &amp;&amp; tree[0] &amp;&amp; Array.isArray(tree[0].children)) {
+        tree[0].children = tree[0].children.slice(start, stop);
+        tree[0].children.forEach(trim);
+    } else {
+        tree = tree.slice(start, stop);
+        tree.forEach(trim);
+    }
+
+    let selectedCategory;
+    if (rootCid) {
+        selectedCategory = await categories.getCategoryData(rootCid);
+    }
+    const crumbs = await buildBreadcrumbs(selectedCategory, &#039;/admin/manage/categories&#039;);
+    res.render(&#039;admin/manage/categories&#039;, {
+        categoriesTree: tree,
+        selectedCategory: selectedCategory,
+        breadcrumbs: crumbs,
+        pagination: pagination.create(page, pageCount, req.query),
+        categoriesPerPage: meta.config.categoriesPerPage,
+    });
+};
+
+async function buildBreadcrumbs(categoryData, url) {
+    if (!categoryData) {
+        return;
+    }
+    const breadcrumbs = [
+        {
+            text: categoryData.name,
+            url: `${nconf.get(&#039;relative_path&#039;)}${url}?cid=${categoryData.cid}`,
+            cid: categoryData.cid,
+        },
+    ];
+    const allCrumbs = await helpers.buildCategoryBreadcrumbs(categoryData.parentCid);
+    const crumbs = allCrumbs.filter(c =&gt; c.cid);
+
+    crumbs.forEach((c) =&gt; {
+        c.url = `${url}?cid=${c.cid}`;
+    });
+    crumbs.unshift({
+        text: &#039;[[admin/manage/categories:top-level]]&#039;,
+        url: url,
+    });
+
+    return crumbs.concat(breadcrumbs);
+}
+
+categoriesController.buildBreadCrumbs = buildBreadcrumbs;
+
+categoriesController.getAnalytics = async function (req, res) {
+    const [name, analyticsData] = await Promise.all([
+        categories.getCategoryField(req.params.category_id, &#039;name&#039;),
+        analytics.getCategoryAnalytics(req.params.category_id),
+    ]);
+    res.render(&#039;admin/manage/category-analytics&#039;, {
+        name: name,
+        analytics: analyticsData,
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

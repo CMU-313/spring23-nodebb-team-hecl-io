@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/manage/group.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/manage/group.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.74</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">165</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">26.61</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.88</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/manage/group&#039;, [
+    &#039;forum/groups/memberlist&#039;,
+    &#039;iconSelect&#039;,
+    &#039;translator&#039;,
+    &#039;categorySelector&#039;,
+    &#039;groupSearch&#039;,
+    &#039;slugify&#039;,
+    &#039;api&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (memberList, iconSelect, translator, categorySelector, groupSearch, slugify, api, bootbox, alerts) {
+    const Groups = {};
+
+    Groups.init = function () {
+        const groupIcon = $(&#039;#group-icon&#039;);
+        const changeGroupUserTitle = $(&#039;#change-group-user-title&#039;);
+        const changeGroupLabelColor = $(&#039;#change-group-label-color&#039;);
+        const changeGroupTextColor = $(&#039;#change-group-text-color&#039;);
+        const groupLabelPreview = $(&#039;#group-label-preview&#039;);
+        const groupLabelPreviewText = $(&#039;#group-label-preview-text&#039;);
+
+        const groupName = ajaxify.data.group.name;
+
+        $(&#039;#group-selector&#039;).on(&#039;change&#039;, function () {
+            ajaxify.go(&#039;admin/manage/groups/&#039; + $(this).val() + window.location.hash);
+        });
+
+        memberList.init(&#039;admin/manage/group&#039;);
+
+        changeGroupUserTitle.on(&#039;keyup&#039;, function () {
+            groupLabelPreviewText.translateText(changeGroupUserTitle.val());
+        });
+
+        changeGroupLabelColor.on(&#039;keyup input&#039;, function () {
+            groupLabelPreview.css(&#039;background-color&#039;, changeGroupLabelColor.val() || &#039;#000000&#039;);
+        });
+
+        changeGroupTextColor.on(&#039;keyup input&#039;, function () {
+            groupLabelPreview.css(&#039;color&#039;, changeGroupTextColor.val() || &#039;#ffffff&#039;);
+        });
+
+        setupGroupMembersMenu();
+
+        $(&#039;#group-icon, #group-icon-label&#039;).on(&#039;click&#039;, function () {
+            const currentIcon = groupIcon.attr(&#039;value&#039;);
+            iconSelect.init(groupIcon, function () {
+                let newIcon = groupIcon.attr(&#039;value&#039;);
+                if (newIcon === currentIcon) {
+                    return;
+                }
+                if (newIcon === &#039;fa-nbb-none&#039;) {
+                    newIcon = &#039;hidden&#039;;
+                }
+                $(&#039;#group-icon-preview&#039;).attr(&#039;class&#039;, &#039;fa fa-fw &#039; + (newIcon || &#039;hidden&#039;));
+                app.flags = app.flags || {};
+                app.flags._unsaved = true;
+            });
+        });
+
+        categorySelector.init($(&#039;.edit-privileges-selector [component=&quot;category-selector&quot;]&#039;), {
+            onSelect: function (selectedCategory) {
+                navigateToCategory(selectedCategory.cid);
+            },
+            showLinks: true,
+        });
+
+        const cidSelector = categorySelector.init($(&#039;.member-post-cids-selector [component=&quot;category-selector&quot;]&#039;), {
+            onSelect: function (selectedCategory) {
+                let cids = ($(&#039;#memberPostCids&#039;).val() || &#039;&#039;).split(&#039;,&#039;).map(cid =&gt; parseInt(cid, 10));
+                cids.push(selectedCategory.cid);
+                cids = cids.filter((cid, index, array) =&gt; array.indexOf(cid) === index);
+                $(&#039;#memberPostCids&#039;).val(cids.join(&#039;,&#039;));
+                cidSelector.selectCategory(0);
+            },
+        });
+
+        groupSearch.init($(&#039;[component=&quot;group-selector&quot;]&#039;));
+
+        $(&#039;form [data-property]&#039;).on(&#039;change&#039;, function () {
+            app.flags = app.flags || {};
+            app.flags._unsaved = true;
+        });
+
+        $(&#039;#save&#039;).on(&#039;click&#039;, function () {
+            api.put(`/groups/${slugify(groupName)}`, {
+                name: $(&#039;#change-group-name&#039;).val(),
+                userTitle: changeGroupUserTitle.val(),
+                description: $(&#039;#change-group-desc&#039;).val(),
+                icon: groupIcon.attr(&#039;value&#039;),
+                labelColor: changeGroupLabelColor.val(),
+                textColor: changeGroupTextColor.val(),
+                userTitleEnabled: $(&#039;#group-userTitleEnabled&#039;).is(&#039;:checked&#039;),
+                private: $(&#039;#group-private&#039;).is(&#039;:checked&#039;),
+                hidden: $(&#039;#group-hidden&#039;).is(&#039;:checked&#039;),
+                memberPostCids: $(&#039;#memberPostCids&#039;).val(),
+                disableJoinRequests: $(&#039;#group-disableJoinRequests&#039;).is(&#039;:checked&#039;),
+                disableLeave: $(&#039;#group-disableLeave&#039;).is(&#039;:checked&#039;),
+            }).then(() =&gt; {
+                const newName = $(&#039;#change-group-name&#039;).val();
+
+                // If the group name changed, change url
+                if (groupName !== newName) {
+                    ajaxify.go(&#039;admin/manage/groups/&#039; + encodeURIComponent(newName), undefined, true);
+                }
+
+                alerts.success(&#039;[[admin/manage/groups:edit.save-success]]&#039;);
+            }).catch(alerts.error);
+            return false;
+        });
+    };
+
+    function setupGroupMembersMenu() {
+        $(&#039;[component=&quot;groups/members&quot;]&#039;).on(&#039;click&#039;, &#039;[data-action]&#039;, function () {
+            const btnEl = $(this);
+            const userRow = btnEl.parents(&#039;[data-uid]&#039;);
+            const ownerFlagEl = userRow.find(&#039;.member-name .user-owner-icon&#039;);
+            const isOwner = !ownerFlagEl.hasClass(&#039;invisible&#039;);
+            const uid = userRow.attr(&#039;data-uid&#039;);
+            const action = btnEl.attr(&#039;data-action&#039;);
+
+            switch (action) {
+            case &#039;toggleOwnership&#039;:
+                api[isOwner ? &#039;del&#039; : &#039;put&#039;](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() =&gt; {
+                    ownerFlagEl.toggleClass(&#039;invisible&#039;);
+                }).catch(alerts.error);
+                break;
+
+            case &#039;kick&#039;:
+                bootbox.confirm(&#039;[[admin/manage/groups:edit.confirm-remove-user]]&#039;, function (confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                    api.del(&#039;/groups/&#039; + ajaxify.data.group.slug + &#039;/membership/&#039; + uid).then(() =&gt; {
+                        userRow.slideUp().remove();
+                    }).catch(alerts.error);
+                });
+                break;
+            default:
+                break;
+            }
+        });
+    }
+
+    function navigateToCategory(cid) {
+        if (cid) {
+            const url = &#039;admin/manage/privileges/&#039; + cid + &#039;?group=&#039; + ajaxify.data.group.nameEncoded;
+            if (app.flags &amp;&amp; app.flags._unsaved === true) {
+                translator.translate(&#039;[[global:unsaved-changes]]&#039;, function (text) {
+                    bootbox.confirm(text, function (navigate) {
+                        if (navigate) {
+                            app.flags._unsaved = false;
+                            ajaxify.go(url);
+                        }
+                    });
+                });
+                return;
+            }
+            ajaxify.go(url);
+        }
+    }
+
+    return Groups;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

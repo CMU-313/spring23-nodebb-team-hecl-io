@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/settings/email.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/settings/email.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">126</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">27.86</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.25</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;admin/settings/email&#039;, [&#039;ace/ace&#039;, &#039;alerts&#039;, &#039;admin/settings&#039;], function (ace, alerts) {
+    const module = {};
+    let emailEditor;
+
+    module.init = function () {
+        configureEmailTester();
+        configureEmailEditor();
+        handleDigestHourChange();
+        handleSmtpServiceChange();
+
+        $(window).on(&#039;action:admin.settingsLoaded action:admin.settingsSaved&#039;, handleDigestHourChange);
+        $(window).on(&#039;action:admin.settingsSaved&#039;, function () {
+            socket.emit(&#039;admin.user.restartJobs&#039;);
+        });
+        $(&#039;[id=&quot;email:smtpTransport:service&quot;]&#039;).change(handleSmtpServiceChange);
+    };
+
+    function configureEmailTester() {
+        $(&#039;button[data-action=&quot;email.test&quot;]&#039;).off(&#039;click&#039;).on(&#039;click&#039;, function () {
+            socket.emit(&#039;admin.email.test&#039;, { template: $(&#039;#test-email&#039;).val() }, function (err) {
+                if (err) {
+                    console.error(err.message);
+                    return alerts.error(err);
+                }
+                alerts.success(&#039;Test Email Sent&#039;);
+            });
+            return false;
+        });
+    }
+
+    function configureEmailEditor() {
+        $(&#039;#email-editor-selector&#039;).on(&#039;change&#039;, updateEmailEditor);
+
+        emailEditor = ace.edit(&#039;email-editor&#039;);
+        emailEditor.$blockScrolling = Infinity;
+        emailEditor.setTheme(&#039;ace/theme/twilight&#039;);
+        emailEditor.getSession().setMode(&#039;ace/mode/html&#039;);
+
+        emailEditor.on(&#039;change&#039;, function () {
+            const emailPath = $(&#039;#email-editor-selector&#039;).val();
+            let original;
+            ajaxify.data.emails.forEach(function (email) {
+                if (email.path === emailPath) {
+                    original = email.original;
+                }
+            });
+            const newEmail = emailEditor.getValue();
+            $(&#039;#email-editor-holder&#039;).val(newEmail !== original ? newEmail : &#039;&#039;);
+        });
+
+        $(&#039;button[data-action=&quot;email.revert&quot;]&#039;).off(&#039;click&#039;).on(&#039;click&#039;, function () {
+            ajaxify.data.emails.forEach(function (email) {
+                if (email.path === $(&#039;#email-editor-selector&#039;).val()) {
+                    emailEditor.getSession().setValue(email.original);
+                    $(&#039;#email-editor-holder&#039;).val(&#039;&#039;);
+                }
+            });
+        });
+
+        updateEmailEditor();
+    }
+
+    function updateEmailEditor() {
+        ajaxify.data.emails.forEach(function (email) {
+            if (email.path === $(&#039;#email-editor-selector&#039;).val()) {
+                emailEditor.getSession().setValue(email.text);
+                $(&#039;#email-editor-holder&#039;)
+                    .val(email.text !== email.original ? email.text : &#039;&#039;)
+                    .attr(&#039;data-field&#039;, &#039;email:custom:&#039; + email.path);
+            }
+        });
+    }
+
+    function handleDigestHourChange() {
+        let hour = parseInt($(&#039;#digestHour&#039;).val(), 10);
+
+        if (isNaN(hour)) {
+            hour = 17;
+        } else if (hour &gt; 23 || hour &lt; 0) {
+            hour = 0;
+        }
+
+        socket.emit(&#039;admin.getServerTime&#039;, {}, function (err, now) {
+            if (err) {
+                return alerts.error(err);
+            }
+
+            const date = new Date(now.timestamp);
+            const offset = (new Date().getTimezoneOffset() - now.offset) / 60;
+            date.setHours(date.getHours() + offset);
+
+            $(&#039;#serverTime&#039;).text(date.toLocaleTimeString());
+
+            date.setHours(parseInt(hour, 10) - offset, 0, 0, 0);
+
+            // If adjusted time is in the past, move to next day
+            if (date.getTime() &lt; Date.now()) {
+                date.setDate(date.getDate() + 1);
+            }
+
+            $(&#039;#nextDigestTime&#039;).text(date.toLocaleString());
+        });
+    }
+
+    function handleSmtpServiceChange() {
+        const isCustom = $(&#039;[id=&quot;email:smtpTransport:service&quot;]&#039;).val() === &#039;nodebb-custom-smtp&#039;;
+        $(&#039;[id=&quot;email:smtpTransport:custom-service&quot;]&#039;)[isCustom ? &#039;slideDown&#039; : &#039;slideUp&#039;](isCustom);
+
+        const enabledEl = document.getElementById(&#039;email:smtpTransport:enabled&#039;);
+        if (enabledEl) {
+            if (!enabledEl.checked) {
+                enabledEl.closest(&#039;label&#039;).classList.toggle(&#039;is-checked&#039;, true);
+                enabledEl.checked = true;
+                alerts.alert({
+                    message: &#039;[[admin/settings/email:smtp-transport.auto-enable-toast]]&#039;,
+                    timeout: 5000,
+                });
+            }
+        }
+    }
+
+    return module;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

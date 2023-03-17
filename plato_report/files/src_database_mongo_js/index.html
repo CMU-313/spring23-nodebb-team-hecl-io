@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/mongo.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/mongo.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.50</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">187</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.32</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.31</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+const winston = require(&#039;winston&#039;);
+const nconf = require(&#039;nconf&#039;);
+const semver = require(&#039;semver&#039;);
+const prompt = require(&#039;prompt&#039;);
+const utils = require(&#039;../utils&#039;);
+
+let client;
+
+const connection = require(&#039;./mongo/connection&#039;);
+
+const mongoModule = module.exports;
+
+function isUriNotSpecified() {
+    return !prompt.history(&#039;mongo:uri&#039;).value;
+}
+
+mongoModule.questions = [
+    {
+        name: &#039;mongo:uri&#039;,
+        description: &#039;MongoDB connection URI: (leave blank if you wish to specify host, port, username/password and database individually)\nFormat: mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]&#039;,
+        default: nconf.get(&#039;mongo:uri&#039;) || &#039;&#039;,
+        hideOnWebInstall: true,
+    },
+    {
+        name: &#039;mongo:host&#039;,
+        description: &#039;Host IP or address of your MongoDB instance&#039;,
+        default: nconf.get(&#039;mongo:host&#039;) || &#039;127.0.0.1&#039;,
+        ask: isUriNotSpecified,
+    },
+    {
+        name: &#039;mongo:port&#039;,
+        description: &#039;Host port of your MongoDB instance&#039;,
+        default: nconf.get(&#039;mongo:port&#039;) || 27017,
+        ask: isUriNotSpecified,
+    },
+    {
+        name: &#039;mongo:username&#039;,
+        description: &#039;MongoDB username&#039;,
+        default: nconf.get(&#039;mongo:username&#039;) || &#039;&#039;,
+        ask: isUriNotSpecified,
+    },
+    {
+        name: &#039;mongo:password&#039;,
+        description: &#039;Password of your MongoDB database&#039;,
+        default: nconf.get(&#039;mongo:password&#039;) || &#039;&#039;,
+        hidden: true,
+        ask: isUriNotSpecified,
+        before: function (value) { value = value || nconf.get(&#039;mongo:password&#039;) || &#039;&#039;; return value; },
+    },
+    {
+        name: &#039;mongo:database&#039;,
+        description: &#039;MongoDB database name&#039;,
+        default: nconf.get(&#039;mongo:database&#039;) || &#039;nodebb&#039;,
+        ask: isUriNotSpecified,
+    },
+];
+
+mongoModule.init = async function () {
+    client = await connection.connect(nconf.get(&#039;mongo&#039;));
+    mongoModule.client = client.db();
+};
+
+mongoModule.createSessionStore = async function (options) {
+    const MongoStore = require(&#039;connect-mongo&#039;);
+    const meta = require(&#039;../meta&#039;);
+
+    const store = MongoStore.create({
+        clientPromise: connection.connect(options),
+        ttl: meta.getSessionTTLSeconds(),
+    });
+
+    return store;
+};
+
+mongoModule.createIndices = async function () {
+    if (!mongoModule.client) {
+        winston.warn(&#039;[database/createIndices] database not initialized&#039;);
+        return;
+    }
+
+    winston.info(&#039;[database] Checking database indices.&#039;);
+    const collection = mongoModule.client.collection(&#039;objects&#039;);
+    await collection.createIndex({ _key: 1, score: -1 }, { background: true });
+    await collection.createIndex({ _key: 1, value: -1 }, { background: true, unique: true, sparse: true });
+    await collection.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0, background: true });
+    winston.info(&#039;[database] Checking database indices done!&#039;);
+};
+
+mongoModule.checkCompatibility = function (callback) {
+    const mongoPkg = require(&#039;mongodb/package.json&#039;);
+    mongoModule.checkCompatibilityVersion(mongoPkg.version, callback);
+};
+
+mongoModule.checkCompatibilityVersion = function (version, callback) {
+    if (semver.lt(version, &#039;2.0.0&#039;)) {
+        return callback(new Error(&#039;The `mongodb` package is out-of-date, please run `./nodebb setup` again.&#039;));
+    }
+
+    callback();
+};
+
+mongoModule.info = async function (db) {
+    if (!db) {
+        const client = await connection.connect(nconf.get(&#039;mongo&#039;));
+        db = client.db();
+    }
+    mongoModule.client = mongoModule.client || db;
+    let serverStatusError = &#039;&#039;;
+
+    async function getServerStatus() {
+        try {
+            return await db.command({ serverStatus: 1 });
+        } catch (err) {
+            serverStatusError = err.message;
+            // Override mongo error with more human-readable error
+            if (err.name === &#039;MongoError&#039; &amp;&amp; err.codeName === &#039;Unauthorized&#039;) {
+                serverStatusError = &#039;[[admin/advanced/database:mongo.unauthorized]]&#039;;
+            }
+            winston.error(err.stack);
+        }
+    }
+
+    let [serverStatus, stats, listCollections] = await Promise.all([
+        getServerStatus(),
+        db.command({ dbStats: 1 }),
+        getCollectionStats(db),
+    ]);
+    stats = stats || {};
+    serverStatus = serverStatus || {};
+    stats.serverStatusError = serverStatusError;
+    const scale = 1024 * 1024 * 1024;
+
+    listCollections = listCollections.map(collectionInfo =&gt; ({
+        name: collectionInfo.ns,
+        count: collectionInfo.count,
+        size: collectionInfo.size,
+        avgObjSize: collectionInfo.avgObjSize,
+        storageSize: collectionInfo.storageSize,
+        totalIndexSize: collectionInfo.totalIndexSize,
+        indexSizes: collectionInfo.indexSizes,
+    }));
+
+    stats.mem = serverStatus.mem || { resident: 0, virtual: 0, mapped: 0 };
+    stats.mem.resident = (stats.mem.resident / 1024).toFixed(3);
+    stats.mem.virtual = (stats.mem.virtual / 1024).toFixed(3);
+    stats.mem.mapped = (stats.mem.mapped / 1024).toFixed(3);
+    stats.collectionData = listCollections;
+    stats.network = serverStatus.network || { bytesIn: 0, bytesOut: 0, numRequests: 0 };
+    stats.network.bytesIn = (stats.network.bytesIn / scale).toFixed(3);
+    stats.network.bytesOut = (stats.network.bytesOut / scale).toFixed(3);
+    stats.network.numRequests = utils.addCommas(stats.network.numRequests);
+    stats.raw = JSON.stringify(stats, null, 4);
+
+    stats.avgObjSize = stats.avgObjSize.toFixed(2);
+    stats.dataSize = (stats.dataSize / scale).toFixed(3);
+    stats.storageSize = (stats.storageSize / scale).toFixed(3);
+    stats.fileSize = stats.fileSize ? (stats.fileSize / scale).toFixed(3) : 0;
+    stats.indexSize = (stats.indexSize / scale).toFixed(3);
+    stats.storageEngine = serverStatus.storageEngine ? serverStatus.storageEngine.name : &#039;mmapv1&#039;;
+    stats.host = serverStatus.host;
+    stats.version = serverStatus.version;
+    stats.uptime = serverStatus.uptime;
+    stats.mongo = true;
+    return stats;
+};
+
+async function getCollectionStats(db) {
+    const items = await db.listCollections().toArray();
+    return await Promise.all(items.map(collection =&gt; db.collection(collection.name).stats()));
+}
+
+mongoModule.close = function (callback) {
+    callback = callback || function () {};
+    client.close(err =&gt; callback(err));
+};
+
+require(&#039;./mongo/main&#039;)(mongoModule);
+require(&#039;./mongo/hash&#039;)(mongoModule);
+require(&#039;./mongo/sets&#039;)(mongoModule);
+require(&#039;./mongo/sorted&#039;)(mongoModule);
+require(&#039;./mongo/list&#039;)(mongoModule);
+require(&#039;./mongo/transaction&#039;)(mongoModule);
+
+require(&#039;../promisify&#039;)(mongoModule, [&#039;client&#039;, &#039;sessionStore&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

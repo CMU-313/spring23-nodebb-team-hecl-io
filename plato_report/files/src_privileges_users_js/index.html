@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/privileges/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/privileges/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.29</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">153</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">40.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.71</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const user = require(&#039;../user&#039;);
+const meta = require(&#039;../meta&#039;);
+const groups = require(&#039;../groups&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const privsUsers = module.exports;
+
+privsUsers.isAdministrator = async function (uid) {
+    return await isGroupMember(uid, &#039;administrators&#039;);
+};
+
+privsUsers.isGlobalModerator = async function (uid) {
+    return await isGroupMember(uid, &#039;Global Moderators&#039;);
+};
+
+async function isGroupMember(uid, groupName) {
+    return await groups[Array.isArray(uid) ? &#039;isMembers&#039; : &#039;isMember&#039;](uid, groupName);
+}
+
+privsUsers.isModerator = async function (uid, cid) {
+    if (Array.isArray(cid)) {
+        return await isModeratorOfCategories(cid, uid);
+    } else if (Array.isArray(uid)) {
+        return await isModeratorsOfCategory(cid, uid);
+    }
+    return await isModeratorOfCategory(cid, uid);
+};
+
+async function isModeratorOfCategories(cids, uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return await filterIsModerator(cids, uid, cids.map(() =&gt; false));
+    }
+
+    const isGlobalModerator = await privsUsers.isGlobalModerator(uid);
+    if (isGlobalModerator) {
+        return await filterIsModerator(cids, uid, cids.map(() =&gt; true));
+    }
+    const uniqueCids = _.uniq(cids);
+    const isAllowed = await helpers.isAllowedTo(&#039;moderate&#039;, uid, uniqueCids);
+
+    const cidToIsAllowed = _.zipObject(uniqueCids, isAllowed);
+    const isModerator = cids.map(cid =&gt; cidToIsAllowed[cid]);
+    return await filterIsModerator(cids, uid, isModerator);
+}
+
+async function isModeratorsOfCategory(cid, uids) {
+    const [check1, check2, check3] = await Promise.all([
+        privsUsers.isGlobalModerator(uids),
+        groups.isMembers(uids, `cid:${cid}:privileges:moderate`),
+        groups.isMembersOfGroupList(uids, `cid:${cid}:privileges:groups:moderate`),
+    ]);
+    const isModerator = uids.map((uid, idx) =&gt; check1[idx] || check2[idx] || check3[idx]);
+    return await filterIsModerator(cid, uids, isModerator);
+}
+
+async function isModeratorOfCategory(cid, uid) {
+    const result = await isModeratorOfCategories([cid], uid);
+    return result ? result[0] : false;
+}
+
+async function filterIsModerator(cid, uid, isModerator) {
+    const data = await plugins.hooks.fire(&#039;filter:user.isModerator&#039;, { uid: uid, cid: cid, isModerator: isModerator });
+    if ((Array.isArray(uid) || Array.isArray(cid)) &amp;&amp; !Array.isArray(data.isModerator)) {
+        throw new Error(&#039;filter:user.isModerator - i/o mismatch&#039;);
+    }
+
+    return data.isModerator;
+}
+
+privsUsers.canEdit = async function (callerUid, uid) {
+    if (parseInt(callerUid, 10) === parseInt(uid, 10)) {
+        return true;
+    }
+    const [isAdmin, isGlobalMod, isTargetAdmin] = await Promise.all([
+        privsUsers.isAdministrator(callerUid),
+        privsUsers.isGlobalModerator(callerUid),
+        privsUsers.isAdministrator(uid),
+    ]);
+
+    const data = await plugins.hooks.fire(&#039;filter:user.canEdit&#039;, {
+        isAdmin: isAdmin,
+        isGlobalMod: isGlobalMod,
+        isTargetAdmin: isTargetAdmin,
+        canEdit: isAdmin || (isGlobalMod &amp;&amp; !isTargetAdmin),
+        callerUid: callerUid,
+        uid: uid,
+    });
+    return data.canEdit;
+};
+
+privsUsers.canBanUser = async function (callerUid, uid) {
+    const privsGlobal = require(&#039;./global&#039;);
+    const [canBan, isTargetAdmin] = await Promise.all([
+        privsGlobal.can(&#039;ban&#039;, callerUid),
+        privsUsers.isAdministrator(uid),
+    ]);
+
+    const data = await plugins.hooks.fire(&#039;filter:user.canBanUser&#039;, {
+        canBan: canBan &amp;&amp; !isTargetAdmin,
+        callerUid: callerUid,
+        uid: uid,
+    });
+    return data.canBan;
+};
+
+privsUsers.canMuteUser = async function (callerUid, uid) {
+    const privsGlobal = require(&#039;./global&#039;);
+    const [canMute, isTargetAdmin] = await Promise.all([
+        privsGlobal.can(&#039;mute&#039;, callerUid),
+        privsUsers.isAdministrator(uid),
+    ]);
+
+    const data = await plugins.hooks.fire(&#039;filter:user.canMuteUser&#039;, {
+        canMute: canMute &amp;&amp; !isTargetAdmin,
+        callerUid: callerUid,
+        uid: uid,
+    });
+    return data.canMute;
+};
+
+privsUsers.canFlag = async function (callerUid, uid) {
+    const [userReputation, targetPrivileged, reporterPrivileged] = await Promise.all([
+        user.getUserField(callerUid, &#039;reputation&#039;),
+        user.isPrivileged(uid),
+        user.isPrivileged(callerUid),
+    ]);
+    const minimumReputation = meta.config[&#039;min:rep:flag&#039;];
+    let canFlag = reporterPrivileged || (userReputation &gt;= minimumReputation);
+
+    if (targetPrivileged &amp;&amp; !reporterPrivileged) {
+        canFlag = false;
+    }
+
+    return { flag: canFlag };
+};
+
+privsUsers.hasBanPrivilege = async uid =&gt; await hasGlobalPrivilege(&#039;ban&#039;, uid);
+privsUsers.hasMutePrivilege = async uid =&gt; await hasGlobalPrivilege(&#039;mute&#039;, uid);
+privsUsers.hasInvitePrivilege = async uid =&gt; await hasGlobalPrivilege(&#039;invite&#039;, uid);
+
+async function hasGlobalPrivilege(privilege, uid) {
+    const privsGlobal = require(&#039;./global&#039;);
+    const privilegeName = privilege.split(&#039;-&#039;).map(word =&gt; word.slice(0, 1).toUpperCase() + word.slice(1)).join(&#039;&#039;);
+    let payload = { uid };
+    payload[`can${privilegeName}`] = await privsGlobal.can(privilege, uid);
+    payload = await plugins.hooks.fire(`filter:user.has${privilegeName}Privilege`, payload);
+    return payload[`can${privilegeName}`];
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

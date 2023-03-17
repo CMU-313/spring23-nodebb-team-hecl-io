@@ -14,7 +14,8 @@
         "lint": "npx tsc && eslint --cache ./nodebb .",
         "test": "npx tsc && nyc --reporter=html --reporter=text-summary mocha",
         "coverage": "nyc report --reporter=text-lcov > ./coverage/lcov.info",
-        "coveralls": "nyc report --reporter=text-lcov | coveralls && rm -r coverage"
+        "coveralls": "nyc report --reporter=text-lcov | coveralls && rm -r coverage",
+        "plato": "npm install -g plato"
     },
     "nyc": {
         "exclude": [
@@ -51,6 +52,7 @@
         "compression": "1.7.4",
         "connect-flash": "0.1.1",
         "connect-mongo": "4.6.0",
+        "plato": "^1.7.0",
         "connect-multiparty": "2.2.0",
         "connect-pg-simple": "8.0.0",
         "connect-redis": "6.1.3",

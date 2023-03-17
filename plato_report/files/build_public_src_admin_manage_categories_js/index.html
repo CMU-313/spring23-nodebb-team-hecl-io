@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/manage/categories.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/manage/categories.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">304</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">37.74</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.40</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/manage/categories&#039;, [
+    &#039;translator&#039;,
+    &#039;benchpress&#039;,
+    &#039;categorySelector&#039;,
+    &#039;api&#039;,
+    &#039;Sortable&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (translator, Benchpress, categorySelector, api, Sortable, bootbox, alerts) {
+    Sortable = Sortable.default;
+    const Categories = {};
+    let newCategoryId = -1;
+    let sortables;
+
+    Categories.init = function () {
+        categorySelector.init($(&#039;.category [component=&quot;category-selector&quot;]&#039;), {
+            parentCid: ajaxify.data.selectedCategory ? ajaxify.data.selectedCategory.cid : 0,
+            onSelect: function (selectedCategory) {
+                ajaxify.go(&#039;/admin/manage/categories&#039; + (selectedCategory.cid ? &#039;?cid=&#039; + selectedCategory.cid : &#039;&#039;));
+            },
+            localCategories: [],
+        });
+        Categories.render(ajaxify.data.categoriesTree);
+
+        $(&#039;button[data-action=&quot;create&quot;]&#039;).on(&#039;click&#039;, Categories.throwCreateModal);
+
+        // Enable/Disable toggle events
+        $(&#039;.categories&#039;).on(&#039;click&#039;, &#039;.category-tools [data-action=&quot;toggle&quot;]&#039;, function () {
+            const $this = $(this);
+            const cid = $this.attr(&#039;data-disable-cid&#039;);
+            const parentEl = $this.parents(&#039;li[data-cid=&quot;&#039; + cid + &#039;&quot;]&#039;);
+            const disabled = parentEl.hasClass(&#039;disabled&#039;);
+            const childrenEls = parentEl.find(&#039;li[data-cid]&#039;);
+            const childrenCids = childrenEls.map(function () {
+                return $(this).attr(&#039;data-cid&#039;);
+            }).get();
+
+            Categories.toggle([cid].concat(childrenCids), !disabled);
+        });
+
+        $(&#039;.categories&#039;).on(&#039;click&#039;, &#039;.toggle&#039;, function () {
+            const el = $(this);
+            el.find(&#039;i&#039;).toggleClass(&#039;fa-chevron-down&#039;).toggleClass(&#039;fa-chevron-right&#039;);
+            el.closest(&#039;[data-cid]&#039;).find(&#039;&gt; ul[data-cid]&#039;).toggleClass(&#039;hidden&#039;);
+        });
+
+        $(&#039;.categories&#039;).on(&#039;click&#039;, &#039;.set-order&#039;, function () {
+            const cid = $(this).attr(&#039;data-cid&#039;);
+            const order = $(this).attr(&#039;data-order&#039;);
+            const modal = bootbox.dialog({
+                title: &#039;[[admin/manage/categories:set-order]]&#039;,
+                message: &#039;&lt;input type=&quot;number&quot; min=&quot;1&quot; class=&quot;form-control input-lg&quot; value=&#039; + order + &#039; /&gt;&lt;p class=&quot;help-block&quot;&gt;[[admin/manage/categories:set-order-help]]&lt;/p&gt;&#039;,
+                show: true,
+                buttons: {
+                    save: {
+                        label: &#039;[[modules:bootbox.confirm]]&#039;,
+                        className: &#039;btn-primary&#039;,
+                        callback: function () {
+                            const val = modal.find(&#039;input&#039;).val();
+                            if (val &amp;&amp; cid) {
+                                const modified = {};
+                                modified[cid] = { order: Math.max(1, parseInt(val, 10)) };
+                                api.put(&#039;/categories/&#039; + cid, modified[cid]).then(function () {
+                                    ajaxify.refresh();
+                                }).catch(alerts.error);
+                            } else {
+                                return false;
+                            }
+                        },
+                    },
+                },
+            });
+        });
+
+        $(&#039;#collapse-all&#039;).on(&#039;click&#039;, function () {
+            toggleAll(false);
+        });
+
+        $(&#039;#expand-all&#039;).on(&#039;click&#039;, function () {
+            toggleAll(true);
+        });
+
+        function toggleAll(expand) {
+            const el = $(&#039;.categories .toggle&#039;);
+            el.find(&#039;i&#039;).toggleClass(&#039;fa-chevron-down&#039;, expand).toggleClass(&#039;fa-chevron-right&#039;, !expand);
+            el.closest(&#039;[data-cid]&#039;).find(&#039;&gt; ul[data-cid]&#039;).toggleClass(&#039;hidden&#039;, !expand);
+        }
+    };
+
+    Categories.throwCreateModal = function () {
+        Benchpress.render(&#039;admin/partials/categories/create&#039;, {}).then(function (html) {
+            const modal = bootbox.dialog({
+                title: &#039;[[admin/manage/categories:alert.create]]&#039;,
+                message: html,
+                buttons: {
+                    save: {
+                        label: &#039;[[global:save]]&#039;,
+                        className: &#039;btn-primary&#039;,
+                        callback: submit,
+                    },
+                },
+            });
+            const options = {
+                localCategories: [
+                    {
+                        cid: 0,
+                        name: &#039;[[admin/manage/categories:parent-category-none]]&#039;,
+                        icon: &#039;fa-none&#039;,
+                    },
+                ],
+            };
+            const parentSelector = categorySelector.init(modal.find(&#039;#parentCidGroup [component=&quot;category-selector&quot;]&#039;), options);
+            const cloneFromSelector = categorySelector.init(modal.find(&#039;#cloneFromCidGroup [component=&quot;category-selector&quot;]&#039;), options);
+            function submit() {
+                const formData = modal.find(&#039;form&#039;).serializeObject();
+                formData.description = &#039;&#039;;
+                formData.icon = &#039;fa-comments&#039;;
+                formData.uid = app.user.uid;
+                formData.parentCid = parentSelector.getSelectedCid();
+                formData.cloneFromCid = cloneFromSelector.getSelectedCid();
+
+                Categories.create(formData);
+                modal.modal(&#039;hide&#039;);
+                return false;
+            }
+
+            $(&#039;#cloneChildren&#039;).on(&#039;change&#039;, function () {
+                const check = $(this);
+                const parentSelect = modal.find(&#039;#parentCidGroup [component=&quot;category-selector&quot;] .dropdown-toggle&#039;);
+
+                if (check.prop(&#039;checked&#039;)) {
+                    parentSelect.attr(&#039;disabled&#039;, &#039;disabled&#039;);
+                    parentSelector.selectCategory(0);
+                } else {
+                    parentSelect.removeAttr(&#039;disabled&#039;);
+                }
+            });
+
+            modal.find(&#039;form&#039;).on(&#039;submit&#039;, submit);
+        });
+    };
+
+    Categories.create = function (payload) {
+        api.post(&#039;/categories&#039;, payload, function (err, data) {
+            if (err) {
+                return alerts.error(err);
+            }
+
+            alerts.alert({
+                alert_id: &#039;category_created&#039;,
+                title: &#039;[[admin/manage/categories:alert.created]]&#039;,
+                message: &#039;[[admin/manage/categories:alert.create-success]]&#039;,
+                type: &#039;success&#039;,
+                timeout: 2000,
+            });
+
+            ajaxify.go(&#039;admin/manage/categories/&#039; + data.cid);
+        });
+    };
+
+    Categories.render = function (categories) {
+        const container = $(&#039;.categories&#039;);
+
+        if (!categories || !categories.length) {
+            translator.translate(&#039;[[admin/manage/categories:alert.none-active]]&#039;, function (text) {
+                $(&#039;&lt;div&gt;&lt;/div&gt;&#039;)
+                    .addClass(&#039;alert alert-info text-center&#039;)
+                    .text(text)
+                    .appendTo(container);
+            });
+        } else {
+            sortables = {};
+            renderList(categories, container, { cid: 0 });
+        }
+    };
+
+    Categories.toggle = function (cids, disabled) {
+        const listEl = document.querySelector(&#039;.categories ul&#039;);
+        Promise.all(cids.map(cid =&gt; api.put(&#039;/categories/&#039; + cid, {
+            disabled: disabled ? 1 : 0,
+        }).then(() =&gt; {
+            const categoryEl = listEl.querySelector(`li[data-cid=&quot;${cid}&quot;]`);
+            categoryEl.classList[disabled ? &#039;add&#039; : &#039;remove&#039;](&#039;disabled&#039;);
+            $(categoryEl).find(&#039;li a[data-action=&quot;toggle&quot;]&#039;).first().translateText(disabled ? &#039;[[admin/manage/categories:enable]]&#039; : &#039;[[admin/manage/categories:disable]]&#039;);
+        }).catch(alerts.error)));
+    };
+
+    function itemDidAdd(e) {
+        newCategoryId = e.to.dataset.cid;
+    }
+
+    function itemDragDidEnd(e) {
+        const isCategoryUpdate = parseInt(newCategoryId, 10) !== -1;
+
+        // Update needed?
+        if ((e.newIndex != null &amp;&amp; parseInt(e.oldIndex, 10) !== parseInt(e.newIndex, 10)) || isCategoryUpdate) {
+            const cid = e.item.dataset.cid;
+            const modified = {};
+            // on page 1 baseIndex is 0, on page n baseIndex is (n - 1) * ajaxify.data.categoriesPerPage
+            // this makes sure order is correct when drag &amp; drop is used on pages &gt; 1
+            const baseIndex = (ajaxify.data.pagination.currentPage - 1) * ajaxify.data.categoriesPerPage;
+            modified[cid] = {
+                order: baseIndex + e.newIndex + 1,
+            };
+
+            if (isCategoryUpdate) {
+                modified[cid].parentCid = newCategoryId;
+
+                // Show/hide expand buttons after drag completion
+                const oldParentCid = parseInt(e.from.getAttribute(&#039;data-cid&#039;), 10);
+                const newParentCid = parseInt(e.to.getAttribute(&#039;data-cid&#039;), 10);
+                if (oldParentCid !== newParentCid) {
+                    const toggle = document.querySelector(`.categories li[data-cid=&quot;${newParentCid}&quot;] .toggle`);
+                    if (toggle) {
+                        toggle.classList.toggle(&#039;hide&#039;, false);
+                    }
+
+                    const children = document.querySelectorAll(`.categories li[data-cid=&quot;${oldParentCid}&quot;] ul[data-cid] li[data-cid]`);
+                    if (!children.length) {
+                        const toggle = document.querySelector(`.categories li[data-cid=&quot;${oldParentCid}&quot;] .toggle`);
+                        if (toggle) {
+                            toggle.classList.toggle(&#039;hide&#039;, true);
+                        }
+                    }
+
+                    e.item.dataset.parentCid = newParentCid;
+                }
+            }
+
+            newCategoryId = -1;
+            api.put(&#039;/categories/&#039; + cid, modified[cid]).catch(alerts.error);
+        }
+    }
+
+    /**
+     * Render categories - recursively
+     *
+     * @param categories {array} categories tree
+     * @param level {number} current sub-level of rendering
+     * @param container {object} parent jquery element for the list
+     * @param parentId {number} parent category identifier
+     */
+    function renderList(categories, container, parentCategory) {
+        // Translate category names if needed
+        let count = 0;
+        const parentId = parentCategory.cid;
+        categories.forEach(function (category, idx, parent) {
+            translator.translate(category.name, function (translated) {
+                if (category.name !== translated) {
+                    category.name = translated;
+                }
+                count += 1;
+
+                if (count === parent.length) {
+                    continueRender();
+                }
+            });
+        });
+
+        if (!categories.length) {
+            continueRender();
+        }
+
+        function continueRender() {
+            app.parseAndTranslate(&#039;admin/partials/categories/category-rows&#039;, {
+                cid: parentCategory.cid,
+                categories: categories,
+                parentCategory: parentCategory,
+            }, function (html) {
+                if (container.find(&#039;.category-row&#039;).length) {
+                    container.find(&#039;.category-row&#039;).after(html);
+                } else {
+                    container.append(html);
+                }
+
+                // Disable expand toggle
+                if (!categories.length) {
+                    const toggleEl = container.get(0).querySelector(&#039;.toggle&#039;);
+                    toggleEl.classList.toggle(&#039;hide&#039;, true);
+                }
+
+                // Handle and children categories in this level have
+                for (let x = 0, numCategories = categories.length; x &lt; numCategories; x += 1) {
+                    renderList(categories[x].children, $(&#039;li[data-cid=&quot;&#039; + categories[x].cid + &#039;&quot;]&#039;), categories[x]);
+                }
+
+                // Make list sortable
+                sortables[parentId] = Sortable.create($(&#039;ul[data-cid=&quot;&#039; + parentId + &#039;&quot;]&#039;)[0], {
+                    group: &#039;cross-categories&#039;,
+                    animation: 150,
+                    handle: &#039;.information&#039;,
+                    dataIdAttr: &#039;data-cid&#039;,
+                    ghostClass: &#039;placeholder&#039;,
+                    onAdd: itemDidAdd,
+                    onEnd: itemDragDidEnd,
+                });
+            });
+        }
+    }
+
+    return Categories;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

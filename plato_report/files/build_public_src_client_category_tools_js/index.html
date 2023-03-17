@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/category/tools.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/category/tools.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.45</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">336</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">42.34</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.46</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/category/tools&#039;, [
+    &#039;topicSelect&#039;,
+    &#039;forum/topic/threadTools&#039;,
+    &#039;components&#039;,
+    &#039;api&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (topicSelect, threadTools, components, api, bootbox, alerts) {
+    const CategoryTools = {};
+
+    CategoryTools.init = function () {
+        topicSelect.init(updateDropdownOptions);
+
+        handlePinnedTopicSort();
+
+        components.get(&#039;topic/delete&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;del&#039;, &#039;/state&#039;, &#039;delete&#039;, onDeletePurgeComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/restore&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;put&#039;, &#039;/state&#039;, &#039;restore&#039;, onDeletePurgeComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/purge&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;del&#039;, &#039;&#039;, &#039;purge&#039;, onDeletePurgeComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/lock&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;put&#039;, &#039;/lock&#039;, &#039;lock&#039;, onCommandComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/unlock&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;del&#039;, &#039;/lock&#039;, &#039;unlock&#039;, onCommandComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/pin&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;put&#039;, &#039;/pin&#039;, &#039;pin&#039;, onCommandComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/unpin&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;del&#039;, &#039;/pin&#039;, &#039;unpin&#039;, onCommandComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/resolve&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;put&#039;, &#039;/resolve&#039;, &#039;resolve&#039;, onCommandComplete);
+            return false;
+        });
+
+        components.get(&#039;topic/unresolve&#039;).on(&#039;click&#039;, function () {
+            categoryCommand(&#039;del&#039;, &#039;/resolve&#039;, &#039;unresolve&#039;, onCommandComplete);
+            return false;
+        });
+
+        // todo: should also use categoryCommand, but no write api call exists for this yet
+        components.get(&#039;topic/mark-unread-for-all&#039;).on(&#039;click&#039;, function () {
+            const tids = topicSelect.getSelectedTids();
+            if (!tids.length) {
+                return alerts.error(&#039;[[error:no-topics-selected]]&#039;);
+            }
+            socket.emit(&#039;topics.markAsUnreadForAll&#039;, tids, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                alerts.success(&#039;[[topic:markAsUnreadForAll.success]]&#039;);
+                tids.forEach(function (tid) {
+                    $(&#039;[component=&quot;category/topic&quot;][data-tid=&quot;&#039; + tid + &#039;&quot;]&#039;).addClass(&#039;unread&#039;);
+                });
+                onCommandComplete();
+            });
+            return false;
+        });
+
+        components.get(&#039;topic/move&#039;).on(&#039;click&#039;, function () {
+            require([&#039;forum/topic/move&#039;], function (move) {
+                const tids = topicSelect.getSelectedTids();
+
+                if (!tids.length) {
+                    return alerts.error(&#039;[[error:no-topics-selected]]&#039;);
+                }
+                move.init(tids, null, onCommandComplete);
+            });
+
+            return false;
+        });
+
+        components.get(&#039;topic/move-all&#039;).on(&#039;click&#039;, function () {
+            const cid = ajaxify.data.cid;
+            if (!ajaxify.data.template.category) {
+                return alerts.error(&#039;[[error:invalid-data]]&#039;);
+            }
+            require([&#039;forum/topic/move&#039;], function (move) {
+                move.init(null, cid, function (err) {
+                    if (err) {
+                        return alerts.error(err);
+                    }
+
+                    ajaxify.refresh();
+                });
+            });
+        });
+
+        components.get(&#039;topic/merge&#039;).on(&#039;click&#039;, function () {
+            const tids = topicSelect.getSelectedTids();
+            require([&#039;forum/topic/merge&#039;], function (merge) {
+                merge.init(function () {
+                    if (tids.length) {
+                        tids.forEach(function (tid) {
+                            merge.addTopic(tid);
+                        });
+                    }
+                });
+            });
+        });
+
+        CategoryTools.removeListeners();
+        socket.on(&#039;event:topic_deleted&#039;, setDeleteState);
+        socket.on(&#039;event:topic_restored&#039;, setDeleteState);
+        socket.on(&#039;event:topic_purged&#039;, onTopicPurged);
+        socket.on(&#039;event:topic_locked&#039;, setLockedState);
+        socket.on(&#039;event:topic_unlocked&#039;, setLockedState);
+        socket.on(&#039;event:topic_pinned&#039;, setPinnedState);
+        socket.on(&#039;event:topic_unpinned&#039;, setPinnedState);
+        socket.on(&#039;event:topic_resolved&#039;, setResolvedState);
+        socket.on(&#039;event:topic_unresolved&#039;, setResolvedState);
+        socket.on(&#039;event:topic_moved&#039;, onTopicMoved);
+    };
+
+    function categoryCommand(method, path, command, onComplete) {
+        if (!onComplete) {
+            onComplete = function () {};
+        }
+        const tids = topicSelect.getSelectedTids();
+        const body = {};
+        const execute = function (ok) {
+            if (ok) {
+                Promise.all(tids.map(tid =&gt; api[method](`/topics/${tid}${path}`, body)))
+                    .then(onComplete)
+                    .catch(alerts.error);
+            }
+        };
+
+        if (!tids.length) {
+            return alerts.error(&#039;[[error:no-topics-selected]]&#039;);
+        }
+
+        switch (command) {
+        case &#039;delete&#039;:
+        case &#039;restore&#039;:
+        case &#039;purge&#039;:
+            bootbox.confirm(`[[topic:thread_tools.${command}_confirm]]`, execute);
+            break;
+
+        case &#039;pin&#039;:
+            threadTools.requestPinExpiry(body, execute.bind(null, true));
+            break;
+
+        default:
+            execute(true);
+            break;
+        }
+    }
+
+    CategoryTools.removeListeners = function () {
+        socket.removeListener(&#039;event:topic_deleted&#039;, setDeleteState);
+        socket.removeListener(&#039;event:topic_restored&#039;, setDeleteState);
+        socket.removeListener(&#039;event:topic_purged&#039;, onTopicPurged);
+        socket.removeListener(&#039;event:topic_locked&#039;, setLockedState);
+        socket.removeListener(&#039;event:topic_unlocked&#039;, setLockedState);
+        socket.removeListener(&#039;event:topic_pinned&#039;, setPinnedState);
+        socket.removeListener(&#039;event:topic_unpinned&#039;, setPinnedState);
+        socket.removeListener(&#039;event:topic_resolved&#039;, setResolvedState);
+        socket.removeListener(&#039;event:topic_unresolved&#039;, setResolvedState);
+        socket.removeListener(&#039;event:topic_moved&#039;, onTopicMoved);
+    };
+
+    function closeDropDown() {
+        $(&#039;.thread-tools.open&#039;).find(&#039;.dropdown-toggle&#039;).trigger(&#039;click&#039;);
+    }
+
+    function onCommandComplete() {
+        closeDropDown();
+        topicSelect.unselectAll();
+    }
+
+    function onDeletePurgeComplete() {
+        closeDropDown();
+        updateDropdownOptions();
+    }
+
+    function updateDropdownOptions() {
+        const tids = topicSelect.getSelectedTids();
+        const isAnyDeleted = isAny(isTopicDeleted, tids);
+        const areAllDeleted = areAll(isTopicDeleted, tids);
+        const isAnyPinned = isAny(isTopicPinned, tids);
+        const isAnyLocked = isAny(isTopicLocked, tids);
+        const isAnyScheduled = isAny(isTopicScheduled, tids);
+        const areAllScheduled = areAll(isTopicScheduled, tids);
+
+        components.get(&#039;topic/delete&#039;).toggleClass(&#039;hidden&#039;, isAnyDeleted);
+        components.get(&#039;topic/restore&#039;).toggleClass(&#039;hidden&#039;, isAnyScheduled || !isAnyDeleted);
+        components.get(&#039;topic/purge&#039;).toggleClass(&#039;hidden&#039;, !areAllDeleted);
+
+        components.get(&#039;topic/lock&#039;).toggleClass(&#039;hidden&#039;, isAnyLocked);
+        components.get(&#039;topic/unlock&#039;).toggleClass(&#039;hidden&#039;, !isAnyLocked);
+
+        components.get(&#039;topic/pin&#039;).toggleClass(&#039;hidden&#039;, areAllScheduled || isAnyPinned);
+        components.get(&#039;topic/unpin&#039;).toggleClass(&#039;hidden&#039;, areAllScheduled || !isAnyPinned);
+
+        components.get(&#039;topic/resolve&#039;).toggleClass(&#039;hidden&#039;, areAllScheduled);
+        components.get(&#039;topic/unresolve&#039;).toggleClass(&#039;hidden&#039;, areAllScheduled);
+
+        components.get(&#039;topic/merge&#039;).toggleClass(&#039;hidden&#039;, isAnyScheduled);
+    }
+
+    function isAny(method, tids) {
+        for (let i = 0; i &lt; tids.length; i += 1) {
+            if (method(tids[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function areAll(method, tids) {
+        for (let i = 0; i &lt; tids.length; i += 1) {
+            if (!method(tids[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isTopicDeleted(tid) {
+        return getTopicEl(tid).hasClass(&#039;deleted&#039;);
+    }
+
+    function isTopicLocked(tid) {
+        return getTopicEl(tid).hasClass(&#039;locked&#039;);
+    }
+
+    function isTopicPinned(tid) {
+        return getTopicEl(tid).hasClass(&#039;pinned&#039;);
+    }
+
+    function isTopicScheduled(tid) {
+        return getTopicEl(tid).hasClass(&#039;scheduled&#039;);
+    }
+
+    function getTopicEl(tid) {
+        return components.get(&#039;category/topic&#039;, &#039;tid&#039;, tid);
+    }
+
+    function setDeleteState(data) {
+        const topic = getTopicEl(data.tid);
+        topic.toggleClass(&#039;deleted&#039;, data.isDeleted);
+        topic.find(&#039;[component=&quot;topic/locked&quot;]&#039;).toggleClass(&#039;hide&#039;, !data.isDeleted);
+    }
+
+    function setPinnedState(data) {
+        const topic = getTopicEl(data.tid);
+        topic.toggleClass(&#039;pinned&#039;, data.isPinned);
+        topic.find(&#039;[component=&quot;topic/pinned&quot;]&#039;).toggleClass(&#039;hide&#039;, !data.isPinned);
+        ajaxify.refresh();
+    }
+
+    function setResolvedState(data) {
+        const topic = getTopicEl(data.tid);
+        topic.toggleClass(&#039;resolved&#039;, data.isResolved);
+        topic.find(&#039;[component=&quot;topic/resolved&quot;]&#039;).toggleClass(&#039;hide&#039;, !data.isResolved);
+        topic.find(&#039;[component=&quot;topic/unresolved&quot;]&#039;).toggleClass(&#039;hide&#039;, data.isResolved);
+        ajaxify.refresh();
+    }
+
+    function setLockedState(data) {
+        const topic = getTopicEl(data.tid);
+        topic.toggleClass(&#039;locked&#039;, data.isLocked);
+        topic.find(&#039;[component=&quot;topic/locked&quot;]&#039;).toggleClass(&#039;hide&#039;, !data.isLocked);
+    }
+
+    function onTopicMoved(data) {
+        getTopicEl(data.tid).remove();
+    }
+
+    function onTopicPurged(data) {
+        getTopicEl(data.tid).remove();
+    }
+
+    function handlePinnedTopicSort() {
+        if (!ajaxify.data.topics || !ajaxify.data.template.category) {
+            return;
+        }
+        const numPinned = ajaxify.data.topics.filter(topic =&gt; topic.pinned).length;
+        if ((!app.user.isAdmin &amp;&amp; !app.user.isMod) || numPinned &lt; 2) {
+            return;
+        }
+
+        app.loadJQueryUI(function () {
+            const topicListEl = $(&#039;[component=&quot;category&quot;]&#039;).filter(function (i, e) {
+                return !$(e).parents(&#039;[widget-area],[data-widget-area]&#039;).length;
+            });
+            let baseIndex = 0;
+            topicListEl.sortable({
+                handle: &#039;[component=&quot;topic/pinned&quot;]&#039;,
+                items: &#039;[component=&quot;category/topic&quot;].pinned&#039;,
+                start: function () {
+                    baseIndex = parseInt(topicListEl.find(&#039;[component=&quot;category/topic&quot;].pinned&#039;).first().attr(&#039;data-index&#039;), 10);
+                },
+                update: function (ev, ui) {
+                    socket.emit(&#039;topics.orderPinnedTopics&#039;, {
+                        tid: ui.item.attr(&#039;data-tid&#039;),
+                        order: baseIndex + ui.item.index(),
+                    }, function (err) {
+                        if (err) {
+                            return alerts.error(err);
+                        }
+                        topicListEl.find(&#039;[component=&quot;category/topic&quot;].pinned&#039;).each((index, el) =&gt; {
+                            $(el).attr(&#039;data-index&#039;, baseIndex + index);
+                        });
+                    });
+                },
+            });
+        });
+    }
+
+    return CategoryTools;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

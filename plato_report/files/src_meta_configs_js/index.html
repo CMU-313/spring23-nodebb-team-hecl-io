@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/configs.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/configs.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">288</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">47.79</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.02</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const path = require(&#039;path&#039;);
+const winston = require(&#039;winston&#039;);
+
+const db = require(&#039;../database&#039;);
+const pubsub = require(&#039;../pubsub&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const Meta = require(&#039;./index&#039;);
+const cacheBuster = require(&#039;./cacheBuster&#039;);
+const defaults = require(&#039;../../install/data/defaults.json&#039;);
+
+const Configs = module.exports;
+
+Meta.config = {};
+
+// called after data is loaded from db
+function deserialize(config) {
+    const deserialized = {};
+    Object.keys(config).forEach((key) =&gt; {
+        const defaultType = typeof defaults[key];
+        const type = typeof config[key];
+        const number = parseFloat(config[key]);
+
+        if (defaultType === &#039;string&#039; &amp;&amp; type === &#039;number&#039;) {
+            deserialized[key] = String(config[key]);
+        } else if (defaultType === &#039;number&#039; &amp;&amp; type === &#039;string&#039;) {
+            if (!isNaN(number) &amp;&amp; isFinite(config[key])) {
+                deserialized[key] = number;
+            } else {
+                deserialized[key] = defaults[key];
+            }
+        } else if (config[key] === &#039;true&#039;) {
+            deserialized[key] = true;
+        } else if (config[key] === &#039;false&#039;) {
+            deserialized[key] = false;
+        } else if (config[key] === null) {
+            deserialized[key] = defaults[key];
+        } else if (defaultType === &#039;undefined&#039; &amp;&amp; !isNaN(number) &amp;&amp; isFinite(config[key])) {
+            deserialized[key] = number;
+        } else if (Array.isArray(defaults[key]) &amp;&amp; !Array.isArray(config[key])) {
+            try {
+                deserialized[key] = JSON.parse(config[key] || &#039;[]&#039;);
+            } catch (err) {
+                winston.error(err.stack);
+                deserialized[key] = defaults[key];
+            }
+        } else {
+            deserialized[key] = config[key];
+        }
+    });
+    return deserialized;
+}
+
+// called before data is saved to db
+function serialize(config) {
+    const serialized = {};
+    Object.keys(config).forEach((key) =&gt; {
+        const defaultType = typeof defaults[key];
+        const type = typeof config[key];
+        const number = parseFloat(config[key]);
+
+        if (defaultType === &#039;string&#039; &amp;&amp; type === &#039;number&#039;) {
+            serialized[key] = String(config[key]);
+        } else if (defaultType === &#039;number&#039; &amp;&amp; type === &#039;string&#039;) {
+            if (!isNaN(number) &amp;&amp; isFinite(config[key])) {
+                serialized[key] = number;
+            } else {
+                serialized[key] = defaults[key];
+            }
+        } else if (config[key] === null) {
+            serialized[key] = defaults[key];
+        } else if (defaultType === &#039;undefined&#039; &amp;&amp; !isNaN(number) &amp;&amp; isFinite(config[key])) {
+            serialized[key] = number;
+        } else if (Array.isArray(defaults[key]) &amp;&amp; Array.isArray(config[key])) {
+            serialized[key] = JSON.stringify(config[key]);
+        } else {
+            serialized[key] = config[key];
+        }
+    });
+    return serialized;
+}
+
+Configs.deserialize = deserialize;
+Configs.serialize = serialize;
+
+Configs.init = async function () {
+    const config = await Configs.list();
+    const buster = await cacheBuster.read();
+    config[&#039;cache-buster&#039;] = `v=${buster || Date.now()}`;
+    Meta.config = config;
+};
+
+Configs.list = async function () {
+    return await Configs.getFields([]);
+};
+
+Configs.get = async function (field) {
+    const values = await Configs.getFields([field]);
+    return (values.hasOwnProperty(field) &amp;&amp; values[field] !== undefined) ? values[field] : null;
+};
+
+Configs.getFields = async function (fields) {
+    let values;
+    if (fields.length) {
+        values = await db.getObjectFields(&#039;config&#039;, fields);
+    } else {
+        values = await db.getObject(&#039;config&#039;);
+    }
+
+    values = { ...defaults, ...(values ? deserialize(values) : {}) };
+
+    if (!fields.length) {
+        values.version = nconf.get(&#039;version&#039;);
+        values.registry = nconf.get(&#039;registry&#039;);
+    }
+    return values;
+};
+
+Configs.set = async function (field, value) {
+    if (!field) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    await Configs.setMultiple({
+        [field]: value,
+    });
+};
+
+Configs.setMultiple = async function (data) {
+    await processConfig(data);
+    data = serialize(data);
+    await db.setObject(&#039;config&#039;, data);
+    updateConfig(deserialize(data));
+};
+
+Configs.setOnEmpty = async function (values) {
+    const data = await db.getObject(&#039;config&#039;);
+    values = serialize(values);
+    const config = { ...values, ...(data ? serialize(data) : {}) };
+    await db.setObject(&#039;config&#039;, config);
+};
+
+Configs.remove = async function (field) {
+    await db.deleteObjectField(&#039;config&#039;, field);
+};
+
+Configs.registerHooks = () =&gt; {
+    plugins.hooks.register(&#039;core&#039;, {
+        hook: &#039;filter:settings.set&#039;,
+        method: async ({ plugin, settings, quiet }) =&gt; {
+            if (plugin === &#039;core.api&#039; &amp;&amp; Array.isArray(settings.tokens)) {
+                // Generate tokens if not present already
+                settings.tokens.forEach((set) =&gt; {
+                    if (set.token === &#039;&#039;) {
+                        set.token = utils.generateUUID();
+                    }
+
+                    if (isNaN(parseInt(set.uid, 10))) {
+                        set.uid = 0;
+                    }
+                });
+            }
+
+            return { plugin, settings, quiet };
+        },
+    });
+
+    plugins.hooks.register(&#039;core&#039;, {
+        hook: &#039;filter:settings.get&#039;,
+        method: async ({ plugin, values }) =&gt; {
+            if (plugin === &#039;core.api&#039; &amp;&amp; Array.isArray(values.tokens)) {
+                values.tokens = values.tokens.map((tokenObj) =&gt; {
+                    tokenObj.uid = parseInt(tokenObj.uid, 10);
+                    if (tokenObj.timestamp) {
+                        tokenObj.timestampISO = new Date(parseInt(tokenObj.timestamp, 10)).toISOString();
+                    }
+
+                    return tokenObj;
+                });
+            }
+
+            return { plugin, values };
+        },
+    });
+};
+
+Configs.cookie = {
+    get: () =&gt; {
+        const cookie = {};
+
+        if (nconf.get(&#039;cookieDomain&#039;) || Meta.config.cookieDomain) {
+            cookie.domain = nconf.get(&#039;cookieDomain&#039;) || Meta.config.cookieDomain;
+        }
+
+        if (nconf.get(&#039;secure&#039;)) {
+            cookie.secure = true;
+        }
+
+        const relativePath = nconf.get(&#039;relative_path&#039;);
+        if (relativePath !== &#039;&#039;) {
+            cookie.path = relativePath;
+        }
+
+        // Ideally configurable from ACP, but cannot be &quot;Strict&quot; as then top-level access will treat it as guest.
+        cookie.sameSite = &#039;Lax&#039;;
+
+        return cookie;
+    },
+};
+
+async function processConfig(data) {
+    ensureInteger(data, &#039;maximumUsernameLength&#039;, 1);
+    ensureInteger(data, &#039;minimumUsernameLength&#039;, 1);
+    ensureInteger(data, &#039;minimumPasswordLength&#039;, 1);
+    ensureInteger(data, &#039;maximumAboutMeLength&#039;, 0);
+    if (data.minimumUsernameLength &gt; data.maximumUsernameLength) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    await Promise.all([
+        saveRenderedCss(data),
+        getLogoSize(data),
+    ]);
+}
+
+function ensureInteger(data, field, min) {
+    if (data.hasOwnProperty(field)) {
+        data[field] = parseInt(data[field], 10);
+        if (!(data[field] &gt;= min)) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+    }
+}
+
+async function saveRenderedCss(data) {
+    if (!data.customCSS) {
+        return;
+    }
+    const less = require(&#039;less&#039;);
+    const lessObject = await less.render(data.customCSS, {
+        compress: true,
+        javascriptEnabled: false,
+    });
+    data.renderedCustomCSS = lessObject.css;
+}
+
+async function getLogoSize(data) {
+    const image = require(&#039;../image&#039;);
+    if (!data[&#039;brand:logo&#039;]) {
+        return;
+    }
+    let size;
+    try {
+        size = await image.size(path.join(nconf.get(&#039;upload_path&#039;), &#039;system&#039;, &#039;site-logo-x50.png&#039;));
+    } catch (err) {
+        if (err.code === &#039;ENOENT&#039;) {
+            // For whatever reason the x50 logo wasn&#039;t generated, gracefully error out
+            winston.warn(&#039;[logo] The email-safe logo doesn\&#039;t seem to have been created, please re-upload your site logo.&#039;);
+            size = {
+                height: 0,
+                width: 0,
+            };
+        } else {
+            throw err;
+        }
+    }
+    data[&#039;brand:emailLogo&#039;] = nconf.get(&#039;url&#039;) + path.join(nconf.get(&#039;upload_url&#039;), &#039;system&#039;, &#039;site-logo-x50.png&#039;);
+    data[&#039;brand:emailLogo:height&#039;] = size.height;
+    data[&#039;brand:emailLogo:width&#039;] = size.width;
+}
+
+function updateConfig(config) {
+    updateLocalConfig(config);
+    pubsub.publish(&#039;config:update&#039;, config);
+}
+
+function updateLocalConfig(config) {
+    Object.assign(Meta.config, config);
+}
+
+pubsub.on(&#039;config:update&#039;, (config) =&gt; {
+    if (typeof config === &#039;object&#039; &amp;&amp; Meta.config) {
+        updateLocalConfig(config);
+    }
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/api/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/api/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">57.15</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">478</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">50.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.97</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const winston = require(&#039;winston&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const groups = require(&#039;../groups&#039;);
+const meta = require(&#039;../meta&#039;);
+const flags = require(&#039;../flags&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const events = require(&#039;../events&#039;);
+const translator = require(&#039;../translator&#039;);
+const sockets = require(&#039;../socket.io&#039;);
+
+const usersAPI = module.exports;
+
+usersAPI.create = async function (caller, data) {
+    if (!data) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const uid = await user.create(data);
+    return await user.getUserData(uid);
+};
+
+usersAPI.update = async function (caller, data) {
+    if (!caller.uid) {
+        throw new Error(&#039;[[error:invalid-uid]]&#039;);
+    }
+
+    if (!data || !data.uid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const oldUserData = await user.getUserFields(data.uid, [&#039;email&#039;, &#039;username&#039;]);
+    if (!oldUserData || !oldUserData.username) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const [isAdminOrGlobalMod, canEdit] = await Promise.all([
+        user.isAdminOrGlobalMod(caller.uid),
+        privileges.users.canEdit(caller.uid, data.uid),
+    ]);
+
+    // Changing own email/username requires password confirmation
+    if (data.hasOwnProperty(&#039;email&#039;) || data.hasOwnProperty(&#039;username&#039;)) {
+        await isPrivilegedOrSelfAndPasswordMatch(caller, data);
+    }
+
+    if (!canEdit) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    if (!isAdminOrGlobalMod &amp;&amp; meta.config[&#039;username:disableEdit&#039;]) {
+        data.username = oldUserData.username;
+    }
+
+    if (!isAdminOrGlobalMod &amp;&amp; meta.config[&#039;email:disableEdit&#039;]) {
+        data.email = oldUserData.email;
+    }
+
+    await user.updateProfile(caller.uid, data);
+    const userData = await user.getUserData(data.uid);
+
+    if (userData.username !== oldUserData.username) {
+        await events.log({
+            type: &#039;username-change&#039;,
+            uid: caller.uid,
+            targetUid: data.uid,
+            ip: caller.ip,
+            oldUsername: oldUserData.username,
+            newUsername: userData.username,
+        });
+    }
+    return userData;
+};
+
+usersAPI.delete = async function (caller, { uid, password }) {
+    await processDeletion({ uid: uid, method: &#039;delete&#039;, password, caller });
+};
+
+usersAPI.deleteContent = async function (caller, { uid, password }) {
+    await processDeletion({ uid, method: &#039;deleteContent&#039;, password, caller });
+};
+
+usersAPI.deleteAccount = async function (caller, { uid, password }) {
+    await processDeletion({ uid, method: &#039;deleteAccount&#039;, password, caller });
+};
+
+usersAPI.deleteMany = async function (caller, data) {
+    if (await canDeleteUids(data.uids)) {
+        await Promise.all(data.uids.map(uid =&gt; processDeletion({ uid, method: &#039;delete&#039;, caller })));
+    }
+};
+
+usersAPI.updateSettings = async function (caller, data) {
+    if (!caller.uid || !data || !data.settings) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const canEdit = await privileges.users.canEdit(caller.uid, data.uid);
+    if (!canEdit) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    let defaults = await user.getSettings(0);
+    defaults = {
+        postsPerPage: defaults.postsPerPage,
+        topicsPerPage: defaults.topicsPerPage,
+        userLang: defaults.userLang,
+        acpLang: defaults.acpLang,
+    };
+    // load raw settings without parsing values to booleans
+    const current = await db.getObject(`user:${data.uid}:settings`);
+    const payload = { ...defaults, ...current, ...data.settings };
+    delete payload.uid;
+
+    return await user.saveSettings(data.uid, payload);
+};
+
+usersAPI.changePassword = async function (caller, data) {
+    await user.changePassword(caller.uid, Object.assign(data, { ip: caller.ip }));
+    await events.log({
+        type: &#039;password-change&#039;,
+        uid: caller.uid,
+        targetUid: data.uid,
+        ip: caller.ip,
+    });
+};
+
+usersAPI.follow = async function (caller, data) {
+    await user.follow(caller.uid, data.uid);
+    plugins.hooks.fire(&#039;action:user.follow&#039;, {
+        fromUid: caller.uid,
+        toUid: data.uid,
+    });
+
+    const userData = await user.getUserFields(caller.uid, [&#039;username&#039;, &#039;userslug&#039;]);
+    const { displayname } = userData;
+
+    const notifObj = await notifications.create({
+        type: &#039;follow&#039;,
+        bodyShort: `[[notifications:user_started_following_you, ${displayname}]]`,
+        nid: `follow:${data.uid}:uid:${caller.uid}`,
+        from: caller.uid,
+        path: `/uid/${data.uid}/followers`,
+        mergeId: &#039;notifications:user_started_following_you&#039;,
+    });
+    if (!notifObj) {
+        return;
+    }
+    notifObj.user = userData;
+    await notifications.push(notifObj, [data.uid]);
+};
+
+usersAPI.unfollow = async function (caller, data) {
+    await user.unfollow(caller.uid, data.uid);
+    plugins.hooks.fire(&#039;action:user.unfollow&#039;, {
+        fromUid: caller.uid,
+        toUid: data.uid,
+    });
+};
+
+usersAPI.ban = async function (caller, data) {
+    if (!await privileges.users.hasBanPrivilege(caller.uid)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    } else if (await user.isAdministrator(data.uid)) {
+        throw new Error(&#039;[[error:cant-ban-other-admins]]&#039;);
+    }
+
+    const banData = await user.bans.ban(data.uid, data.until, data.reason);
+    await db.setObjectField(`uid:${data.uid}:ban:${banData.timestamp}`, &#039;fromUid&#039;, caller.uid);
+
+    if (!data.reason) {
+        data.reason = await translator.translate(&#039;[[user:info.banned-no-reason]]&#039;);
+    }
+
+    sockets.in(`uid_${data.uid}`).emit(&#039;event:banned&#039;, {
+        until: data.until,
+        reason: validator.escape(String(data.reason || &#039;&#039;)),
+    });
+
+    await flags.resolveFlag(&#039;user&#039;, data.uid, caller.uid);
+    await flags.resolveUserPostFlags(data.uid, caller.uid);
+    await events.log({
+        type: &#039;user-ban&#039;,
+        uid: caller.uid,
+        targetUid: data.uid,
+        ip: caller.ip,
+        reason: data.reason || undefined,
+    });
+    plugins.hooks.fire(&#039;action:user.banned&#039;, {
+        callerUid: caller.uid,
+        ip: caller.ip,
+        uid: data.uid,
+        until: data.until &gt; 0 ? data.until : undefined,
+        reason: data.reason || undefined,
+    });
+    const canLoginIfBanned = await user.bans.canLoginIfBanned(data.uid);
+    if (!canLoginIfBanned) {
+        await user.auth.revokeAllSessions(data.uid);
+    }
+};
+
+usersAPI.unban = async function (caller, data) {
+    if (!await privileges.users.hasBanPrivilege(caller.uid)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    await user.bans.unban(data.uid);
+
+    sockets.in(`uid_${data.uid}`).emit(&#039;event:unbanned&#039;);
+
+    await events.log({
+        type: &#039;user-unban&#039;,
+        uid: caller.uid,
+        targetUid: data.uid,
+        ip: caller.ip,
+    });
+    plugins.hooks.fire(&#039;action:user.unbanned&#039;, {
+        callerUid: caller.uid,
+        ip: caller.ip,
+        uid: data.uid,
+    });
+};
+
+usersAPI.mute = async function (caller, data) {
+    if (!await privileges.users.hasMutePrivilege(caller.uid)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    } else if (await user.isAdministrator(data.uid)) {
+        throw new Error(&#039;[[error:cant-mute-other-admins]]&#039;);
+    }
+    const reason = data.reason || &#039;[[user:info.muted-no-reason]]&#039;;
+    await db.setObject(`user:${data.uid}`, {
+        mutedUntil: data.until,
+        mutedReason: reason,
+    });
+    const now = Date.now();
+    const muteKey = `uid:${data.uid}:mute:${now}`;
+    const muteData = {
+        fromUid: caller.uid,
+        uid: data.uid,
+        timestamp: now,
+        expire: data.until,
+    };
+    if (data.reason) {
+        muteData.reason = reason;
+    }
+    await db.sortedSetAdd(`uid:${data.uid}:mutes:timestamp`, now, muteKey);
+    await db.setObject(muteKey, muteData);
+    await events.log({
+        type: &#039;user-mute&#039;,
+        uid: caller.uid,
+        targetUid: data.uid,
+        ip: caller.ip,
+        reason: data.reason || undefined,
+    });
+    plugins.hooks.fire(&#039;action:user.muted&#039;, {
+        callerUid: caller.uid,
+        ip: caller.ip,
+        uid: data.uid,
+        until: data.until &gt; 0 ? data.until : undefined,
+        reason: data.reason || undefined,
+    });
+};
+
+usersAPI.unmute = async function (caller, data) {
+    if (!await privileges.users.hasMutePrivilege(caller.uid)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    await db.deleteObjectFields(`user:${data.uid}`, [&#039;mutedUntil&#039;, &#039;mutedReason&#039;]);
+
+    await events.log({
+        type: &#039;user-unmute&#039;,
+        uid: caller.uid,
+        targetUid: data.uid,
+        ip: caller.ip,
+    });
+    plugins.hooks.fire(&#039;action:user.unmuted&#039;, {
+        callerUid: caller.uid,
+        ip: caller.ip,
+        uid: data.uid,
+    });
+};
+
+async function isPrivilegedOrSelfAndPasswordMatch(caller, data) {
+    const { uid } = caller;
+    const isSelf = parseInt(uid, 10) === parseInt(data.uid, 10);
+    const canEdit = await privileges.users.canEdit(uid, data.uid);
+
+    if (!canEdit) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    const [hasPassword, passwordMatch] = await Promise.all([
+        user.hasPassword(data.uid),
+        data.password ? user.isPasswordCorrect(data.uid, data.password, caller.ip) : false,
+    ]);
+
+    if (isSelf &amp;&amp; hasPassword &amp;&amp; !passwordMatch) {
+        throw new Error(&#039;[[error:invalid-password]]&#039;);
+    }
+}
+
+async function processDeletion({ uid, method, password, caller }) {
+    const isTargetAdmin = await user.isAdministrator(uid);
+    const isSelf = parseInt(uid, 10) === parseInt(caller.uid, 10);
+    const isAdmin = await user.isAdministrator(caller.uid);
+
+    if (isSelf &amp;&amp; meta.config.allowAccountDelete !== 1) {
+        throw new Error(&#039;[[error:account-deletion-disabled]]&#039;);
+    } else if (!isSelf &amp;&amp; !isAdmin) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    } else if (isTargetAdmin) {
+        throw new Error(&#039;[[error:cant-delete-admin]&#039;);
+    }
+
+    // Privilege checks -- only deleteAccount is available for non-admins
+    const hasAdminPrivilege = await privileges.admin.can(&#039;admin:users&#039;, caller.uid);
+    if (!hasAdminPrivilege &amp;&amp; [&#039;delete&#039;, &#039;deleteContent&#039;].includes(method)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    // Self-deletions require a password
+    const hasPassword = await user.hasPassword(uid);
+    if (isSelf &amp;&amp; hasPassword) {
+        const ok = await user.isPasswordCorrect(uid, password, caller.ip);
+        if (!ok) {
+            throw new Error(&#039;[[error:invalid-password]]&#039;);
+        }
+    }
+
+    await flags.resolveFlag(&#039;user&#039;, uid, caller.uid);
+
+    let userData;
+    if (method === &#039;deleteAccount&#039;) {
+        userData = await user[method](uid);
+    } else {
+        userData = await user[method](caller.uid, uid);
+    }
+    userData = userData || {};
+
+    sockets.server.sockets.emit(&#039;event:user_status_change&#039;, { uid: caller.uid, status: &#039;offline&#039; });
+
+    plugins.hooks.fire(&#039;action:user.delete&#039;, {
+        callerUid: caller.uid,
+        uid: uid,
+        ip: caller.ip,
+        user: userData,
+    });
+
+    await events.log({
+        type: `user-${method}`,
+        uid: caller.uid,
+        targetUid: uid,
+        ip: caller.ip,
+        username: userData.username,
+        email: userData.email,
+    });
+}
+
+async function canDeleteUids(uids) {
+    if (!Array.isArray(uids)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const isMembers = await groups.isMembers(uids, &#039;administrators&#039;);
+    if (isMembers.includes(true)) {
+        throw new Error(&#039;[[error:cant-delete-other-admins]]&#039;);
+    }
+
+    return true;
+}
+
+usersAPI.search = async function (caller, data) {
+    if (!data) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const [allowed, isPrivileged] = await Promise.all([
+        privileges.global.can(&#039;search:users&#039;, caller.uid),
+        user.isPrivileged(caller.uid),
+    ]);
+    let filters = data.filters || [];
+    filters = Array.isArray(filters) ? filters : [filters];
+    if (!allowed ||
+        ((
+            data.searchBy === &#039;ip&#039; ||
+            data.searchBy === &#039;email&#039; ||
+            filters.includes(&#039;banned&#039;) ||
+            filters.includes(&#039;flagged&#039;)
+        ) &amp;&amp; !isPrivileged)
+    ) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    return await user.search({
+        query: data.query,
+        searchBy: data.searchBy || &#039;username&#039;,
+        page: data.page || 1,
+        sortBy: data.sortBy || &#039;lastonline&#039;,
+        filters: filters,
+    });
+};
+
+usersAPI.changePicture = async (caller, data) =&gt; {
+    if (!data) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const { type, url } = data;
+    let picture = &#039;&#039;;
+
+    await user.checkMinReputation(caller.uid, data.uid, &#039;min:rep:profile-picture&#039;);
+    const canEdit = await privileges.users.canEdit(caller.uid, data.uid);
+    if (!canEdit) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    if (type === &#039;default&#039;) {
+        picture = &#039;&#039;;
+    } else if (type === &#039;uploaded&#039;) {
+        picture = await user.getUserField(data.uid, &#039;uploadedpicture&#039;);
+    } else if (type === &#039;external&#039; &amp;&amp; url) {
+        picture = validator.escape(url);
+    } else {
+        const returnData = await plugins.hooks.fire(&#039;filter:user.getPicture&#039;, {
+            uid: caller.uid,
+            type: type,
+            picture: undefined,
+        });
+        picture = returnData &amp;&amp; returnData.picture;
+    }
+
+    const validBackgrounds = await user.getIconBackgrounds(caller.uid);
+    if (!validBackgrounds.includes(data.bgColor)) {
+        data.bgColor = validBackgrounds[0];
+    }
+
+    await user.updateProfile(caller.uid, {
+        uid: data.uid,
+        picture: picture,
+        &#039;icon:bgColor&#039;: data.bgColor,
+    }, [&#039;picture&#039;, &#039;icon:bgColor&#039;]);
+};
+
+usersAPI.generateExport = async (caller, { uid, type }) =&gt; {
+    const count = await db.incrObjectField(&#039;locks&#039;, `export:${uid}${type}`);
+    if (count &gt; 1) {
+        throw new Error(&#039;[[error:already-exporting]]&#039;);
+    }
+
+    const child = require(&#039;child_process&#039;).fork(`./src/user/jobs/export-${type}.js`, [], {
+        env: process.env,
+    });
+    child.send({ uid });
+    child.on(&#039;error&#039;, async (err) =&gt; {
+        winston.error(err.stack);
+        await db.deleteObjectField(&#039;locks&#039;, `export:${uid}${type}`);
+    });
+    child.on(&#039;exit&#039;, async () =&gt; {
+        await db.deleteObjectField(&#039;locks&#039;, `export:${uid}${type}`);
+        const userData = await user.getUserFields(uid, [&#039;username&#039;, &#039;userslug&#039;]);
+        const { displayname } = userData;
+        const n = await notifications.create({
+            bodyShort: `[[notifications:${type}-exported, ${displayname}]]`,
+            path: `/api/user/${userData.userslug}/export/${type}`,
+            nid: `${type}:export:${uid}`,
+            from: uid,
+        });
+        await notifications.push(n, [caller.uid]);
+        await events.log({
+            type: `export:${type}`,
+            uid: caller.uid,
+            targetUid: uid,
+            ip: caller.ip,
+        });
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

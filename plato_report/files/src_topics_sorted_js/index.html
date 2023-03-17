@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/sorted.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/sorted.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">219</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">45.34</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.84</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const user = require(&#039;../user&#039;);
+const categories = require(&#039;../categories&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+module.exports = function (Topics) {
+    Topics.getSortedTopics = async function (params) {
+        const data = {
+            nextStart: 0,
+            topicCount: 0,
+            topics: [],
+        };
+
+        params.term = params.term || &#039;alltime&#039;;
+        params.sort = params.sort || &#039;recent&#039;;
+        params.query = params.query || {};
+        if (params.hasOwnProperty(&#039;cids&#039;) &amp;&amp; params.cids &amp;&amp; !Array.isArray(params.cids)) {
+            params.cids = [params.cids];
+        }
+        params.tags = params.tags || [];
+        if (params.tags &amp;&amp; !Array.isArray(params.tags)) {
+            params.tags = [params.tags];
+        }
+        data.tids = await getTids(params);
+        data.tids = await sortTids(data.tids, params);
+        data.tids = await filterTids(data.tids.slice(0, meta.config.recentMaxTopics), params);
+        data.topicCount = data.tids.length;
+        data.topics = await getTopics(data.tids, params);
+        data.nextStart = params.stop + 1;
+        return data;
+    };
+
+    async function getTids(params) {
+        if (plugins.hooks.hasListeners(&#039;filter:topics.getSortedTids&#039;)) {
+            const result = await plugins.hooks.fire(&#039;filter:topics.getSortedTids&#039;, { params: params, tids: [] });
+            return result.tids;
+        }
+        let tids = [];
+        if (params.term !== &#039;alltime&#039;) {
+            tids = await Topics.getLatestTidsFromSet(&#039;topics:tid&#039;, 0, -1, params.term);
+            if (params.filter === &#039;watched&#039;) {
+                tids = await Topics.filterWatchedTids(tids, params.uid);
+            }
+        } else if (params.filter === &#039;watched&#039;) {
+            tids = await db.getSortedSetRevRange(`uid:${params.uid}:followed_tids`, 0, -1);
+        } else if (params.cids) {
+            tids = await getCidTids(params);
+        } else if (params.tags.length) {
+            tids = await getTagTids(params);
+        } else if (params.sort === &#039;old&#039;) {
+            tids = await db.getSortedSetRange(`topics:recent`, 0, meta.config.recentMaxTopics - 1);
+        } else {
+            tids = await db.getSortedSetRevRange(`topics:${params.sort}`, 0, meta.config.recentMaxTopics - 1);
+        }
+
+        return tids;
+    }
+
+    async function getTagTids(params) {
+        const sets = [
+            params.sort === &#039;old&#039; ?
+                &#039;topics:recent&#039; :
+                `topics:${params.sort}`,
+            ...params.tags.map(tag =&gt; `tag:${tag}:topics`),
+        ];
+        const method = params.sort === &#039;old&#039; ?
+            &#039;getSortedSetIntersect&#039; :
+            &#039;getSortedSetRevIntersect&#039;;
+        return await db[method]({
+            sets: sets,
+            start: 0,
+            stop: meta.config.recentMaxTopics - 1,
+            weights: sets.map((s, index) =&gt; (index ? 0 : 1)),
+        });
+    }
+
+    async function getCidTids(params) {
+        if (params.tags.length) {
+            return _.intersection(...await Promise.all(params.tags.map(async (tag) =&gt; {
+                const sets = params.cids.map(cid =&gt; `cid:${cid}:tag:${tag}:topics`);
+                return await db.getSortedSetRevRange(sets, 0, -1);
+            })));
+        }
+
+        const sets = [];
+        const pinnedSets = [];
+        params.cids.forEach((cid) =&gt; {
+            if (params.sort === &#039;recent&#039; || params.sort === &#039;old&#039;) {
+                sets.push(`cid:${cid}:tids`);
+            } else {
+                sets.push(`cid:${cid}:tids${params.sort ? `:${params.sort}` : &#039;&#039;}`);
+            }
+            pinnedSets.push(`cid:${cid}:tids:pinned`);
+        });
+        let pinnedTids = await db.getSortedSetRevRange(pinnedSets, 0, -1);
+        pinnedTids = await Topics.tools.checkPinExpiry(pinnedTids);
+        const method = params.sort === &#039;old&#039; ?
+            &#039;getSortedSetRange&#039; :
+            &#039;getSortedSetRevRange&#039;;
+        const tids = await db[method](sets, 0, meta.config.recentMaxTopics - 1);
+        return pinnedTids.concat(tids);
+    }
+
+    async function sortTids(tids, params) {
+        if (params.term === &#039;alltime&#039; &amp;&amp; !params.cids &amp;&amp; !params.tags.length &amp;&amp; params.filter !== &#039;watched&#039; &amp;&amp; !params.floatPinned) {
+            return tids;
+        }
+        const topicData = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;lastposttime&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;, &#039;postcount&#039;, &#039;pinned&#039;]);
+        const sortMap = {
+            recent: sortRecent,
+            old: sortOld,
+            posts: sortPopular,
+            votes: sortVotes,
+            views: sortViews,
+        };
+        const sortFn = sortMap[params.sort] || sortRecent;
+
+        if (params.floatPinned) {
+            floatPinned(topicData, sortFn);
+        } else {
+            topicData.sort(sortFn);
+        }
+
+        return topicData.map(topic =&gt; topic &amp;&amp; topic.tid);
+    }
+
+    function floatPinned(topicData, sortFn) {
+        topicData.sort((a, b) =&gt; (a.pinned !== b.pinned ? b.pinned - a.pinned : sortFn(a, b)));
+    }
+
+    function sortRecent(a, b) {
+        return b.lastposttime - a.lastposttime;
+    }
+
+    function sortOld(a, b) {
+        return a.lastposttime - b.lastposttime;
+    }
+
+    function sortVotes(a, b) {
+        if (a.votes !== b.votes) {
+            return b.votes - a.votes;
+        }
+        return b.postcount - a.postcount;
+    }
+
+    function sortPopular(a, b) {
+        if (a.postcount !== b.postcount) {
+            return b.postcount - a.postcount;
+        }
+        return b.viewcount - a.viewcount;
+    }
+
+    function sortViews(a, b) {
+        return b.viewcount - a.viewcount;
+    }
+
+    async function filterTids(tids, params) {
+        const { filter } = params;
+        const { uid } = params;
+
+        if (filter === &#039;new&#039;) {
+            tids = await Topics.filterNewTids(tids, uid);
+        } else if (filter === &#039;unreplied&#039;) {
+            tids = await Topics.filterUnrepliedTids(tids);
+        } else {
+            tids = await Topics.filterNotIgnoredTids(tids, uid);
+        }
+
+        tids = await privileges.topics.filterTids(&#039;topics:read&#039;, tids, uid);
+        let topicData = await Topics.getTopicsFields(tids, [&#039;uid&#039;, &#039;tid&#039;, &#039;cid&#039;]);
+        const topicCids = _.uniq(topicData.map(topic =&gt; topic.cid)).filter(Boolean);
+
+        async function getIgnoredCids() {
+            if (params.cids || filter === &#039;watched&#039; || meta.config.disableRecentCategoryFilter) {
+                return [];
+            }
+            return await categories.isIgnored(topicCids, uid);
+        }
+        const [ignoredCids, filtered] = await Promise.all([
+            getIgnoredCids(),
+            user.blocks.filter(uid, topicData),
+        ]);
+
+        const isCidIgnored = _.zipObject(topicCids, ignoredCids);
+        topicData = filtered;
+
+        const cids = params.cids &amp;&amp; params.cids.map(String);
+        tids = topicData.filter(t =&gt; (
+            t &amp;&amp;
+            t.cid &amp;&amp;
+            !isCidIgnored[t.cid] &amp;&amp;
+            (!cids || cids.includes(String(t.cid)))
+        )).map(t =&gt; t.tid);
+
+        const result = await plugins.hooks.fire(&#039;filter:topics.filterSortedTids&#039;, { tids: tids, params: params });
+        return result.tids;
+    }
+
+    async function getTopics(tids, params) {
+        tids = tids.slice(params.start, params.stop !== -1 ? params.stop + 1 : undefined);
+        const topicData = await Topics.getTopicsByTids(tids, params);
+        Topics.calculateTopicIndices(topicData, params.start);
+        return topicData;
+    }
+
+    Topics.calculateTopicIndices = function (topicData, start) {
+        topicData.forEach((topic, index) =&gt; {
+            if (topic) {
+                topic.index = start + index;
+            }
+        });
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

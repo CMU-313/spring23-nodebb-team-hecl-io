@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/admin/rooms.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/admin/rooms.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.09</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">160</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.28</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.63</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const os = require(&#039;os&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const topics = require(&#039;../../topics&#039;);
+const pubsub = require(&#039;../../pubsub&#039;);
+const utils = require(&#039;../../utils&#039;);
+
+const stats = {};
+const totals = {};
+
+const SocketRooms = module.exports;
+
+SocketRooms.stats = stats;
+SocketRooms.totals = totals;
+
+pubsub.on(&#039;sync:stats:start&#039;, () =&gt; {
+    const stats = SocketRooms.getLocalStats();
+    pubsub.publish(&#039;sync:stats:end&#039;, {
+        stats: stats,
+        id: `${os.hostname()}:${nconf.get(&#039;port&#039;)}`,
+    });
+});
+
+pubsub.on(&#039;sync:stats:end&#039;, (data) =&gt; {
+    stats[data.id] = data.stats;
+});
+
+pubsub.on(&#039;sync:stats:guests&#039;, (eventId) =&gt; {
+    const Sockets = require(&#039;../index&#039;);
+    const guestCount = Sockets.getCountInRoom(&#039;online_guests&#039;);
+    pubsub.publish(eventId, guestCount);
+});
+
+SocketRooms.getTotalGuestCount = function (callback) {
+    let count = 0;
+    const eventId = `sync:stats:guests:end:${utils.generateUUID()}`;
+    pubsub.on(eventId, (guestCount) =&gt; {
+        count += guestCount;
+    });
+
+    pubsub.publish(&#039;sync:stats:guests&#039;, eventId);
+
+    setTimeout(() =&gt; {
+        pubsub.removeAllListeners(eventId);
+        callback(null, count);
+    }, 100);
+};
+
+
+SocketRooms.getAll = async function () {
+    pubsub.publish(&#039;sync:stats:start&#039;);
+
+    totals.onlineGuestCount = 0;
+    totals.onlineRegisteredCount = 0;
+    totals.socketCount = 0;
+    totals.topics = {};
+    totals.users = {
+        categories: 0,
+        recent: 0,
+        unread: 0,
+        topics: 0,
+        category: 0,
+    };
+
+    for (const instance of Object.values(stats)) {
+        totals.onlineGuestCount += instance.onlineGuestCount;
+        totals.onlineRegisteredCount += instance.onlineRegisteredCount;
+        totals.socketCount += instance.socketCount;
+        totals.users.categories += instance.users.categories;
+        totals.users.recent += instance.users.recent;
+        totals.users.unread += instance.users.unread;
+        totals.users.topics += instance.users.topics;
+        totals.users.category += instance.users.category;
+
+        instance.topics.forEach((topic) =&gt; {
+            totals.topics[topic.tid] = totals.topics[topic.tid] || { count: 0, tid: topic.tid };
+            totals.topics[topic.tid].count += topic.count;
+        });
+    }
+
+    let topTenTopics = [];
+    Object.keys(totals.topics).forEach((tid) =&gt; {
+        topTenTopics.push({ tid: tid, count: totals.topics[tid].count || 0 });
+    });
+
+    topTenTopics = topTenTopics.sort((a, b) =&gt; b.count - a.count).slice(0, 10);
+
+    const topTenTids = topTenTopics.map(topic =&gt; topic.tid);
+
+    const titles = await topics.getTopicsFields(topTenTids, [&#039;title&#039;]);
+    totals.topTenTopics = topTenTopics.map((topic, index) =&gt; {
+        topic.title = titles[index].title;
+        return topic;
+    });
+    return totals;
+};
+
+SocketRooms.getOnlineUserCount = function (io) {
+    let count = 0;
+
+    if (io) {
+        for (const [key] of io.sockets.adapter.rooms) {
+            if (key.startsWith(&#039;uid_&#039;)) {
+                count += 1;
+            }
+        }
+    }
+
+    return count;
+};
+
+SocketRooms.getLocalStats = function () {
+    const Sockets = require(&#039;../index&#039;);
+    const io = Sockets.server;
+
+    const socketData = {
+        onlineGuestCount: 0,
+        onlineRegisteredCount: 0,
+        socketCount: 0,
+        users: {
+            categories: 0,
+            recent: 0,
+            unread: 0,
+            topics: 0,
+            category: 0,
+        },
+        topics: {},
+    };
+
+    if (io &amp;&amp; io.sockets) {
+        socketData.onlineGuestCount = Sockets.getCountInRoom(&#039;online_guests&#039;);
+        socketData.onlineRegisteredCount = SocketRooms.getOnlineUserCount(io);
+        socketData.socketCount = io.sockets.sockets.size;
+        socketData.users.categories = Sockets.getCountInRoom(&#039;categories&#039;);
+        socketData.users.recent = Sockets.getCountInRoom(&#039;recent_topics&#039;);
+        socketData.users.unread = Sockets.getCountInRoom(&#039;unread_topics&#039;);
+
+        let topTenTopics = [];
+        let tid;
+
+        for (const [room, clients] of io.sockets.adapter.rooms) {
+            tid = room.match(/^topic_(\d+)/);
+            if (tid) {
+                socketData.users.topics += clients.size;
+                topTenTopics.push({ tid: tid[1], count: clients.size });
+            } else if (room.match(/^category/)) {
+                socketData.users.category += clients.size;
+            }
+        }
+
+        topTenTopics = topTenTopics.sort((a, b) =&gt; b.count - a.count).slice(0, 10);
+        socketData.topics = topTenTopics;
+    }
+
+    return socketData;
+};
+
+require(&#039;../../promisify&#039;)(SocketRooms);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

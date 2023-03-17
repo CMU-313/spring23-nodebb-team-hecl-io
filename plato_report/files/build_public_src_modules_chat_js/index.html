@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/chat.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/chat.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">434</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">53.48</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.69</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;chat&#039;, [
+    &#039;components&#039;, &#039;taskbar&#039;, &#039;translator&#039;, &#039;hooks&#039;, &#039;bootbox&#039;, &#039;alerts&#039;, &#039;api&#039;,
+], function (components, taskbar, translator, hooks, bootbox, alerts, api) {
+    const module = {};
+    let newMessage = false;
+
+    module.openChat = function (roomId, uid) {
+        if (!app.user.uid) {
+            return alerts.error(&#039;[[error:not-logged-in]]&#039;);
+        }
+
+        function loadAndCenter(chatModal) {
+            module.load(chatModal.attr(&#039;data-uuid&#039;));
+            module.center(chatModal);
+            module.focusInput(chatModal);
+        }
+
+        if (module.modalExists(roomId)) {
+            loadAndCenter(module.getModal(roomId));
+        } else {
+            api.get(`/chats/${roomId}`, {
+                uid: uid || app.user.uid,
+            }).then((roomData) =&gt; {
+                roomData.users = roomData.users.filter(function (user) {
+                    return user &amp;&amp; parseInt(user.uid, 10) !== parseInt(app.user.uid, 10);
+                });
+                roomData.uid = uid || app.user.uid;
+                roomData.isSelf = true;
+                module.createModal(roomData, loadAndCenter);
+            }).catch(alerts.error);
+        }
+    };
+
+    module.newChat = function (touid, callback) {
+        function createChat() {
+            api.post(`/chats`, {
+                uids: [touid],
+            }).then(({ roomId }) =&gt; {
+                if (!ajaxify.data.template.chats) {
+                    module.openChat(roomId);
+                } else {
+                    ajaxify.go(&#039;chats/&#039; + roomId);
+                }
+
+                callback(null, roomId);
+            }).catch(alerts.error);
+        }
+
+        callback = callback || function () { };
+        if (!app.user.uid) {
+            return alerts.error(&#039;[[error:not-logged-in]]&#039;);
+        }
+
+        if (parseInt(touid, 10) === parseInt(app.user.uid, 10)) {
+            return alerts.error(&#039;[[error:cant-chat-with-yourself]]&#039;);
+        }
+        socket.emit(&#039;modules.chats.isDnD&#039;, touid, function (err, isDnD) {
+            if (err) {
+                return alerts.error(err);
+            }
+            if (!isDnD) {
+                return createChat();
+            }
+
+            bootbox.confirm(&#039;[[modules:chat.confirm-chat-with-dnd-user]]&#039;, function (ok) {
+                if (ok) {
+                    createChat();
+                }
+            });
+        });
+    };
+
+    module.loadChatsDropdown = function (chatsListEl) {
+        socket.emit(&#039;modules.chats.getRecentChats&#039;, {
+            uid: app.user.uid,
+            after: 0,
+        }, function (err, data) {
+            if (err) {
+                return alerts.error(err);
+            }
+
+            const rooms = data.rooms.filter(function (room) {
+                return room.teaser;
+            });
+
+            translator.toggleTimeagoShorthand(function () {
+                for (let i = 0; i &lt; rooms.length; i += 1) {
+                    rooms[i].teaser.timeago = $.timeago(new Date(parseInt(rooms[i].teaser.timestamp, 10)));
+                }
+                translator.toggleTimeagoShorthand();
+                app.parseAndTranslate(&#039;partials/chats/dropdown&#039;, { rooms: rooms }, function (html) {
+                    chatsListEl.find(&#039;*&#039;).not(&#039;.navigation-link&#039;).remove();
+                    chatsListEl.prepend(html);
+                    app.createUserTooltips(chatsListEl, &#039;right&#039;);
+                    chatsListEl.off(&#039;click&#039;).on(&#039;click&#039;, &#039;[data-roomid]&#039;, function (ev) {
+                        if ($(ev.target).parents(&#039;.user-link&#039;).length) {
+                            return;
+                        }
+                        const roomId = $(this).attr(&#039;data-roomid&#039;);
+                        if (!ajaxify.currentPage.match(/^chats\//)) {
+                            module.openChat(roomId);
+                        } else {
+                            ajaxify.go(&#039;user/&#039; + app.user.userslug + &#039;/chats/&#039; + roomId);
+                        }
+                    });
+
+                    $(&#039;[component=&quot;chats/mark-all-read&quot;]&#039;).off(&#039;click&#039;).on(&#039;click&#039;, function () {
+                        socket.emit(&#039;modules.chats.markAllRead&#039;, function (err) {
+                            if (err) {
+                                return alerts.error(err);
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    };
+
+
+    module.onChatMessageReceived = function (data) {
+        const isSelf = data.self === 1;
+        data.message.self = data.self;
+
+        newMessage = data.self === 0;
+        if (module.modalExists(data.roomId)) {
+            addMessageToModal(data);
+        } else if (!ajaxify.data.template.chats) {
+            api.get(`/chats/${data.roomId}`, {}).then((roomData) =&gt; {
+                roomData.users = roomData.users.filter(function (user) {
+                    return user &amp;&amp; parseInt(user.uid, 10) !== parseInt(app.user.uid, 10);
+                });
+                roomData.silent = true;
+                roomData.uid = app.user.uid;
+                roomData.isSelf = isSelf;
+                module.createModal(roomData);
+            }).catch(alerts.error);
+        }
+    };
+
+    function addMessageToModal(data) {
+        const modal = module.getModal(data.roomId);
+        const username = data.message.fromUser.username;
+        const isSelf = data.self === 1;
+        require([&#039;forum/chats/messages&#039;], function (ChatsMessages) {
+            // don&#039;t add if already added
+            if (!modal.find(&#039;[data-mid=&quot;&#039; + data.message.messageId + &#039;&quot;]&#039;).length) {
+                ChatsMessages.appendChatMessage(modal.find(&#039;.chat-content&#039;), data.message);
+            }
+
+            if (modal.is(&#039;:visible&#039;)) {
+                taskbar.updateActive(modal.attr(&#039;data-uuid&#039;));
+                if (ChatsMessages.isAtBottom(modal.find(&#039;.chat-content&#039;))) {
+                    ChatsMessages.scrollToBottom(modal.find(&#039;.chat-content&#039;));
+                }
+            } else if (!ajaxify.data.template.chats) {
+                module.toggleNew(modal.attr(&#039;data-uuid&#039;), true, true);
+            }
+
+            if (!isSelf &amp;&amp; (!modal.is(&#039;:visible&#039;) || !app.isFocused)) {
+                taskbar.push(&#039;chat&#039;, modal.attr(&#039;data-uuid&#039;), {
+                    title: &#039;[[modules:chat.chatting_with]] &#039; + (data.roomName || username),
+                    touid: data.message.fromUser.uid,
+                    roomId: data.roomId,
+                    isSelf: false,
+                });
+            }
+        });
+    }
+
+    module.onUserStatusChange = function (data) {
+        const modal = module.getModal(data.uid);
+        app.updateUserStatus(modal.find(&#039;[component=&quot;user/status&quot;]&#039;), data.status);
+    };
+
+    module.onRoomRename = function (data) {
+        const newTitle = $(&#039;&lt;div&gt;&lt;/div&gt;&#039;).html(data.newName).text();
+        const modal = module.getModal(data.roomId);
+        modal.find(&#039;[component=&quot;chat/room/name&quot;]&#039;).text(newTitle);
+        taskbar.update(&#039;chat&#039;, modal.attr(&#039;data-uuid&#039;), {
+            title: newTitle,
+        });
+        hooks.fire(&#039;action:chat.renamed&#039;, Object.assign(data, {
+            modal: modal,
+        }));
+    };
+
+    module.getModal = function (roomId) {
+        return $(&#039;#chat-modal-&#039; + roomId);
+    };
+
+    module.modalExists = function (roomId) {
+        return $(&#039;#chat-modal-&#039; + roomId).length !== 0;
+    };
+
+    module.createModal = function (data, callback) {
+        callback = callback || function () {};
+        require([
+            &#039;scrollStop&#039;, &#039;forum/chats&#039;, &#039;forum/chats/messages&#039;,
+        ], function (scrollStop, Chats, ChatsMessages) {
+            app.parseAndTranslate(&#039;chat&#039;, data, function (chatModal) {
+                if (module.modalExists(data.roomId)) {
+                    return callback(module.getModal(data.roomId));
+                }
+                const uuid = utils.generateUUID();
+                let dragged = false;
+
+                chatModal.attr(&#039;id&#039;, &#039;chat-modal-&#039; + data.roomId);
+                chatModal.attr(&#039;data-roomid&#039;, data.roomId);
+                chatModal.attr(&#039;intervalId&#039;, 0);
+                chatModal.attr(&#039;data-uuid&#039;, uuid);
+                chatModal.css(&#039;position&#039;, &#039;fixed&#039;);
+                chatModal.appendTo($(&#039;body&#039;));
+                chatModal.find(&#039;.timeago&#039;).timeago();
+                module.center(chatModal);
+
+                app.loadJQueryUI(function () {
+                    chatModal.find(&#039;.modal-content&#039;).resizable({
+                        handles: &#039;n, e, s, w, se&#039;,
+                        minHeight: 250,
+                        minWidth: 400,
+                    });
+
+                    chatModal.find(&#039;.modal-content&#039;).on(&#039;resize&#039;, function (event, ui) {
+                        if (ui.originalSize.height === ui.size.height) {
+                            return;
+                        }
+
+                        chatModal.find(&#039;.modal-body&#039;).css(&#039;height&#039;, module.calculateChatListHeight(chatModal));
+                    });
+
+                    chatModal.draggable({
+                        start: function () {
+                            taskbar.updateActive(uuid);
+                        },
+                        stop: function () {
+                            module.focusInput(chatModal);
+                        },
+                        distance: 10,
+                        handle: &#039;.modal-header&#039;,
+                    });
+                });
+
+                scrollStop.apply(chatModal.find(&#039;[component=&quot;chat/messages&quot;]&#039;));
+
+                chatModal.find(&#039;#chat-close-btn&#039;).on(&#039;click&#039;, function () {
+                    module.close(chatModal);
+                });
+
+                function gotoChats() {
+                    const text = components.get(&#039;chat/input&#039;).val();
+                    $(window).one(&#039;action:ajaxify.end&#039;, function () {
+                        components.get(&#039;chat/input&#039;).val(text);
+                    });
+
+                    ajaxify.go(&#039;user/&#039; + app.user.userslug + &#039;/chats/&#039; + chatModal.attr(&#039;data-roomid&#039;));
+                    module.close(chatModal);
+                }
+
+                chatModal.find(&#039;.modal-header&#039;).on(&#039;dblclick&#039;, gotoChats);
+                chatModal.find(&#039;button[data-action=&quot;maximize&quot;]&#039;).on(&#039;click&#039;, gotoChats);
+                chatModal.find(&#039;button[data-action=&quot;minimize&quot;]&#039;).on(&#039;click&#039;, function () {
+                    const uuid = chatModal.attr(&#039;data-uuid&#039;);
+                    module.minimize(uuid);
+                });
+
+                chatModal.on(&#039;mouseup&#039;, function () {
+                    taskbar.updateActive(chatModal.attr(&#039;data-uuid&#039;));
+
+                    if (dragged) {
+                        dragged = false;
+                    }
+                });
+
+                chatModal.on(&#039;mousemove&#039;, function (e) {
+                    if (e.which === 1) {
+                        dragged = true;
+                    }
+                });
+
+                chatModal.on(&#039;mousemove keypress click&#039;, function () {
+                    if (newMessage) {
+                        socket.emit(&#039;modules.chats.markRead&#039;, data.roomId);
+                        newMessage = false;
+                    }
+                });
+
+                Chats.addActionHandlers(chatModal.find(&#039;[component=&quot;chat/messages&quot;]&#039;), data.roomId);
+                Chats.addRenameHandler(chatModal.attr(&#039;data-roomid&#039;), chatModal.find(&#039;[data-action=&quot;rename&quot;]&#039;), data.roomName);
+                Chats.addLeaveHandler(chatModal.attr(&#039;data-roomid&#039;), chatModal.find(&#039;[data-action=&quot;leave&quot;]&#039;));
+                Chats.addSendHandlers(chatModal.attr(&#039;data-roomid&#039;), chatModal.find(&#039;.chat-input&#039;), chatModal.find(&#039;[data-action=&quot;send&quot;]&#039;));
+                Chats.addMemberHandler(chatModal.attr(&#039;data-roomid&#039;), chatModal.find(&#039;[data-action=&quot;members&quot;]&#039;));
+
+                Chats.createAutoComplete(chatModal.find(&#039;[component=&quot;chat/input&quot;]&#039;));
+
+                Chats.addScrollHandler(chatModal.attr(&#039;data-roomid&#039;), data.uid, chatModal.find(&#039;.chat-content&#039;));
+                Chats.addScrollBottomHandler(chatModal.find(&#039;.chat-content&#039;));
+
+                Chats.addCharactersLeftHandler(chatModal);
+                Chats.addIPHandler(chatModal);
+
+                Chats.addUploadHandler({
+                    dragDropAreaEl: chatModal.find(&#039;.modal-content&#039;),
+                    pasteEl: chatModal,
+                    uploadFormEl: chatModal.find(&#039;[component=&quot;chat/upload&quot;]&#039;),
+                    inputEl: chatModal.find(&#039;[component=&quot;chat/input&quot;]&#039;),
+                });
+
+                ChatsMessages.addSocketListeners();
+
+                taskbar.push(&#039;chat&#039;, chatModal.attr(&#039;data-uuid&#039;), {
+                    title: &#039;[[modules:chat.chatting_with]] &#039; + (data.roomName || (data.users.length ? data.users[0].username : &#039;&#039;)),
+                    roomId: data.roomId,
+                    icon: &#039;fa-comment&#039;,
+                    state: &#039;&#039;,
+                    isSelf: data.isSelf,
+                }, function () {
+                    taskbar.toggleNew(chatModal.attr(&#039;data-uuid&#039;), !data.isSelf);
+                    hooks.fire(&#039;action:chat.loaded&#039;, chatModal);
+
+                    if (typeof callback === &#039;function&#039;) {
+                        callback(chatModal);
+                    }
+                });
+            });
+        });
+    };
+
+    module.focusInput = function (chatModal) {
+        setTimeout(function () {
+            chatModal.find(&#039;[component=&quot;chat/input&quot;]&#039;).focus();
+        }, 20);
+    };
+
+    module.close = function (chatModal) {
+        const uuid = chatModal.attr(&#039;data-uuid&#039;);
+        clearInterval(chatModal.attr(&#039;intervalId&#039;));
+        chatModal.attr(&#039;intervalId&#039;, 0);
+        chatModal.remove();
+        chatModal.data(&#039;modal&#039;, null);
+        taskbar.discard(&#039;chat&#039;, uuid);
+
+        if (chatModal.attr(&#039;data-mobile&#039;)) {
+            module.disableMobileBehaviour(chatModal);
+        }
+
+        hooks.fire(&#039;action:chat.closed&#039;, {
+            uuid: uuid,
+            modal: chatModal,
+        });
+    };
+
+    // TODO: see taskbar.js:44
+    module.closeByUUID = function (uuid) {
+        const chatModal = $(&#039;.chat-modal[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        module.close(chatModal);
+    };
+
+    module.center = function (chatModal) {
+        let hideAfter = false;
+        if (chatModal.hasClass(&#039;hide&#039;)) {
+            chatModal.removeClass(&#039;hide&#039;);
+            hideAfter = true;
+        }
+        chatModal.css(&#039;left&#039;, Math.max(0, (($(window).width() - $(chatModal).outerWidth()) / 2) + $(window).scrollLeft()) + &#039;px&#039;);
+        chatModal.css(&#039;top&#039;, Math.max(0, ($(window).height() / 2) - ($(chatModal).outerHeight() / 2)) + &#039;px&#039;);
+
+        if (hideAfter) {
+            chatModal.addClass(&#039;hide&#039;);
+        }
+        return chatModal;
+    };
+
+    module.load = function (uuid) {
+        require([&#039;forum/chats/messages&#039;], function (ChatsMessages) {
+            const chatModal = $(&#039;.chat-modal[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+            chatModal.removeClass(&#039;hide&#039;);
+            taskbar.updateActive(uuid);
+            ChatsMessages.scrollToBottom(chatModal.find(&#039;.chat-content&#039;));
+            module.focusInput(chatModal);
+            socket.emit(&#039;modules.chats.markRead&#039;, chatModal.attr(&#039;data-roomid&#039;));
+
+            const env = utils.findBootstrapEnvironment();
+            if (env === &#039;xs&#039; || env === &#039;sm&#039;) {
+                module.enableMobileBehaviour(chatModal);
+            }
+        });
+    };
+
+    module.enableMobileBehaviour = function (modalEl) {
+        app.toggleNavbar(false);
+        modalEl.attr(&#039;data-mobile&#039;, &#039;1&#039;);
+        const messagesEl = modalEl.find(&#039;.modal-body&#039;);
+        messagesEl.css(&#039;height&#039;, module.calculateChatListHeight(modalEl));
+        function resize() {
+            messagesEl.css(&#039;height&#039;, module.calculateChatListHeight(modalEl));
+            require([&#039;forum/chats/messages&#039;], function (ChatsMessages) {
+                ChatsMessages.scrollToBottom(modalEl.find(&#039;.chat-content&#039;));
+            });
+        }
+
+        $(window).on(&#039;resize&#039;, resize);
+        $(window).one(&#039;action:ajaxify.start&#039;, function () {
+            module.close(modalEl);
+            $(window).off(&#039;resize&#039;, resize);
+        });
+    };
+
+    module.disableMobileBehaviour = function () {
+        app.toggleNavbar(true);
+    };
+
+    module.calculateChatListHeight = function (modalEl) {
+        // Formula: modal height minus header height. Simple(tm).
+        return modalEl.find(&#039;.modal-content&#039;).outerHeight() - modalEl.find(&#039;.modal-header&#039;).outerHeight();
+    };
+
+    module.minimize = function (uuid) {
+        const chatModal = $(&#039;.chat-modal[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        chatModal.addClass(&#039;hide&#039;);
+        taskbar.minimize(&#039;chat&#039;, uuid);
+        clearInterval(chatModal.attr(&#039;intervalId&#039;));
+        chatModal.attr(&#039;intervalId&#039;, 0);
+        hooks.fire(&#039;action:chat.minimized&#039;, {
+            uuid: uuid,
+            modal: chatModal,
+        });
+    };
+
+    module.toggleNew = taskbar.toggleNew;
+
+    return module;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

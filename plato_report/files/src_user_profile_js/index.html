@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/profile.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/profile.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.33</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">334</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.97</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.47</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const validator = require(&#039;validator&#039;);
+const winston = require(&#039;winston&#039;);
+
+const utils = require(&#039;../utils&#039;);
+const slugify = require(&#039;../slugify&#039;);
+const meta = require(&#039;../meta&#039;);
+const db = require(&#039;../database&#039;);
+const groups = require(&#039;../groups&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+module.exports = function (User) {
+    User.updateProfile = async function (uid, data, extraFields) {
+        let fields = [
+            &#039;username&#039;, &#039;email&#039;, &#039;fullname&#039;, &#039;website&#039;, &#039;location&#039;,
+            &#039;groupTitle&#039;, &#039;birthday&#039;, &#039;signature&#039;, &#039;aboutme&#039;,
+        ];
+        if (Array.isArray(extraFields)) {
+            fields = _.uniq(fields.concat(extraFields));
+        }
+        if (!data.uid) {
+            throw new Error(&#039;[[error:invalid-update-uid]]&#039;);
+        }
+        const updateUid = data.uid;
+
+        const result = await plugins.hooks.fire(&#039;filter:user.updateProfile&#039;, {
+            uid: uid,
+            data: data,
+            fields: fields,
+        });
+        fields = result.fields;
+        data = result.data;
+
+        await validateData(uid, data);
+
+        const oldData = await User.getUserFields(updateUid, fields);
+        const updateData = {};
+        await Promise.all(fields.map(async (field) =&gt; {
+            if (!(data[field] !== undefined &amp;&amp; typeof data[field] === &#039;string&#039;)) {
+                return;
+            }
+
+            data[field] = data[field].trim();
+
+            if (field === &#039;email&#039;) {
+                return await updateEmail(updateUid, data.email);
+            } else if (field === &#039;username&#039;) {
+                return await updateUsername(updateUid, data.username);
+            } else if (field === &#039;fullname&#039;) {
+                return await updateFullname(updateUid, data.fullname);
+            }
+            updateData[field] = data[field];
+        }));
+
+        if (Object.keys(updateData).length) {
+            await User.setUserFields(updateUid, updateData);
+        }
+
+        plugins.hooks.fire(&#039;action:user.updateProfile&#039;, {
+            uid: uid,
+            data: data,
+            fields: fields,
+            oldData: oldData,
+        });
+
+        return await User.getUserFields(updateUid, [
+            &#039;email&#039;, &#039;username&#039;, &#039;userslug&#039;,
+            &#039;picture&#039;, &#039;icon:text&#039;, &#039;icon:bgColor&#039;,
+        ]);
+    };
+
+    async function validateData(callerUid, data) {
+        await isEmailValid(data);
+        await isUsernameAvailable(data, data.uid);
+        await isWebsiteValid(callerUid, data);
+        await isAboutMeValid(callerUid, data);
+        await isSignatureValid(callerUid, data);
+        isFullnameValid(data);
+        isLocationValid(data);
+        isBirthdayValid(data);
+        isGroupTitleValid(data);
+    }
+
+    async function isEmailValid(data) {
+        if (!data.email) {
+            return;
+        }
+
+        data.email = data.email.trim();
+        if (!utils.isEmailValid(data.email)) {
+            throw new Error(&#039;[[error:invalid-email]]&#039;);
+        }
+    }
+
+    async function isUsernameAvailable(data, uid) {
+        if (!data.username) {
+            return;
+        }
+        data.username = data.username.trim();
+
+        let userData;
+        if (uid) {
+            userData = await User.getUserFields(uid, [&#039;username&#039;, &#039;userslug&#039;]);
+            if (userData.username === data.username) {
+                return;
+            }
+        }
+
+        if (data.username.length &lt; meta.config.minimumUsernameLength) {
+            throw new Error(&#039;[[error:username-too-short]]&#039;);
+        }
+
+        if (data.username.length &gt; meta.config.maximumUsernameLength) {
+            throw new Error(&#039;[[error:username-too-long]]&#039;);
+        }
+
+        const userslug = slugify(data.username);
+        if (!utils.isUserNameValid(data.username) || !userslug) {
+            throw new Error(&#039;[[error:invalid-username]]&#039;);
+        }
+
+        if (uid &amp;&amp; userslug === userData.userslug) {
+            return;
+        }
+        const exists = await User.existsBySlug(userslug);
+        if (exists) {
+            throw new Error(&#039;[[error:username-taken]]&#039;);
+        }
+
+        const { error } = await plugins.hooks.fire(&#039;filter:username.check&#039;, {
+            username: data.username,
+            error: undefined,
+        });
+        if (error) {
+            throw error;
+        }
+    }
+    User.checkUsername = async username =&gt; isUsernameAvailable({ username });
+
+    async function isWebsiteValid(callerUid, data) {
+        if (!data.website) {
+            return;
+        }
+        if (data.website.length &gt; 255) {
+            throw new Error(&#039;[[error:invalid-website]]&#039;);
+        }
+        await User.checkMinReputation(callerUid, data.uid, &#039;min:rep:website&#039;);
+    }
+
+    async function isAboutMeValid(callerUid, data) {
+        if (!data.aboutme) {
+            return;
+        }
+        if (data.aboutme !== undefined &amp;&amp; data.aboutme.length &gt; meta.config.maximumAboutMeLength) {
+            throw new Error(`[[error:about-me-too-long, ${meta.config.maximumAboutMeLength}]]`);
+        }
+
+        await User.checkMinReputation(callerUid, data.uid, &#039;min:rep:aboutme&#039;);
+    }
+
+    async function isSignatureValid(callerUid, data) {
+        if (!data.signature) {
+            return;
+        }
+        const signature = data.signature.replace(/\r\n/g, &#039;\n&#039;);
+        if (signature.length &gt; meta.config.maximumSignatureLength) {
+            throw new Error(`[[error:signature-too-long, ${meta.config.maximumSignatureLength}]]`);
+        }
+        await User.checkMinReputation(callerUid, data.uid, &#039;min:rep:signature&#039;);
+    }
+
+    function isFullnameValid(data) {
+        if (data.fullname &amp;&amp; (validator.isURL(data.fullname) || data.fullname.length &gt; 255)) {
+            throw new Error(&#039;[[error:invalid-fullname]]&#039;);
+        }
+    }
+
+    function isLocationValid(data) {
+        if (data.location &amp;&amp; (validator.isURL(data.location) || data.location.length &gt; 255)) {
+            throw new Error(&#039;[[error:invalid-location]]&#039;);
+        }
+    }
+
+    function isBirthdayValid(data) {
+        if (!data.birthday) {
+            return;
+        }
+
+        const result = new Date(data.birthday);
+        if (result &amp;&amp; result.toString() === &#039;Invalid Date&#039;) {
+            throw new Error(&#039;[[error:invalid-birthday]]&#039;);
+        }
+    }
+
+    function isGroupTitleValid(data) {
+        function checkTitle(title) {
+            if (title === &#039;registered-users&#039; || groups.isPrivilegeGroup(title)) {
+                throw new Error(&#039;[[error:invalid-group-title]]&#039;);
+            }
+        }
+        if (!data.groupTitle) {
+            return;
+        }
+        let groupTitles = [];
+        if (validator.isJSON(data.groupTitle)) {
+            groupTitles = JSON.parse(data.groupTitle);
+            if (!Array.isArray(groupTitles)) {
+                throw new Error(&#039;[[error:invalid-group-title]]&#039;);
+            }
+            groupTitles.forEach(title =&gt; checkTitle(title));
+        } else {
+            groupTitles = [data.groupTitle];
+            checkTitle(data.groupTitle);
+        }
+        if (!meta.config.allowMultipleBadges &amp;&amp; groupTitles.length &gt; 1) {
+            data.groupTitle = JSON.stringify(groupTitles[0]);
+        }
+    }
+
+    User.checkMinReputation = async function (callerUid, uid, setting) {
+        const isSelf = parseInt(callerUid, 10) === parseInt(uid, 10);
+        if (!isSelf || meta.config[&#039;reputation:disabled&#039;]) {
+            return;
+        }
+        const reputation = await User.getUserField(uid, &#039;reputation&#039;);
+        if (reputation &lt; meta.config[setting]) {
+            throw new Error(`[[error:not-enough-reputation-${setting.replace(/:/g, &#039;-&#039;)}, ${meta.config[setting]}]]`);
+        }
+    };
+
+    async function updateEmail(uid, newEmail) {
+        let oldEmail = await User.getUserField(uid, &#039;email&#039;);
+        oldEmail = oldEmail || &#039;&#039;;
+        if (oldEmail === newEmail) {
+            return;
+        }
+
+        // 👉 Looking for email change logic? src/user/email.js (UserEmail.confirmByUid)
+        if (newEmail) {
+            await User.email.sendValidationEmail(uid, {
+                email: newEmail,
+                force: 1,
+            }).catch(err =&gt; winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+        }
+    }
+
+    async function updateUsername(uid, newUsername) {
+        if (!newUsername) {
+            return;
+        }
+        const userData = await User.getUserFields(uid, [&#039;username&#039;, &#039;userslug&#039;]);
+        if (userData.username === newUsername) {
+            return;
+        }
+        const newUserslug = slugify(newUsername);
+        const now = Date.now();
+        await Promise.all([
+            updateUidMapping(&#039;username&#039;, uid, newUsername, userData.username),
+            updateUidMapping(&#039;userslug&#039;, uid, newUserslug, userData.userslug),
+            db.sortedSetAdd(`user:${uid}:usernames`, now, `${newUsername}:${now}`),
+        ]);
+        await db.sortedSetRemove(&#039;username:sorted&#039;, `${userData.username.toLowerCase()}:${uid}`);
+        await db.sortedSetAdd(&#039;username:sorted&#039;, 0, `${newUsername.toLowerCase()}:${uid}`);
+    }
+
+    async function updateUidMapping(field, uid, value, oldValue) {
+        if (value === oldValue) {
+            return;
+        }
+        await db.sortedSetRemove(`${field}:uid`, oldValue);
+        await User.setUserField(uid, field, value);
+        if (value) {
+            await db.sortedSetAdd(`${field}:uid`, uid, value);
+        }
+    }
+
+    async function updateFullname(uid, newFullname) {
+        const fullname = await User.getUserField(uid, &#039;fullname&#039;);
+        await updateUidMapping(&#039;fullname&#039;, uid, newFullname, fullname);
+        if (newFullname !== fullname) {
+            if (fullname) {
+                await db.sortedSetRemove(&#039;fullname:sorted&#039;, `${fullname.toLowerCase()}:${uid}`);
+            }
+            if (newFullname) {
+                await db.sortedSetAdd(&#039;fullname:sorted&#039;, 0, `${newFullname.toLowerCase()}:${uid}`);
+            }
+        }
+    }
+
+    User.changePassword = async function (uid, data) {
+        if (uid &lt;= 0 || !data || !data.uid) {
+            throw new Error(&#039;[[error:invalid-uid]]&#039;);
+        }
+        User.isPasswordValid(data.newPassword);
+        const [isAdmin, hasPassword] = await Promise.all([
+            User.isAdministrator(uid),
+            User.hasPassword(uid),
+        ]);
+
+        if (meta.config[&#039;password:disableEdit&#039;] &amp;&amp; !isAdmin) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+
+        const isSelf = parseInt(uid, 10) === parseInt(data.uid, 10);
+
+        if (!isAdmin &amp;&amp; !isSelf) {
+            throw new Error(&#039;[[user:change_password_error_privileges]]&#039;);
+        }
+
+        if (isSelf &amp;&amp; hasPassword) {
+            const correct = await User.isPasswordCorrect(data.uid, data.currentPassword, data.ip);
+            if (!correct) {
+                throw new Error(&#039;[[user:change_password_error_wrong_current]]&#039;);
+            }
+        }
+
+        const hashedPassword = await User.hashPassword(data.newPassword);
+        await Promise.all([
+            User.setUserFields(data.uid, {
+                password: hashedPassword,
+                &#039;password:shaWrapped&#039;: 1,
+                rss_token: utils.generateUUID(),
+            }),
+            User.reset.cleanByUid(data.uid),
+            User.reset.updateExpiry(data.uid),
+            User.auth.revokeAllSessions(data.uid),
+            User.email.expireValidation(data.uid),
+        ]);
+
+        plugins.hooks.fire(&#039;action:password.change&#039;, { uid: uid, targetUid: data.uid });
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

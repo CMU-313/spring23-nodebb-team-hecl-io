@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/header/unread.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/header/unread.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.50</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">96</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.18</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.02</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;forum/header/unread&#039;, function () {
+    const unread = {};
+    const watchStates = {
+        ignoring: 1,
+        notwatching: 2,
+        watching: 3,
+    };
+
+    unread.initUnreadTopics = function () {
+        const unreadTopics = app.user.unreadData;
+
+        function onNewPost(data) {
+            if (data &amp;&amp; data.posts &amp;&amp; data.posts.length &amp;&amp; unreadTopics) {
+                const post = data.posts[0];
+                if (parseInt(post.uid, 10) === parseInt(app.user.uid, 10) ||
+                    (!post.topic.isFollowing &amp;&amp; post.categoryWatchState !== watchStates.watching)
+                ) {
+                    return;
+                }
+
+                const tid = post.topic.tid;
+                if (!unreadTopics[&#039;&#039;][tid] || !unreadTopics.new[tid] ||
+                    !unreadTopics.watched[tid] || !unreadTopics.unreplied[tid]) {
+                    markTopicsUnread(tid);
+                }
+
+                if (!unreadTopics[&#039;&#039;][tid]) {
+                    increaseUnreadCount(&#039;&#039;);
+                    unreadTopics[&#039;&#039;][tid] = true;
+                }
+                const isNewTopic = post.isMain &amp;&amp; parseInt(post.uid, 10) !== parseInt(app.user.uid, 10);
+                if (isNewTopic &amp;&amp; !unreadTopics.new[tid]) {
+                    increaseUnreadCount(&#039;new&#039;);
+                    unreadTopics.new[tid] = true;
+                }
+                const isUnreplied = parseInt(post.topic.postcount, 10) &lt;= 1;
+                if (isUnreplied &amp;&amp; !unreadTopics.unreplied[tid]) {
+                    increaseUnreadCount(&#039;unreplied&#039;);
+                    unreadTopics.unreplied[tid] = true;
+                }
+
+                if (post.topic.isFollowing &amp;&amp; !unreadTopics.watched[tid]) {
+                    increaseUnreadCount(&#039;watched&#039;);
+                    unreadTopics.watched[tid] = true;
+                }
+            }
+        }
+
+        function increaseUnreadCount(filter) {
+            const unreadUrl = &#039;/unread&#039; + (filter ? &#039;?filter=&#039; + filter : &#039;&#039;);
+            const newCount = 1 + parseInt($(&#039;a[href=&quot;&#039; + config.relative_path + unreadUrl + &#039;&quot;].navigation-link i&#039;).attr(&#039;data-content&#039;), 10);
+            updateUnreadTopicCount(unreadUrl, newCount);
+        }
+
+        function markTopicsUnread(tid) {
+            $(&#039;[data-tid=&quot;&#039; + tid + &#039;&quot;]&#039;).addClass(&#039;unread&#039;);
+        }
+
+        $(window).on(&#039;action:ajaxify.end&#039;, function () {
+            if (ajaxify.data.template.topic) {
+                [&#039;&#039;, &#039;new&#039;, &#039;watched&#039;, &#039;unreplied&#039;].forEach(function (filter) {
+                    delete unreadTopics[filter][ajaxify.data.tid];
+                });
+            }
+        });
+        socket.removeListener(&#039;event:new_post&#039;, onNewPost);
+        socket.on(&#039;event:new_post&#039;, onNewPost);
+
+        socket.removeListener(&#039;event:unread.updateCount&#039;, updateUnreadCounters);
+        socket.on(&#039;event:unread.updateCount&#039;, updateUnreadCounters);
+    };
+
+    function updateUnreadCounters(data) {
+        updateUnreadTopicCount(&#039;/unread&#039;, data.unreadTopicCount);
+        updateUnreadTopicCount(&#039;/unread?filter=new&#039;, data.unreadNewTopicCount);
+        updateUnreadTopicCount(&#039;/unread?filter=watched&#039;, data.unreadWatchedTopicCount);
+        updateUnreadTopicCount(&#039;/unread?filter=unreplied&#039;, data.unreadUnrepliedTopicCount);
+    }
+
+    function updateUnreadTopicCount(url, count) {
+        if (!utils.isNumber(count)) {
+            return;
+        }
+
+        $(&#039;a[href=&quot;&#039; + config.relative_path + url + &#039;&quot;].navigation-link i&#039;)
+            .toggleClass(&#039;unread-count&#039;, count &gt; 0)
+            .attr(&#039;data-content&#039;, count &gt; 99 ? &#039;99+&#039; : count);
+
+        $(&#039;#mobile-menu [data-unread-url=&quot;&#039; + url + &#039;&quot;]&#039;).attr(&#039;data-content&#039;, count &gt; 99 ? &#039;99+&#039; : count);
+    }
+    unread.updateUnreadTopicCount = updateUnreadTopicCount;
+
+    return unread;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/flags/list.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/flags/list.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.31</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">262</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">71.32</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.84</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null) ? context[&#039;breadcrumbs&#039;][&#039;length&#039;] : null) ?
+        &quot;\n&lt;ol class=\&quot;breadcrumb\&quot; itemscope=\&quot;itemscope\&quot; itemprop=\&quot;breadcrumb\&quot; itemtype=\&quot;http://schema.org/BreadcrumbList\&quot;&gt;\n    &quot; + 
+          compiled.blocks[&#039;breadcrumbs&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n&lt;/ol&gt;\n&quot; :
+        &quot;&quot;) + 
+      &quot;\n\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-4 col-md-3\&quot;&gt;\n        &lt;div class=\&quot;text-center\&quot;&gt;\n    &lt;div class=\&quot;panel panel-default\&quot;&gt;\n        &lt;div class=\&quot;panel-body collapse\&quot; id=\&quot;flags-daily-wrapper\&quot; aria-expanded=\&quot;false\&quot;&gt;\n            &lt;div&gt;&lt;canvas id=\&quot;flags:daily\&quot; height=\&quot;150\&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;panel-footer\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;#flags-daily-wrapper\&quot; aria-controls=\&quot;#flags-daily-wrapper\&quot;&gt;&lt;small&gt;[[flags:graph-label]]&lt;/small&gt;&amp;nbsp;&lt;i class=\&quot;fa fa-sort\&quot;&gt;&lt;/i&gt;&lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;panel panel-default\&quot;&gt;\n    &lt;div class=\&quot;panel-heading\&quot;&gt;\n        &lt;h3 class=\&quot;panel-title\&quot;&gt;[[flags:quick-filters]]&lt;/h3&gt;\n    &lt;/div&gt;\n    &lt;div class=\&quot;panel-body\&quot;&gt;\n        &lt;ul&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/flags?quick=mine\&quot;&gt;[[flags:filter-quick-mine]]&lt;/a&gt;&lt;/li&gt;\n        &lt;/ul&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;panel panel-default\&quot;&gt;\n    &lt;div class=\&quot;panel-heading\&quot;&gt;\n        &lt;h3 class=\&quot;panel-title\&quot;&gt;[[flags:filters]]&lt;/h3&gt;\n    &lt;/div&gt;\n    &lt;div class=\&quot;panel-body\&quot;&gt;\n        &lt;form role=\&quot;form\&quot; component=\&quot;flags/filters\&quot;&gt;\n            &lt;fieldset&gt;\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-cid\&quot;&gt;[[flags:filter-cid]]&lt;/label&gt;\n                    &lt;div class=\&quot;input-group\&quot;&gt;\n                    &lt;div component=\&quot;category/dropdown\&quot; class=\&quot;btn-group category-dropdown-container bottom-sheet\&quot;&gt;\n   &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot;&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;selectedCategory&#039;] : null) ?
+        &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+          __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard((context != null) ? context[&#039;selectedCategory&#039;] : null)])) + 
+          &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-stack-1x &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;icon&#039;] : null)) + 
+          &quot;\&quot; style=\&quot;color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;color&#039;] : null)) + 
+          &quot;;\&quot;&gt;&lt;/i&gt;&lt;/span&gt; &lt;span class=\&quot;visible-sm-inline visible-md-inline visible-lg-inline\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;name&#039;] : null)) + 
+          &quot;&lt;/span&gt;&quot; :
+        &quot;\n    &lt;span class=\&quot;visible-sm-inline visible-md-inline visible-lg-inline\&quot;&gt;[[unread:all_categories]]&lt;/span&gt;&lt;span class=\&quot;visible-xs-inline\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-list\&quot;&gt;&lt;/i&gt;&lt;/span&gt;&quot;) + 
+      &quot; &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n&lt;/button&gt;\n&lt;div component=\&quot;category-selector-search\&quot; class=\&quot;hidden\&quot;&gt;\n    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; autocomplete=\&quot;off\&quot;&gt;\n&lt;/div&gt;\n&lt;ul component=\&quot;category/list\&quot; class=\&quot;dropdown-menu category-dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n    &lt;li role=\&quot;presentation\&quot; class=\&quot;category\&quot; data-all=\&quot;all\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot; href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/&quot; + 
+      __escape(guard((context != null) ? context[&#039;allCategoriesUrl&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i component=\&quot;category/select/icon\&quot; class=\&quot;fa fa-fw fa-check &quot; + 
+      (guard((context != null) ? context[&#039;selectedCategory&#039;] : null) ?
+        &quot;invisible&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot;&gt;&lt;/i&gt; [[unread:all_categories]]&lt;/a&gt;\n    &lt;/li&gt;\n    &quot; + 
+      compiled.blocks[&#039;categoryItems&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n&lt;/ul&gt;\n&lt;/div&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;sort\&quot;&gt;[[flags:sort]]&lt;/label&gt;\n                    &lt;select class=\&quot;form-control\&quot; id=\&quot;sort\&quot; name=\&quot;sort\&quot;&gt;\n                        &lt;optgroup label=\&quot;[[flags:sort-all]]\&quot;&gt;\n                            &lt;option value=\&quot;newest\&quot;&gt;[[flags:sort-newest]]&lt;/option&gt;\n                            &lt;option value=\&quot;oldest\&quot;&gt;[[flags:sort-oldest]]&lt;/option&gt;\n                            &lt;option value=\&quot;reports\&quot;&gt;[[flags:sort-reports]]&lt;/option&gt;\n                        &lt;/optgroup&gt;\n                        &lt;optgroup label=\&quot;[[flags:sort-posts-only]]\&quot;&gt;\n                            &lt;option value=\&quot;downvotes\&quot;&gt;[[flags:sort-downvotes]]&lt;/option&gt;\n                            &lt;option value=\&quot;upvotes\&quot;&gt;[[flags:sort-upvotes]]&lt;/option&gt;\n                            &lt;option value=\&quot;replies\&quot;&gt;[[flags:sort-replies]]&lt;/option&gt;\n                        &lt;/optgroup&gt;\n                    &lt;/select&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-state\&quot;&gt;[[flags:filter-state]]&lt;/label&gt;\n                    &lt;select class=\&quot;form-control\&quot; id=\&quot;filter-state\&quot; name=\&quot;state\&quot;&gt;\n                        &lt;option value=\&quot;\&quot;&gt;[[flags:state-all]]&lt;/option&gt;\n                        &lt;option value=\&quot;open\&quot;&gt;[[flags:state-open]]&lt;/option&gt;\n                        &lt;option value=\&quot;wip\&quot;&gt;[[flags:state-wip]]&lt;/option&gt;\n                        &lt;option value=\&quot;resolved\&quot;&gt;[[flags:state-resolved]]&lt;/option&gt;\n                        &lt;option value=\&quot;rejected\&quot;&gt;[[flags:state-rejected]]&lt;/option&gt;\n                    &lt;/select&gt;\n                &lt;/div&gt;\n\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-type\&quot;&gt;[[flags:filter-type]]&lt;/label&gt;\n                    &lt;select class=\&quot;form-control\&quot; id=\&quot;filter-type\&quot; name=\&quot;type\&quot;&gt;\n                        &lt;option value=\&quot;\&quot;&gt;[[flags:filter-type-all]]&lt;/option&gt;\n                        &lt;option value=\&quot;post\&quot;&gt;[[flags:filter-type-post]]&lt;/option&gt;\n                        &lt;option value=\&quot;user\&quot;&gt;[[flags:filter-type-user]]&lt;/option&gt;\n                    &lt;/select&gt;\n                &lt;/div&gt;\n            &lt;/fieldset&gt;\n\n            &lt;fieldset class=\&quot;collapse&quot; + 
+      (guard((context != null) ? context[&#039;expanded&#039;] : null) ?
+        &quot; in&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot; id=\&quot;more-filters\&quot; aria-expanded=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;expanded&#039;] : null)) + 
+      &quot;\&quot;&gt;\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-assignee\&quot;&gt;[[flags:filter-assignee]]&lt;/label&gt;\n                    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; id=\&quot;filter-assignee\&quot; name=\&quot;assignee\&quot; /&gt;\n                &lt;/div&gt;\n\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-targetUid\&quot;&gt;[[flags:filter-targetUid]]&lt;/label&gt;\n                    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; id=\&quot;filter-targetUid\&quot; name=\&quot;targetUid\&quot; /&gt;\n                &lt;/div&gt;\n\n                &lt;div class=\&quot;form-group\&quot;&gt;\n                    &lt;label for=\&quot;filter-reporterId\&quot;&gt;[[flags:filter-reporterId]]&lt;/label&gt;\n                    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; id=\&quot;filter-reporterId\&quot; name=\&quot;reporterId\&quot; /&gt;\n                &lt;/div&gt;\n            &lt;/fieldset&gt;\n\n            &quot; + 
+      (guard((context != null) ? context[&#039;expanded&#039;] : null) ?
+        &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-link btn-block\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;#more-filters\&quot; aria-controls=\&quot;#more-filters\&quot; data-text-variant=\&quot;[[flags:more-filters]] \&quot;&gt;[[flags:fewer-filters]]&amp;nbsp;&lt;i class=\&quot;fa fa-sort\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n            &quot; :
+        &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-link btn-block\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;#more-filters\&quot; aria-controls=\&quot;#more-filters\&quot; data-text-variant=\&quot;[[flags:fewer-filters]] \&quot;&gt;[[flags:more-filters]]&amp;nbsp;&lt;i class=\&quot;fa fa-sort\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n            &quot;) + 
+      &quot;\n            &lt;button type=\&quot;button\&quot; id=\&quot;apply-filters\&quot; class=\&quot;btn btn-primary btn-block\&quot;&gt;[[flags:apply-filters]]&lt;/button&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n    &lt;/div&gt;\n    &lt;div class=\&quot;col-sm-8 col-md-9\&quot;&gt;\n        &quot; + 
+      (guard((context != null) ? context[&#039;hasFilter&#039;] : null) ?
+        &quot;\n        &lt;div class=\&quot;alert alert-warning\&quot;&gt;\n            &lt;p class=\&quot;pull-right\&quot;&gt;\n                &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/flags\&quot;&gt;[[flags:filter-reset]]&lt;/a&gt;\n            &lt;/p&gt;\n            [[flags:filter-active]]\n        &lt;/div&gt;\n        &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n        &lt;div class=\&quot;btn-group pull-right\&quot; component=\&quot;flags/bulk-actions\&quot;&gt;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; autocomplete=\&quot;off\&quot; aria-haspopup=\&quot;true\&quot; aria-expanded=\&quot;false\&quot; disabled=\&quot;disabled\&quot;&gt;\n                &lt;i class=\&quot;fa fa-clone\&quot;&gt;&lt;/i&gt; [[flags:bulk-actions]] &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n            &lt;/button&gt;\n            &lt;ul class=\&quot;dropdown-menu\&quot;&gt;\n                &lt;li&gt;&lt;a href=\&quot;#\&quot; data-action=\&quot;bulk-assign\&quot;&gt;[[flags:assign-to-me]]&lt;/a&gt;&lt;/li&gt;\n                &lt;li&gt;&lt;a href=\&quot;#\&quot; data-action=\&quot;bulk-mark-resolved\&quot;&gt;[[flags:bulk-resolve]]&lt;/a&gt;&lt;/li&gt;\n            &lt;/ul&gt;\n        &lt;/div&gt;\n\n        &lt;table class=\&quot;table table-striped table-hover\&quot; component=\&quot;flags/list\&quot;&gt;\n            &lt;thead&gt;\n                &lt;tr&gt;\n                    &lt;th&gt;\n                        &lt;input type=\&quot;checkbox\&quot; data-action=\&quot;toggle-all\&quot; autocomplete=\&quot;off\&quot; /&gt;\n                    &lt;/th&gt;\n                    &lt;th&gt;&lt;/th&gt;\n                    &lt;th&gt;&lt;span class=\&quot;hidden-xs\&quot;&gt;[[flags:reports]] &lt;/span&gt;&lt;i class=\&quot;fa fa-user-plus\&quot;&gt;&lt;/i&gt;&lt;/th&gt;\n                    &lt;th&gt;&lt;span class=\&quot;hidden-xs\&quot;&gt;[[flags:first-reported]] &lt;/span&gt;&lt;i class=\&quot;fa fa-clock-o\&quot;&gt;&lt;/i&gt;&lt;/th&gt;\n                    &lt;th&gt;[[flags:state]]&lt;/th&gt;\n                &lt;/tr&gt;\n            &lt;/thead&gt;\n            &lt;tbody&gt;\n                &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;flags&#039;] != null) ? context[&#039;flags&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n                &lt;tr&gt;\n                    &lt;td colspan=\&quot;5\&quot;&gt;\n                        &lt;div class=\&quot;alert alert-success text-center\&quot;&gt;\n                            [[flags:no-flags]]\n                        &lt;/div&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n                &quot;) + 
+      &quot;\n                &quot; + 
+      compiled.blocks[&#039;flags&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n            &lt;/tbody&gt;\n        &lt;/table&gt;\n\n        &lt;div component=\&quot;pagination\&quot; class=\&quot;text-center pagination-container&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot; hidden&quot;) + 
+      &quot;\&quot;&gt;\n    &lt;ul class=\&quot;pagination hidden-xs\&quot;&gt;\n        &lt;li class=\&quot;previous pull-left&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &quot; + 
+      compiled.blocks[&#039;pagination.pages&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\n        &lt;li class=\&quot;next pull-right&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n\n    &lt;ul class=\&quot;pagination hidden-sm hidden-md hidden-lg\&quot;&gt;\n        &lt;li class=\&quot;first&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;first&#039;] != null) ? context[&#039;pagination&#039;][&#039;first&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;1\&quot;&gt;&lt;i class=\&quot;fa fa-fast-backward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;previous&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n            &lt;a href=\&quot;#\&quot;&gt;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;currentPage&#039;] : null)) + 
+      &quot; / &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;next&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;last&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;last&#039;] != null) ? context[&#039;pagination&#039;][&#039;last&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fast-forward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n&lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;breadcrumbs&#039;: function breadcrumbs(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;breadcrumbs&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li&quot; + 
+          (index === length - 1 ?
+            &quot; component=\&quot;breadcrumb/current\&quot;&quot; :
+            &quot;&quot;) + 
+          &quot; itemscope=\&quot;itemscope\&quot; itemprop=\&quot;itemListElement\&quot; itemtype=\&quot;http://schema.org/ListItem\&quot; &quot; + 
+          (index === length - 1 ?
+            &quot;class=\&quot;active\&quot;&quot; :
+            &quot;&quot;) + 
+          &quot;&gt;\n        &lt;meta itemprop=\&quot;position\&quot; content=\&quot;&quot; + 
+          __escape(index) + 
+          &quot;\&quot; /&gt;\n        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null) ?
+            &quot;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null)) + 
+              &quot;\&quot; itemprop=\&quot;item\&quot;&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &lt;span itemprop=\&quot;name\&quot;&gt;\n                &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;\n                &quot; + 
+          (index === length - 1 ?
+            &quot;\n                &quot; + 
+              (guard((context != null) ? context[&#039;feeds:disableRSS&#039;] : null) ?
+                &quot;&quot; :
+                &quot;\n                &quot; + 
+                  (guard((context != null) ? context[&#039;rssFeedUrl&#039;] : null) ?
+                    &quot;&lt;a target=\&quot;_blank\&quot; href=\&quot;&quot; + 
+                      __escape(guard((context != null) ? context[&#039;rssFeedUrl&#039;] : null)) + 
+                      &quot;\&quot; itemprop=\&quot;item\&quot;&gt;&lt;i class=\&quot;fa fa-rss-square\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&quot; :
+                    &quot;&quot;)) + 
+              &quot;\n                &quot; :
+            &quot;&quot;) + 
+          &quot;\n            &lt;/span&gt;\n        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null) ?
+            &quot;&lt;/a&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;categoryItems&#039;: function categoryItems(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;categoryItems&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li role=\&quot;presentation\&quot; class=\&quot;category &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;disabledClass&#039;] : null) ?
+            &quot;disabled&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-parent-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;parentCid&#039;] : null)) + 
+          &quot;\&quot; data-name=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot; href=\&quot;#\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;level&#039;] : null)) + 
+          &quot;&lt;i component=\&quot;category/select/icon\&quot; class=\&quot;fa fa-fw fa-check &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;selected&#039;] : null) ?
+            &quot;&quot; :
+            &quot;invisible&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;&lt;span component=\&quot;category-markup\&quot; style=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;match&#039;] : null) ?
+            &quot;font-weight: bold;&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null) ?
+            &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+              __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard(value)])) + 
+              &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-stack-1x &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null)) + 
+              &quot;\&quot; style=\&quot;color: &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;color&#039;] : null)) + 
+              &quot;;\&quot;&gt;&lt;/i&gt;&lt;/span&gt;&quot; :
+            &quot;&quot;) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;/a&gt;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;flags&#039;: function flags(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;flags&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                &lt;tr data-flag-id=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;flagId&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                    &lt;td&gt;\n                        &lt;input type=\&quot;checkbox\&quot; autocomplete=\&quot;off\&quot; /&gt;\n                    &lt;/td&gt;\n                    &lt;td&gt;\n                        &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/flags/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;flagId&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                            &lt;strong&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;target_readable&#039;] : null)) + 
+          &quot;&lt;/strong&gt;\n                        &lt;/a&gt;\n                    &lt;/td&gt;\n                    &lt;td&gt;\n                        &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;heat&#039;] : null)) + 
+          &quot;\n                    &lt;/td&gt;\n                    &lt;td&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;datetimeISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt;&lt;/td&gt;\n                    &lt;td&gt;&lt;span class=\&quot;label label-&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;labelClass&#039;] : null)) + 
+          &quot;\&quot;&gt;[[flags:state-&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;flags&#039;] != null &amp;&amp; context[&#039;flags&#039;][key0] != null) ? context[&#039;flags&#039;][key0][&#039;state&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;/td&gt;\n                &lt;/tr&gt;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;pagination.pages&#039;: function paginationpages(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;separator&#039;] : null) ?
+            &quot;\n            &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n                &lt;a href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-ellipsis-h\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot; :
+            &quot;\n            &lt;li class=\&quot;page&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;active&#039;] : null) ?
+                &quot; active&quot; :
+                &quot;&quot;) + 
+              &quot;\&quot; &gt;\n                &lt;a href=\&quot;?&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;qs&#039;] : null)) + 
+              &quot;\&quot; data-page=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot;) + 
+          &quot;\n        &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/emails/notification.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/emails/notification.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">62</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">27.16</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.82</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;!DOCTYPE html&gt;\n&lt;html lang=\&quot;en\&quot; xmlns=\&quot;http://www.w3.org/1999/xhtml\&quot; xmlns:v=\&quot;urn:schemas-microsoft-com:vml\&quot; xmlns:o=\&quot;urn:schemas-microsoft-com:office:office\&quot;&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;utf-8\&quot;&gt; &lt;!-- utf-8 works for most cases --&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width\&quot;&gt; &lt;!-- Forcing initial-scale shouldn&#039;t be necessary --&gt;\n    &lt;meta http-equiv=\&quot;X-UA-Compatible\&quot; content=\&quot;IE=edge\&quot;&gt; &lt;!-- Use the latest (edge) version of IE rendering engine --&gt;\n    &lt;meta name=\&quot;x-apple-disable-message-reformatting\&quot;&gt;  &lt;!-- Disable auto-scale in iOS 10 Mail entirely --&gt;\n    &lt;title&gt;&lt;/title&gt; &lt;!-- The title tag shows in email notifications, like Android 4.4. --&gt;\n\n    &lt;!-- Web Font / @font-face : BEGIN --&gt;\n    &lt;!-- NOTE: If web fonts are not required, lines 10 - 27 can be safely removed. --&gt;\n\n    &lt;!-- Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font. --&gt;\n    &lt;!--[if mso]&gt;\n        &lt;style&gt;\n            * {\n                font-family: sans-serif !important;\n            }\n        &lt;/style&gt;\n    &lt;![endif]--&gt;\n\n    &lt;!-- All other clients get the webfont reference; some will render the font and others will silently fail to the fallbacks. More on that here: http://stylecampaign.com/blog/2015/02/webfont-support-in-email/ --&gt;\n    &lt;!--[if !mso]&gt;&lt;!--&gt;\n        &lt;!-- insert web font reference, eg: &lt;link href=&#039;https://fonts.googleapis.com/css?family=Roboto:400,700&#039; rel=&#039;stylesheet&#039; type=&#039;text/css&#039;&gt; --&gt;\n    &lt;!--&lt;![endif]--&gt;\n\n    &lt;!-- Web Font / @font-face : END --&gt;\n\n    &lt;!-- CSS Reset --&gt;\n    &lt;style&gt;\n\n        /* What it does: Remove spaces around the email design added by some email clients. */\n        /* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */\n        html,\n        body {\n            margin: 0 auto !important;\n            padding: 0 !important;\n            height: 100% !important;\n            width: 100% !important;\n        }\n\n        /* What it does: Stops email clients resizing small text. */\n        * {\n            -ms-text-size-adjust: 100%;\n            -webkit-text-size-adjust: 100%;\n        }\n\n        /* What it does: Centers email on Android 4.4 */\n        div[style*=\&quot;margin: 16px 0\&quot;] {\n            margin:0 !important;\n        }\n\n        /* What it does: Stops Outlook from adding extra spacing to tables. */\n        table,\n        td {\n            mso-table-lspace: 0pt !important;\n            mso-table-rspace: 0pt !important;\n        }\n\n        /* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */\n        table {\n            border-spacing: 0 !important;\n            border-collapse: collapse !important;\n            table-layout: fixed !important;\n            margin: 0 auto !important;\n        }\n        table table table {\n            table-layout: auto;\n        }\n\n        /* What it does: Uses a better rendering method when resizing images in IE. */\n        img {\n            -ms-interpolation-mode:bicubic;\n        }\n\n        /* What it does: A work-around for email clients meddling in triggered links. */\n        *[x-apple-data-detectors],    /* iOS */\n        .x-gmail-data-detectors,     /* Gmail */\n        .x-gmail-data-detectors *,\n        .aBn {\n            border-bottom: 0 !important;\n            cursor: default !important;\n            color: inherit !important;\n            text-decoration: none !important;\n            font-size: inherit !important;\n            font-family: inherit !important;\n            font-weight: inherit !important;\n            line-height: inherit !important;\n        }\n\n        /* What it does: Prevents Gmail from displaying an download button on large, non-linked images. */\n        .a6S {\n            display: none !important;\n            opacity: 0.01 !important;\n        }\n        /* If the above doesn&#039;t work, add a .g-img class to any image in question. */\n        img.g-img + div {\n            display:none !important;\n           }\n\n        /* What it does: Prevents underlining the button text in Windows 10 */\n        .button-link {\n            text-decoration: none !important;\n        }\n\n        /* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */\n        /* Create one of these media queries for each additional viewport size you&#039;d like to fix */\n        /* Thanks to Eric Lepetit (@ericlepetitsf) for help troubleshooting */\n        @media only screen and (min-device-width: 375px) and (max-device-width: 413px) { /* iPhone 6 and 6+ */\n            .email-container {\n                min-width: 375px !important;\n            }\n        }\n\n    &lt;/style&gt;\n\n    &lt;!-- Progressive Enhancements --&gt;\n    &lt;style&gt;\n\n        /* What it does: Hover styles for buttons */\n        .button-td,\n        .button-a {\n            transition: all 100ms ease-in;\n        }\n        .button-td:hover,\n        .button-a:hover {\n            background: #555555 !important;\n            border-color: #555555 !important;\n        }\n\n        /* Media Queries */\n        @media screen and (max-width: 600px) {\n\n            /* What it does: Adjust typography on small screens to improve readability */\n            .email-container p {\n                font-size: 17px !important;\n                line-height: 26px !important;\n            }\n\n        }\n\n        .notification-body img {\n            max-width: 100%;\n            height: auto;\n        }\n    &lt;/style&gt;\n\n    &lt;!-- What it does: Makes background images in 72ppi Outlook render at correct size. --&gt;\n    &lt;!--[if gte mso 9]&gt;\n    &lt;xml&gt;\n        &lt;o:OfficeDocumentSettings&gt;\n            &lt;o:AllowPNG/&gt;\n            &lt;o:PixelsPerInch&gt;96&lt;/o:PixelsPerInch&gt;\n        &lt;/o:OfficeDocumentSettings&gt;\n    &lt;/xml&gt;\n    &lt;![endif]--&gt;\n\n&lt;/head&gt;\n\n&lt;body width=\&quot;100%\&quot; bgcolor=\&quot;#f6f6f6\&quot; style=\&quot;margin: 0; mso-line-height-rule: exactly;\&quot;&gt;\n    &lt;center style=\&quot;width: 100%; background: #f6f6f6; text-align: left;\&quot;&gt;\n\n        &lt;!--\n            Set the email width. Defined in two places:\n            1. max-width for all clients except Desktop Windows Outlook, allowing the email to squish on narrow but never go wider than 600px.\n            2. MSO tags for Desktop Windows Outlook enforce a 600px width.\n        --&gt;\n        &lt;div style=\&quot;max-width: 600px; margin: auto;&quot; + 
+      (guard((context != null) ? context[&#039;rtl&#039;] : null) ?
+        &quot; text-align: right; direction: rtl;&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot; class=\&quot;email-container\&quot;&gt;\n            &lt;!--[if mso]&gt;\n            &lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; width=\&quot;600\&quot; align=\&quot;center\&quot;&gt;\n            &lt;tr&gt;\n            &lt;td&gt;\n            &lt;![endif]--&gt;\n\n            &lt;!-- Email Header : BEGIN --&gt;\n            &lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; align=\&quot;center\&quot; width=\&quot;100%\&quot; style=\&quot;max-width: 600px;\&quot;&gt;\n                &lt;tr&gt;\n                    &lt;td style=\&quot;padding: 20px 0; text-align: center\&quot;&gt;\n                        &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;src&#039;] : null) ?
+        &quot;\n                        &lt;img src=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;src&#039;] : null)) + 
+          &quot;\&quot; height=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;height&#039;] : null)) + 
+          &quot;\&quot; width=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;width&#039;] : null)) + 
+          &quot;\&quot; alt=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;site_title&#039;] : null)) + 
+          &quot;\&quot; border=\&quot;0\&quot; style=\&quot;height: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;height&#039;] : null)) + 
+          &quot;px; width: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;logo&#039;] != null) ? context[&#039;logo&#039;][&#039;width&#039;] : null)) + 
+          &quot;px; background: #f6f6f6; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 15px; line-height: 20px; color: #333333;\&quot;&gt;\n                        &quot; :
+        &quot;\n                        &amp;nbsp;\n                        &quot;) + 
+      &quot;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n            &lt;/table&gt;\n            &lt;!-- Email Header : END --&gt;\n\n&lt;!-- Email Body : BEGIN --&gt;\n&lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; align=\&quot;center\&quot; width=\&quot;100%\&quot; style=\&quot;max-width: 600px;\&quot;&gt;\n\n    &lt;!-- 1 Column Text + Button : BEGIN --&gt;\n    &lt;tr&gt;\n        &lt;td bgcolor=\&quot;#ffffff\&quot;&gt;\n            &lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; width=\&quot;100%\&quot;&gt;\n                &lt;tr&gt;\n                    &lt;td style=\&quot;padding: 40px 40px 6px 40px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 15px; line-height: 20px; color: #555555;\&quot;&gt;\n                        &lt;h1 style=\&quot;margin: 0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 24px; line-height: 27px; color: #333333; font-weight: normal;\&quot;&gt;[[email:greeting_with_name, &quot; + 
+      __escape(guard((context != null) ? context[&#039;username&#039;] : null)) + 
+      &quot;]]&lt;/h1&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n                &lt;tr&gt;\n                    &lt;td style=\&quot;padding: 0px 40px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 15px; line-height: 20px; color: #555555;\&quot;&gt;\n                        &lt;h1 style=\&quot;margin: 0 0 10px 0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 18px; line-height: 21px; color: #aaaaaa; font-weight: normal;\&quot;&gt;&quot; + 
+      __escape(guard((context != null) ? context[&#039;intro&#039;] : null)) + 
+      &quot;&lt;/h1&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n                &lt;tr class=\&quot;notification-body\&quot;&gt;\n                    &lt;td style=\&quot;padding: 20px 40px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 15px; line-height: 20px; color: #555555;\&quot;&gt;\n                        &lt;p style=\&quot;margin: 0; padding: 6px 0px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 13px; line-height: 26px; color: #666666;\&quot;&gt;\n                            &quot; + 
+      __escape(guard((context != null) ? context[&#039;body&#039;] : null)) + 
+      &quot;\n                        &lt;/p&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n                &lt;tr&gt;\n                    &lt;td style=\&quot;padding: 32px 40px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 15px; line-height: 20px; color: #555555;\&quot;&gt;\n                        &lt;!-- Button : BEGIN --&gt;\n                        &lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; align=\&quot;center\&quot; style=\&quot;margin: auto;\&quot;&gt;\n                            &lt;tr&gt;\n                                &lt;td style=\&quot;border-radius: 3px; background: #222222; text-align: center;\&quot; class=\&quot;button-td\&quot;&gt;\n                                    &lt;a href=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;notification_url&#039;] : null)) + 
+      &quot;\&quot; style=\&quot;background: #222222; border: 15px solid #222222; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; font-size: 13px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 3px; font-weight: bold;\&quot; class=\&quot;button-a\&quot;&gt;\n                                        &lt;span style=\&quot;color:#ffffff;\&quot; class=\&quot;button-link\&quot;&gt;[[email:notif.cta&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;notification&#039;] != null) ? context[&#039;notification&#039;][&#039;cta-type&#039;] : null) ?
+        &quot;-&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;notification&#039;] != null) ? context[&#039;notification&#039;][&#039;cta-type&#039;] : null)) :
+        &quot;&quot;) + 
+      &quot;]] &amp;rarr;&lt;/span&gt;\n                                    &lt;/a&gt;\n                                &lt;/td&gt;\n                            &lt;/tr&gt;\n                        &lt;/table&gt;\n                        &lt;!-- Button : END --&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n            &lt;/table&gt;\n        &lt;/td&gt;\n    &lt;/tr&gt;\n    &lt;!-- 1 Column Text + Button : END --&gt;\n\n&lt;/table&gt;\n&lt;!-- Email Body : END --&gt;\n\n            &lt;!-- Email Footer : BEGIN --&gt;\n            &lt;table role=\&quot;presentation\&quot; cellspacing=\&quot;0\&quot; cellpadding=\&quot;0\&quot; border=\&quot;0\&quot; align=\&quot;center\&quot; width=\&quot;100%\&quot; style=\&quot;max-width: 680px;\&quot;&gt;\n                &lt;tr&gt;\n                    &lt;td style=\&quot;padding: 40px 10px;width: 100%;font-size: 12px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol; line-height:18px; text-align: center; color: #888888;\&quot;&gt;\n                        &lt;br&gt;&lt;br&gt;\n                        &quot; + 
+      (guard((context != null) ? context[&#039;showUnsubscribe&#039;] : null) ?
+        &quot;\n                        [[email:notif.post.unsub.info]] &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;url&#039;] : null)) + 
+          &quot;/uid/&quot; + 
+          __escape(guard((context != null) ? context[&#039;uid&#039;] : null)) + 
+          &quot;/settings\&quot;&gt;[[email:unsub.cta]]&lt;/a&gt;.\n                        &lt;br /&gt;[[email:notif.post.unsub.one-click]] &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;unsubUrl&#039;] : null)) + 
+          &quot;\&quot;&gt;[[email:unsubscribe]]&lt;/a&gt;.\n                        &quot; :
+        &quot;&quot;) + 
+      &quot;\n                        &lt;br&gt;&lt;br&gt;\n                    &lt;/td&gt;\n                &lt;/tr&gt;\n            &lt;/table&gt;\n            &lt;!-- Email Footer : END --&gt;\n\n            &lt;!--[if mso]&gt;\n            &lt;/td&gt;\n            &lt;/tr&gt;\n            &lt;/table&gt;\n            &lt;![endif]--&gt;\n        &lt;/div&gt;\n\n    &lt;/center&gt;\n&lt;/body&gt;\n\n&lt;/html&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

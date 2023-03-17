@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/blocks.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/blocks.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.20</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">113</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">38.75</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.48</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const cacheCreate = require(&#039;../cache/lru&#039;);
+
+module.exports = function (User) {
+    User.blocks = {
+        _cache: cacheCreate({
+            name: &#039;user:blocks&#039;,
+            max: 100,
+            ttl: 0,
+        }),
+    };
+
+    User.blocks.is = async function (targetUid, uids) {
+        const isArray = Array.isArray(uids);
+        uids = isArray ? uids : [uids];
+        const blocks = await User.blocks.list(uids);
+        const isBlocked = uids.map((uid, index) =&gt; blocks[index] &amp;&amp; blocks[index].includes(parseInt(targetUid, 10)));
+        return isArray ? isBlocked : isBlocked[0];
+    };
+
+    User.blocks.can = async function (callerUid, blockerUid, blockeeUid, type) {
+        // Guests can&#039;t block
+        if (blockerUid === 0 || blockeeUid === 0) {
+            throw new Error(&#039;[[error:cannot-block-guest]]&#039;);
+        } else if (blockerUid === blockeeUid) {
+            throw new Error(&#039;[[error:cannot-block-self]]&#039;);
+        }
+
+        // Administrators and global moderators cannot be blocked
+        // Only admins/mods can block users as another user
+        const [isCallerAdminOrMod, isBlockeeAdminOrMod] = await Promise.all([
+            User.isAdminOrGlobalMod(callerUid),
+            User.isAdminOrGlobalMod(blockeeUid),
+        ]);
+        if (isBlockeeAdminOrMod &amp;&amp; type === &#039;block&#039;) {
+            throw new Error(&#039;[[error:cannot-block-privileged]]&#039;);
+        }
+        if (parseInt(callerUid, 10) !== parseInt(blockerUid, 10) &amp;&amp; !isCallerAdminOrMod) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+    };
+
+    User.blocks.list = async function (uids) {
+        const isArray = Array.isArray(uids);
+        uids = (isArray ? uids : [uids]).map(uid =&gt; parseInt(uid, 10));
+        const cachedData = {};
+        const unCachedUids = User.blocks._cache.getUnCachedKeys(uids, cachedData);
+        if (unCachedUids.length) {
+            const unCachedData = await db.getSortedSetsMembers(unCachedUids.map(uid =&gt; `uid:${uid}:blocked_uids`));
+            unCachedUids.forEach((uid, index) =&gt; {
+                cachedData[uid] = (unCachedData[index] || []).map(uid =&gt; parseInt(uid, 10));
+                User.blocks._cache.set(uid, cachedData[uid]);
+            });
+        }
+        const result = uids.map(uid =&gt; cachedData[uid] || []);
+        return isArray ? result.slice() : result[0];
+    };
+
+    User.blocks.add = async function (targetUid, uid) {
+        await User.blocks.applyChecks(&#039;block&#039;, targetUid, uid);
+        await db.sortedSetAdd(`uid:${uid}:blocked_uids`, Date.now(), targetUid);
+        await User.incrementUserFieldBy(uid, &#039;blocksCount&#039;, 1);
+        User.blocks._cache.del(parseInt(uid, 10));
+        plugins.hooks.fire(&#039;action:user.blocks.add&#039;, { uid: uid, targetUid: targetUid });
+    };
+
+    User.blocks.remove = async function (targetUid, uid) {
+        await User.blocks.applyChecks(&#039;unblock&#039;, targetUid, uid);
+        await db.sortedSetRemove(`uid:${uid}:blocked_uids`, targetUid);
+        await User.decrementUserFieldBy(uid, &#039;blocksCount&#039;, 1);
+        User.blocks._cache.del(parseInt(uid, 10));
+        plugins.hooks.fire(&#039;action:user.blocks.remove&#039;, { uid: uid, targetUid: targetUid });
+    };
+
+    User.blocks.applyChecks = async function (type, targetUid, uid) {
+        await User.blocks.can(uid, uid, targetUid);
+        const isBlock = type === &#039;block&#039;;
+        const is = await User.blocks.is(targetUid, uid);
+        if (is === isBlock) {
+            throw new Error(`[[error:already-${isBlock ? &#039;blocked&#039; : &#039;unblocked&#039;}]]`);
+        }
+    };
+
+    User.blocks.filterUids = async function (targetUid, uids) {
+        const isBlocked = await User.blocks.is(targetUid, uids);
+        return uids.filter((uid, index) =&gt; !isBlocked[index]);
+    };
+
+    User.blocks.filter = async function (uid, property, set) {
+        // Given whatever is passed in, iterates through it, and removes entries made by blocked uids
+        // property is optional
+        if (Array.isArray(property) &amp;&amp; typeof set === &#039;undefined&#039;) {
+            set = property;
+            property = &#039;uid&#039;;
+        }
+
+        if (!Array.isArray(set) || !set.length) {
+            return set;
+        }
+
+        const isPlain = typeof set[0] !== &#039;object&#039;;
+        const blocked_uids = await User.blocks.list(uid);
+        const blockedSet = new Set(blocked_uids);
+
+        set = set.filter(item =&gt; !blockedSet.has(parseInt(isPlain ? item : (item &amp;&amp; item[property]), 10)));
+        const data = await plugins.hooks.fire(&#039;filter:user.blocks.filter&#039;, { set: set, property: property, uid: uid, blockedSet: blockedSet });
+
+        return data.set;
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

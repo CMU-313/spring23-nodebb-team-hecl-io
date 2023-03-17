@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/messaging/data.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/messaging/data.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.07</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">156</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.73</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.76</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const utils = require(&#039;../utils&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+const intFields = [&#039;timestamp&#039;, &#039;edited&#039;, &#039;fromuid&#039;, &#039;roomId&#039;, &#039;deleted&#039;, &#039;system&#039;];
+
+module.exports = function (Messaging) {
+    Messaging.newMessageCutoff = 1000 * 60 * 3;
+
+    Messaging.getMessagesFields = async (mids, fields) =&gt; {
+        if (!Array.isArray(mids) || !mids.length) {
+            return [];
+        }
+
+        const keys = mids.map(mid =&gt; `message:${mid}`);
+        const messages = await db.getObjects(keys, fields);
+
+        return await Promise.all(messages.map(
+            async (message, idx) =&gt; modifyMessage(message, fields, parseInt(mids[idx], 10))
+        ));
+    };
+
+    Messaging.getMessageField = async (mid, field) =&gt; {
+        const fields = await Messaging.getMessageFields(mid, [field]);
+        return fields ? fields[field] : null;
+    };
+
+    Messaging.getMessageFields = async (mid, fields) =&gt; {
+        const messages = await Messaging.getMessagesFields([mid], fields);
+        return messages ? messages[0] : null;
+    };
+
+    Messaging.setMessageField = async (mid, field, content) =&gt; {
+        await db.setObjectField(`message:${mid}`, field, content);
+    };
+
+    Messaging.setMessageFields = async (mid, data) =&gt; {
+        await db.setObject(`message:${mid}`, data);
+    };
+
+    Messaging.getMessagesData = async (mids, uid, roomId, isNew) =&gt; {
+        let messages = await Messaging.getMessagesFields(mids, []);
+        messages = await user.blocks.filter(uid, &#039;fromuid&#039;, messages);
+        messages = messages
+            .map((msg, idx) =&gt; {
+                if (msg) {
+                    msg.messageId = parseInt(mids[idx], 10);
+                    msg.ip = undefined;
+                }
+                return msg;
+            })
+            .filter(Boolean);
+
+        const users = await user.getUsersFields(
+            messages.map(msg =&gt; msg &amp;&amp; msg.fromuid),
+            [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;, &#039;status&#039;, &#039;banned&#039;]
+        );
+
+        messages.forEach((message, index) =&gt; {
+            message.fromUser = users[index];
+            message.fromUser.banned = !!message.fromUser.banned;
+            message.fromUser.deleted = message.fromuid !== message.fromUser.uid &amp;&amp; message.fromUser.uid === 0;
+
+            const self = message.fromuid === parseInt(uid, 10);
+            message.self = self ? 1 : 0;
+
+            message.newSet = false;
+            message.roomId = String(message.roomId || roomId);
+            message.deleted = !!message.deleted;
+            message.system = !!message.system;
+        });
+
+        messages = await Promise.all(messages.map(async (message) =&gt; {
+            if (message.system) {
+                message.content = validator.escape(String(message.content));
+                message.cleanedContent = utils.stripHTMLTags(utils.decodeHTMLEntities(message.content));
+                return message;
+            }
+
+            const result = await Messaging.parse(message.content, message.fromuid, uid, roomId, isNew);
+            message.content = result;
+            message.cleanedContent = utils.stripHTMLTags(utils.decodeHTMLEntities(result));
+            return message;
+        }));
+
+        if (messages.length &gt; 1) {
+            // Add a spacer in between messages with time gaps between them
+            messages = messages.map((message, index) =&gt; {
+                // Compare timestamps with the previous message, and check if a spacer needs to be added
+                if (index &gt; 0 &amp;&amp; message.timestamp &gt; messages[index - 1].timestamp + Messaging.newMessageCutoff) {
+                    // If it&#039;s been 5 minutes, this is a new set of messages
+                    message.newSet = true;
+                } else if (index &gt; 0 &amp;&amp; message.fromuid !== messages[index - 1].fromuid) {
+                    // If the previous message was from the other person, this is also a new set
+                    message.newSet = true;
+                } else if (index === 0) {
+                    message.newSet = true;
+                }
+
+                return message;
+            });
+        } else if (messages.length === 1) {
+            // For single messages, we don&#039;t know the context, so look up the previous message and compare
+            const key = `uid:${uid}:chat:room:${roomId}:mids`;
+            const index = await db.sortedSetRank(key, messages[0].messageId);
+            if (index &gt; 0) {
+                const mid = await db.getSortedSetRange(key, index - 1, index - 1);
+                const fields = await Messaging.getMessageFields(mid, [&#039;fromuid&#039;, &#039;timestamp&#039;]);
+                if ((messages[0].timestamp &gt; fields.timestamp + Messaging.newMessageCutoff) ||
+                    (messages[0].fromuid !== fields.fromuid)) {
+                    // If it&#039;s been 5 minutes, this is a new set of messages
+                    messages[0].newSet = true;
+                }
+            } else {
+                messages[0].newSet = true;
+            }
+        } else {
+            messages = [];
+        }
+
+        const data = await plugins.hooks.fire(&#039;filter:messaging.getMessages&#039;, {
+            messages: messages,
+            uid: uid,
+            roomId: roomId,
+            isNew: isNew,
+            mids: mids,
+        });
+
+        return data &amp;&amp; data.messages;
+    };
+};
+
+async function modifyMessage(message, fields, mid) {
+    if (message) {
+        db.parseIntFields(message, intFields, fields);
+        if (message.hasOwnProperty(&#039;timestamp&#039;)) {
+            message.timestampISO = utils.toISOString(message.timestamp);
+        }
+        if (message.hasOwnProperty(&#039;edited&#039;)) {
+            message.editedISO = utils.toISOString(message.edited);
+        }
+    }
+
+    const payload = await plugins.hooks.fire(&#039;filter:messaging.getFields&#039;, {
+        mid: mid,
+        message: message,
+        fields: fields,
+    });
+
+    return payload.message;
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

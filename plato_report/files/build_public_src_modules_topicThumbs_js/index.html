@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/topicThumbs.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/topicThumbs.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">77.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">130</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">22.91</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.47</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;topicThumbs&#039;, [
+    &#039;api&#039;, &#039;bootbox&#039;, &#039;alerts&#039;, &#039;uploader&#039;, &#039;benchpress&#039;, &#039;translator&#039;, &#039;jquery-ui/widgets/sortable&#039;,
+], function (api, bootbox, alerts, uploader, Benchpress, translator) {
+    const Thumbs = {};
+
+    Thumbs.get = id =&gt; api.get(`/topics/${id}/thumbs`, {});
+
+    Thumbs.getByPid = pid =&gt; api.get(`/posts/${pid}`, {}).then(post =&gt; Thumbs.get(post.tid));
+
+    Thumbs.delete = (id, path) =&gt; api.del(`/topics/${id}/thumbs`, {
+        path: path,
+    });
+
+    Thumbs.deleteAll = (id) =&gt; {
+        Thumbs.get(id).then((thumbs) =&gt; {
+            Promise.all(thumbs.map(thumb =&gt; Thumbs.delete(id, thumb.url)));
+        });
+    };
+
+    Thumbs.upload = id =&gt; new Promise((resolve) =&gt; {
+        uploader.show({
+            title: &#039;[[topic:composer.thumb_title]]&#039;,
+            method: &#039;put&#039;,
+            route: config.relative_path + `/api/v3/topics/${id}/thumbs`,
+        }, function (url) {
+            resolve(url);
+        });
+    });
+
+    Thumbs.modal = {};
+
+    Thumbs.modal.open = function (payload) {
+        const { id, pid } = payload;
+        let { modal } = payload;
+        let numThumbs;
+
+        return new Promise((resolve) =&gt; {
+            Promise.all([
+                Thumbs.get(id),
+                pid ? Thumbs.getByPid(pid) : [],
+            ]).then(results =&gt; new Promise((resolve) =&gt; {
+                const thumbs = results.reduce((memo, cur) =&gt; memo.concat(cur));
+                numThumbs = thumbs.length;
+
+                resolve(thumbs);
+            })).then(thumbs =&gt; Benchpress.render(&#039;modals/topic-thumbs&#039;, { thumbs })).then((html) =&gt; {
+                if (modal) {
+                    translator.translate(html, function (translated) {
+                        modal.find(&#039;.bootbox-body&#039;).html(translated);
+                        Thumbs.modal.handleSort({ modal, numThumbs });
+                    });
+                } else {
+                    modal = bootbox.dialog({
+                        title: &#039;[[modules:thumbs.modal.title]]&#039;,
+                        message: html,
+                        buttons: {
+                            add: {
+                                label: &#039;&lt;i class=&quot;fa fa-plus&quot;&gt;&lt;/i&gt; [[modules:thumbs.modal.add]]&#039;,
+                                className: &#039;btn-success&#039;,
+                                callback: () =&gt; {
+                                    Thumbs.upload(id).then(() =&gt; {
+                                        Thumbs.modal.open({ ...payload, modal });
+                                        require([&#039;composer&#039;], (composer) =&gt; {
+                                            composer.updateThumbCount(id, $(`[component=&quot;composer&quot;][data-uuid=&quot;${id}&quot;]`));
+                                            resolve();
+                                        });
+                                    });
+                                    return false;
+                                },
+                            },
+                            close: {
+                                label: &#039;[[global:close]]&#039;,
+                                className: &#039;btn-primary&#039;,
+                            },
+                        },
+                    });
+                    Thumbs.modal.handleDelete({ ...payload, modal });
+                    Thumbs.modal.handleSort({ modal, numThumbs });
+                }
+            });
+        });
+    };
+
+    Thumbs.modal.handleDelete = (payload) =&gt; {
+        const modalEl = payload.modal.get(0);
+
+        modalEl.addEventListener(&#039;click&#039;, (ev) =&gt; {
+            if (ev.target.closest(&#039;button[data-action=&quot;remove&quot;]&#039;)) {
+                bootbox.confirm(&#039;[[modules:thumbs.modal.confirm-remove]]&#039;, (ok) =&gt; {
+                    if (!ok) {
+                        return;
+                    }
+
+                    const id = ev.target.closest(&#039;.media[data-id]&#039;).getAttribute(&#039;data-id&#039;);
+                    const path = ev.target.closest(&#039;.media[data-path]&#039;).getAttribute(&#039;data-path&#039;);
+                    api.del(`/topics/${id}/thumbs`, {
+                        path: path,
+                    }).then(() =&gt; {
+                        Thumbs.modal.open(payload);
+                    }).catch(alerts.error);
+                });
+            }
+        });
+    };
+
+    Thumbs.modal.handleSort = ({ modal, numThumbs }) =&gt; {
+        if (numThumbs &gt; 1) {
+            const selectorEl = modal.find(&#039;.topic-thumbs-modal&#039;);
+            selectorEl.sortable({
+                items: &#039;[data-id]&#039;,
+            });
+            selectorEl.on(&#039;sortupdate&#039;, Thumbs.modal.handleSortChange);
+        }
+    };
+
+    Thumbs.modal.handleSortChange = (ev, ui) =&gt; {
+        const items = ui.item.get(0).parentNode.querySelectorAll(&#039;[data-id]&#039;);
+        Array.from(items).forEach((el, order) =&gt; {
+            const id = el.getAttribute(&#039;data-id&#039;);
+            let path = el.getAttribute(&#039;data-path&#039;);
+            path = path.replace(new RegExp(`^${config.upload_url}`), &#039;&#039;);
+
+            api.put(`/topics/${id}/thumbs/order`, { path, order }).catch(alerts.error);
+        });
+    };
+
+    return Thumbs;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

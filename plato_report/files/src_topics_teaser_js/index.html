@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/teaser.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/teaser.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.35</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">175</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.49</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.91</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+module.exports = function (Topics) {
+    Topics.getTeasers = async function (topics, options) {
+        if (!Array.isArray(topics) || !topics.length) {
+            return [];
+        }
+        let uid = options;
+        let { teaserPost } = meta.config;
+        if (typeof options === &#039;object&#039;) {
+            uid = options.uid;
+            teaserPost = options.teaserPost || meta.config.teaserPost;
+        }
+
+        const counts = [];
+        const teaserPids = [];
+        const tidToPost = {};
+
+        topics.forEach((topic) =&gt; {
+            counts.push(topic &amp;&amp; topic.postcount);
+            if (topic) {
+                if (topic.teaserPid === &#039;null&#039;) {
+                    delete topic.teaserPid;
+                }
+                if (teaserPost === &#039;first&#039;) {
+                    teaserPids.push(topic.mainPid);
+                } else if (teaserPost === &#039;last-post&#039;) {
+                    teaserPids.push(topic.teaserPid || topic.mainPid);
+                } else { // last-reply and everything else uses teaserPid like `last` that was used before
+                    teaserPids.push(topic.teaserPid);
+                }
+            }
+        });
+
+        const [allPostData, callerSettings] = await Promise.all([
+            posts.getPostsFields(teaserPids, [&#039;pid&#039;, &#039;uid&#039;, &#039;timestamp&#039;, &#039;tid&#039;, &#039;content&#039;]),
+            user.getSettings(uid),
+        ]);
+        let postData = allPostData.filter(post =&gt; post &amp;&amp; post.pid);
+        postData = await handleBlocks(uid, postData);
+        postData = postData.filter(Boolean);
+        const uids = _.uniq(postData.map(post =&gt; post.uid));
+        const sortNewToOld = callerSettings.topicPostSort === &#039;newest_to_oldest&#039;;
+        const usersData = await user.getUsersFields(uids, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;]);
+
+        const users = {};
+        usersData.forEach((user) =&gt; {
+            users[user.uid] = user;
+        });
+        postData.forEach((post) =&gt; {
+            // If the post author isn&#039;t represented in the retrieved users&#039; data,
+            // then it means they were deleted, assume guest.
+            if (!users.hasOwnProperty(post.uid)) {
+                post.uid = 0;
+            }
+
+            post.user = users[post.uid];
+            post.timestampISO = utils.toISOString(post.timestamp);
+            tidToPost[post.tid] = post;
+        });
+        await Promise.all(postData.map(p =&gt; posts.parsePost(p)));
+
+        const { tags } = await plugins.hooks.fire(&#039;filter:teasers.configureStripTags&#039;, { tags: utils.stripTags.slice(0) });
+
+        const teasers = topics.map((topic, index) =&gt; {
+            if (!topic) {
+                return null;
+            }
+
+            const topicPost = tidToPost[topic.tid];
+            if (topicPost) {
+                topicPost.index = calcTeaserIndex(teaserPost, counts[index], sortNewToOld);
+                if (topicPost.content) {
+                    topicPost.content = utils.stripHTMLTags(replaceImgWithAltText(topicPost.content), tags);
+                }
+            }
+            return topicPost;
+        });
+
+        const result = await plugins.hooks.fire(&#039;filter:teasers.get&#039;, { teasers: teasers, uid: uid });
+        return result.teasers;
+    };
+
+    function calcTeaserIndex(teaserPost, postCountInTopic, sortNewToOld) {
+        if (teaserPost === &#039;first&#039;) {
+            return 1;
+        }
+
+        if (sortNewToOld) {
+            return Math.min(2, postCountInTopic);
+        }
+        return postCountInTopic;
+    }
+
+    function replaceImgWithAltText(str) {
+        return String(str).replace(/&lt;img .*?alt=&quot;(.*?)&quot;[^&gt;]*&gt;/gi, &#039;$1&#039;);
+    }
+
+    async function handleBlocks(uid, teasers) {
+        const blockedUids = await user.blocks.list(uid);
+        if (!blockedUids.length) {
+            return teasers;
+        }
+
+        return await Promise.all(teasers.map(async (postData) =&gt; {
+            if (blockedUids.includes(parseInt(postData.uid, 10))) {
+                return await getPreviousNonBlockedPost(postData, blockedUids);
+            }
+            return postData;
+        }));
+    }
+
+    async function getPreviousNonBlockedPost(postData, blockedUids) {
+        let isBlocked = false;
+        let prevPost = postData;
+        const postsPerIteration = 5;
+        let start = 0;
+        let stop = start + postsPerIteration - 1;
+        let checkedAllReplies = false;
+
+        function checkBlocked(post) {
+            const isPostBlocked = blockedUids.includes(parseInt(post.uid, 10));
+            prevPost = !isPostBlocked ? post : prevPost;
+            return isPostBlocked;
+        }
+
+        do {
+            /* eslint-disable no-await-in-loop */
+            let pids = await db.getSortedSetRevRange(`tid:${postData.tid}:posts`, start, stop);
+            if (!pids.length) {
+                checkedAllReplies = true;
+                const mainPid = await Topics.getTopicField(postData.tid, &#039;mainPid&#039;);
+                pids = [mainPid];
+            }
+            const prevPosts = await posts.getPostsFields(pids, [&#039;pid&#039;, &#039;uid&#039;, &#039;timestamp&#039;, &#039;tid&#039;, &#039;content&#039;]);
+            isBlocked = prevPosts.every(checkBlocked);
+            start += postsPerIteration;
+            stop = start + postsPerIteration - 1;
+        } while (isBlocked &amp;&amp; prevPost &amp;&amp; prevPost.pid &amp;&amp; !checkedAllReplies);
+
+        return prevPost;
+    }
+
+    Topics.getTeasersByTids = async function (tids, uid) {
+        if (!Array.isArray(tids) || !tids.length) {
+            return [];
+        }
+        const topics = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;postcount&#039;, &#039;teaserPid&#039;, &#039;mainPid&#039;]);
+        return await Topics.getTeasers(topics, uid);
+    };
+
+    Topics.getTeaser = async function (tid, uid) {
+        const teasers = await Topics.getTeasersByTids([tid], uid);
+        return Array.isArray(teasers) &amp;&amp; teasers.length ? teasers[0] : null;
+    };
+
+    Topics.updateTeaser = async function (tid) {
+        let pid = await Topics.getLatestUndeletedReply(tid);
+        pid = pid || null;
+        if (pid) {
+            await Topics.setTopicField(tid, &#039;teaserPid&#039;, pid);
+        } else {
+            await Topics.deleteTopicField(tid, &#039;teaserPid&#039;);
+        }
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

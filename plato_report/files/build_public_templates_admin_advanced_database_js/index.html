@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/advanced/database.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/advanced/database.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">64.75</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">135</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">43.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.86</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;\n&lt;div class=\&quot;row database\&quot;&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;mongo&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;serverStatusError&#039;] : null) ?
+            &quot;\n        &lt;div class=\&quot;alert alert-warning\&quot;&gt;\n            &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;serverStatusError&#039;] : null)) + 
+              &quot;\n        &lt;/div&gt;\n        &quot; :
+            &quot;&quot;) + 
+          &quot;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;&lt;i class=\&quot;fa fa-hdd-o\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:mongo]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;div class=\&quot;database-info\&quot;&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.version]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;version&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:uptime-seconds]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;uptime&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.storage-engine]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;storageEngine&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.collections]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;collections&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.objects]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;objects&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.avg-object-size]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-b, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;avgObjSize&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.data-size]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;dataSize&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.storage-size]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;storageSize&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.index-size]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;indexSize&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;fileSize&#039;] : null) ?
+            &quot;\n                    &lt;span&gt;[[admin/advanced/database:mongo.file-size]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;fileSize&#039;] : null)) + 
+              &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.resident-memory]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;mem&#039;] != null) ? context[&#039;mongo&#039;][&#039;mem&#039;][&#039;resident&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.virtual-memory]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;mem&#039;] != null) ? context[&#039;mongo&#039;][&#039;mem&#039;][&#039;virtual&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.mapped-memory]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;mem&#039;] != null) ? context[&#039;mongo&#039;][&#039;mem&#039;][&#039;mapped&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.bytes-in]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;network&#039;] != null) ? context[&#039;mongo&#039;][&#039;network&#039;][&#039;bytesIn&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.bytes-out]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;network&#039;] != null) ? context[&#039;mongo&#039;][&#039;network&#039;][&#039;bytesOut&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:mongo.num-requests]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null &amp;&amp; context[&#039;mongo&#039;][&#039;network&#039;] != null) ? context[&#039;mongo&#039;][&#039;network&#039;][&#039;numRequests&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;redis&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;&lt;i class=\&quot;fa fa-hdd-o\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:redis]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;div class=\&quot;database-info\&quot;&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.version]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;redis_version&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:uptime-seconds]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;uptime_in_seconds&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:uptime-days]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;uptime_in_days&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.keys]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;keys&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.expires]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;expires&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.avg-ttl]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;avg_ttl&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.connected-clients]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;connected_clients&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.connected-slaves]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;connected_slaves&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.blocked-clients]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;blocked_clients&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n\n                    &lt;span&gt;[[admin/advanced/database:redis.used-memory]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;used_memory_human&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.memory-frag-ratio]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;mem_fragmentation_ratio&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.total-connections-recieved]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;total_connections_received&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.total-commands-processed]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;total_commands_processed&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.iops]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;instantaneous_ops_per_sec&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n\n                    &lt;span&gt;[[admin/advanced/database:redis.iinput]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-mb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;instantaneous_input&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.ioutput]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-mb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;instantaneous_output&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.total-input]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;total_net_input&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.total-output]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;[[admin/advanced/database:x-gb, &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;total_net_output&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;&lt;br/&gt;\n\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.keyspace-hits]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;keyspace_hits&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;span&gt;[[admin/advanced/database:redis.keyspace-misses]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;keyspace_misses&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;postgres&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;&lt;i class=\&quot;fa fa-hdd-o\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:postgres]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;div class=\&quot;database-info\&quot;&gt;\n                    &lt;span&gt;[[admin/advanced/database:postgres.version]]&lt;/span&gt; &lt;span class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;postgres&#039;] != null) ? context[&#039;postgres&#039;][&#039;version&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                    &lt;hr/&gt;\n                    &lt;span&gt;[[admin/advanced/database:uptime-seconds]]&lt;/span&gt; &lt;span class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;postgres&#039;] != null) ? context[&#039;postgres&#039;][&#039;uptime&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br/&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row database\&quot;&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;mongo&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;.mongodb-raw\&quot;&gt;\n                &lt;h3 class=\&quot;panel-title\&quot;&gt;&lt;i class=\&quot;fa fa-caret-down\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:mongo.raw-info]]&lt;/h3&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;panel-body mongodb-raw collapse\&quot;&gt;\n                &lt;div class=\&quot;highlight\&quot;&gt;\n                    &lt;pre&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;mongo&#039;] != null) ? context[&#039;mongo&#039;][&#039;raw&#039;] : null)) + 
+          &quot;&lt;/pre&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;redis&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;.redis-raw\&quot;&gt;\n                &lt;h3 class=\&quot;panel-title\&quot;&gt;&lt;i class=\&quot;fa fa-caret-down\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:redis.raw-info]]&lt;/h3&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;panel-body redis-raw collapse\&quot;&gt;\n                &lt;div class=\&quot;highlight\&quot;&gt;\n                    &lt;pre&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;redis&#039;] != null) ? context[&#039;redis&#039;][&#039;raw&#039;] : null)) + 
+          &quot;&lt;/pre&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;postgres&#039;] : null) ?
+        &quot;\n    &lt;div class=\&quot;col-lg-6\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot; data-toggle=\&quot;collapse\&quot; data-target=\&quot;.postgresql-raw\&quot;&gt;\n                &lt;h3 class=\&quot;panel-title\&quot;&gt;&lt;i class=\&quot;fa fa-caret-down\&quot;&gt;&lt;/i&gt; [[admin/advanced/database:postgres.raw-info]]&lt;/h3&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;panel-body postgresql-raw collapse\&quot;&gt;\n                &lt;div class=\&quot;highlight\&quot;&gt;\n                    &lt;pre&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;postgres&#039;] != null) ? context[&#039;postgres&#039;][&#039;raw&#039;] : null)) + 
+          &quot;&lt;/pre&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n&lt;/div&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

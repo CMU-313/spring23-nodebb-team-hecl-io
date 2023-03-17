@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/partials/topic/post.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/partials/topic/post.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.25</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">213</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">69.03</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.56</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;clearfix post-header\&quot;&gt;\n    &lt;div class=\&quot;icon pull-left\&quot;&gt;\n        &lt;a href=\&quot;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null) ?
+        __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/user/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null)) :
+        &quot;#&quot;) + 
+      &quot;\&quot;&gt;\n            &quot; + 
+      __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;] : null), &quot;sm2x&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;&quot;, &quot;user/picture&quot;])) + 
+      &quot;\n            &lt;i component=\&quot;user/status\&quot; class=\&quot;fa fa-circle status &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;status&#039;] : null)) + 
+      &quot;\&quot; title=\&quot;[[global:&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;status&#039;] : null)) + 
+      &quot;]]\&quot;&gt;&lt;/i&gt;\n        &lt;/a&gt;\n    &lt;/div&gt;\n\n\n    &lt;small class=\&quot;pull-left\&quot;&gt;\n        &lt;strong&gt;\n            &lt;a href=\&quot;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null) ?
+        __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/user/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null)) :
+        &quot;#&quot;) + 
+      &quot;\&quot; itemprop=\&quot;author\&quot; data-username=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;username&#039;] : null)) + 
+      &quot;\&quot; data-uid=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;uid&#039;] : null)) + 
+      &quot;\&quot;&gt;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;displayname&#039;] : null)) + 
+      &quot;&lt;/a&gt;\n        &lt;/strong&gt;\n\n        &quot; + 
+      compiled.blocks[&#039;posts.user.selectedGroups&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\n        &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;banned&#039;] : null) ?
+        &quot;\n        &lt;span class=\&quot;label label-danger\&quot;&gt;[[user:banned]]&lt;/span&gt;\n        &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n        &lt;span class=\&quot;visible-xs-inline-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block\&quot;&gt;\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;toPid&#039;] : null) ?
+        &quot;\n            &lt;a component=\&quot;post/parent\&quot; class=\&quot;btn btn-xs btn-default hidden-xs\&quot; data-topid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;toPid&#039;] : null)) + 
+          &quot;\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/post/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;toPid&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-reply\&quot;&gt;&lt;/i&gt; @&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;parent&#039;] != null) ? context[&#039;posts&#039;][&#039;parent&#039;][&#039;username&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;parent&#039;] != null) ? context[&#039;posts&#039;][&#039;parent&#039;][&#039;username&#039;] : null)) :
+            &quot;[[global:guest]]&quot;) + 
+          &quot;&lt;/a&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &lt;span&gt;\n                &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;][&#039;length&#039;] : null) ?
+        &quot;\n                &amp;#124;\n                &quot; + 
+          compiled.blocks[&#039;posts.user.custom_profile_info&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n                &quot; :
+        &quot;&quot;) + 
+      &quot;\n            &lt;/span&gt;\n        &lt;/span&gt;\n\n    &lt;/small&gt;\n    &lt;small class=\&quot;pull-right\&quot;&gt;\n        &lt;span class=\&quot;bookmarked\&quot;&gt;&lt;i class=\&quot;fa fa-bookmark-o\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n    &lt;/small&gt;\n    &lt;small class=\&quot;pull-right\&quot;&gt;\n        &lt;i component=\&quot;post/edit-indicator\&quot; class=\&quot;fa fa-pencil-square&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;posts:history&#039;] : null) ?
+        &quot; pointer&quot; :
+        &quot;&quot;) + 
+      &quot; edit-icon &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;editor&#039;] != null) ? context[&#039;posts&#039;][&#039;editor&#039;][&#039;username&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot;\&quot;&gt;&lt;/i&gt;\n\n        &lt;small data-editor=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;editor&#039;] != null) ? context[&#039;posts&#039;][&#039;editor&#039;][&#039;userslug&#039;] : null)) + 
+      &quot;\&quot; component=\&quot;post/editor\&quot; class=\&quot;hidden\&quot;&gt;[[global:last_edited_by, &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;editor&#039;] != null) ? context[&#039;posts&#039;][&#039;editor&#039;][&#039;username&#039;] : null)) + 
+      &quot;]] &lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;editedISO&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;/span&gt;&lt;/small&gt;\n\n        &lt;span class=\&quot;visible-xs-inline-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block\&quot;&gt;\n            &lt;a class=\&quot;permalink\&quot; href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/post/&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;pid&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;timestampISO&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;/span&gt;&lt;/a&gt;\n        &lt;/span&gt;\n    &lt;/small&gt;\n&lt;/div&gt;\n\n&lt;br /&gt;\n\n&lt;div class=\&quot;content\&quot; component=\&quot;post/content\&quot; itemprop=\&quot;text\&quot;&gt;\n    &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;content&#039;] : null)) + 
+      &quot;\n&lt;/div&gt;\n\n&lt;div class=\&quot;post-footer\&quot;&gt;\n    &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;signature&#039;] : null) ?
+        &quot;\n    &lt;div component=\&quot;post/signature\&quot; data-uid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;uid&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;post-signature\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;signature&#039;] : null)) + 
+          &quot;&lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &lt;p class=\&quot;endorsed-message\&quot;\n   component=\&quot;post/endorse-message\&quot;\n    &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;endorsed&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n    hidden\n    &quot;) + 
+      &quot;&gt;\n    This post has been marked as endorsed.\n&lt;/p&gt;\n\n    &lt;div class=\&quot;clearfix\&quot;&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;hideReplies&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n    &lt;a component=\&quot;post/reply-count\&quot; data-target-component=\&quot;post/replies/container\&quot; href=\&quot;#\&quot; class=\&quot;threaded-replies no-select pull-left &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;count&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hidden&quot;) + 
+          &quot;\&quot;&gt;\n        &lt;span component=\&quot;post/reply-count/avatars\&quot; class=\&quot;avatars &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;hasMore&#039;] : null) ?
+            &quot;hasMore&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;\n            &quot; + 
+          compiled.blocks[&#039;posts.replies.users&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n        &lt;/span&gt;\n\n        &lt;span class=\&quot;replies-count\&quot; component=\&quot;post/reply-count/text\&quot; data-replies=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;count&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;text&#039;] : null)) + 
+          &quot;&lt;/span&gt;\n        &lt;span class=\&quot;replies-last hidden-xs\&quot;&gt;[[topic:last_reply_time]] &lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;timestampISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt;&lt;/span&gt;\n\n        &lt;i class=\&quot;fa fa-fw fa-chevron-right\&quot; component=\&quot;post/replies/open\&quot;&gt;&lt;/i&gt;\n        &lt;i class=\&quot;fa fa-fw fa-chevron-down hidden\&quot; component=\&quot;post/replies/close\&quot;&gt;&lt;/i&gt;\n        \n        &lt;i class=\&quot;fa fa-fw fa-spin fa-spinner hidden\&quot; component=\&quot;post/replies/loading\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n    &quot;) + 
+      &quot;\n\n    &lt;small class=\&quot;pull-right\&quot;&gt;\n        &lt;!-- This partial intentionally left blank; overwritten by nodebb-plugin-reactions --&gt;\n        &lt;span class=\&quot;post-tools\&quot;&gt;\n            &lt;a component=\&quot;post/reply\&quot; href=\&quot;#\&quot; class=\&quot;no-select &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;topics:reply&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot;\&quot;&gt;[[topic:reply]]&lt;/a&gt;\n            &lt;!-- Added Endorse Button in Post --&gt;\n            &lt;a component=\&quot;post/endorse\&quot; data-endorsed=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;endorsed&#039;] : null)) + 
+      &quot;\&quot; href=\&quot;#\&quot; class=\&quot;endorseBtn no-select \&quot;&gt;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;endorsed&#039;] : null) ?
+        &quot; Unendorse &quot; :
+        &quot;Endorse &quot;) + 
+      &quot; &lt;/a&gt;\n            &lt;a component=\&quot;post/quote\&quot; href=\&quot;#\&quot; class=\&quot;no-select &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;topics:reply&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot;\&quot;&gt;[[topic:quote]]&lt;/a&gt;\n        &lt;/span&gt;\n\n        &quot; + 
+      (guard((context != null) ? context[&#039;reputation:disabled&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n        &lt;span class=\&quot;votes\&quot;&gt;\n            &lt;a component=\&quot;post/upvote\&quot; href=\&quot;#\&quot; class=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;upvoted&#039;] : null) ?
+            &quot;upvoted&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;\n                &lt;i class=\&quot;fa fa-chevron-up\&quot;&gt;&lt;/i&gt;\n            &lt;/a&gt;\n\n            &lt;span component=\&quot;post/vote-count\&quot; data-votes=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;votes&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;votes&#039;] : null)) + 
+          &quot;&lt;/span&gt;\n\n            &quot; + 
+          (guard((context != null) ? context[&#039;downvote:disabled&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n            &lt;a component=\&quot;post/downvote\&quot; href=\&quot;#\&quot; class=\&quot;&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;downvoted&#039;] : null) ?
+                &quot;downvoted&quot; :
+                &quot;&quot;) + 
+              &quot;\&quot;&gt;\n                &lt;i class=\&quot;fa fa-chevron-down\&quot;&gt;&lt;/i&gt;\n            &lt;/a&gt;\n            &quot;) + 
+          &quot;\n        &lt;/span&gt;\n        &quot;) + 
+      &quot;\n\n        &lt;span component=\&quot;post/tools\&quot; class=\&quot;dropdown moderator-tools bottom-sheet &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null) ? context[&#039;posts&#039;][&#039;display_post_menu&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot;\&quot;&gt;\n    &lt;a href=\&quot;#\&quot; data-toggle=\&quot;dropdown\&quot; data-ajaxify=\&quot;false\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-ellipsis-v\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n    &lt;ul class=\&quot;dropdown-menu dropdown-menu-right hidden\&quot; role=\&quot;menu\&quot;&gt;&lt;/ul&gt;\n&lt;/span&gt;\n\n    &lt;/small&gt;\n    &lt;/div&gt;\n    &lt;div component=\&quot;post/replies/container\&quot;&gt;&lt;/div&gt;\n&lt;/div&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;posts.user.selectedGroups&#039;: function postsuserselectedGroups(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;slug&#039;] : null) ?
+            &quot;\n&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/groups/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;slug&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;small class=\&quot;label group-label inline-block\&quot; style=\&quot;color:&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;textColor&#039;] : null)) + 
+              &quot;;background-color: &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;labelColor&#039;] : null)) + 
+              &quot;;\&quot;&gt;&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;icon&#039;] : null) ?
+                &quot;&lt;i class=\&quot;fa &quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;icon&#039;] : null)) + 
+                  &quot;\&quot;&gt;&lt;/i&gt; &quot; :
+                &quot;&quot;) + 
+              __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;selectedGroups&#039;][key0][&#039;userTitle&#039;] : null)) + 
+              &quot;&lt;/small&gt;&lt;/a&gt;\n&quot; :
+            &quot;&quot;) + 
+          &quot;\n&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;posts.user.custom_profile_info&#039;: function postsusercustom_profile_info(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;][key0] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;custom_profile_info&#039;][key0][&#039;content&#039;] : null)) + 
+          &quot;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;posts.replies.users&#039;: function postsrepliesusers(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;users&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &quot; + 
+          __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;replies&#039;][&#039;users&#039;] != null) ? context[&#039;posts&#039;][&#039;replies&#039;][&#039;users&#039;][key0] : null), &quot;xs&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;&quot;])) + 
+          &quot;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

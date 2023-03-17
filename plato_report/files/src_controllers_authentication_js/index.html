@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/authentication.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/authentication.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">57.02</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">510</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">67.19</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.92</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const passport = require(&#039;passport&#039;);
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+const util = require(&#039;util&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const analytics = require(&#039;../analytics&#039;);
+const user = require(&#039;../user&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const slugify = require(&#039;../slugify&#039;);
+const helpers = require(&#039;./helpers&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const sockets = require(&#039;../socket.io&#039;);
+
+const authenticationController = module.exports;
+
+async function registerAndLoginUser(req, res, userData) {
+    if (!userData.hasOwnProperty(&#039;email&#039;)) {
+        userData.updateEmail = true;
+    }
+
+    const data = await plugins.hooks.fire(&#039;filter:register.interstitial&#039;, {
+        req,
+        userData,
+        interstitials: [],
+    });
+
+    // If interstitials are found, save registration attempt into session and abort
+    const deferRegistration = data.interstitials.length;
+
+    if (deferRegistration) {
+        userData.register = true;
+        req.session.registration = userData;
+
+        if (req.body.noscript === &#039;true&#039;) {
+            res.redirect(`${nconf.get(&#039;relative_path&#039;)}/register/complete`);
+            return;
+        }
+        res.json({ next: `${nconf.get(&#039;relative_path&#039;)}/register/complete` });
+        return;
+    }
+    const queue = await user.shouldQueueUser(req.ip);
+    const result = await plugins.hooks.fire(&#039;filter:register.shouldQueue&#039;, { req: req, res: res, userData: userData, queue: queue });
+    if (result.queue) {
+        return await addToApprovalQueue(req, userData);
+    }
+
+    const uid = await user.create(userData);
+    if (res.locals.processLogin) {
+        await authenticationController.doLogin(req, uid);
+    }
+
+    // Distinguish registrations through invites from direct ones
+    if (userData.token) {
+        // Token has to be verified at this point
+        await Promise.all([
+            user.confirmIfInviteEmailIsUsed(userData.token, userData.email, uid),
+            user.joinGroupsFromInvitation(uid, userData.token),
+        ]);
+    }
+    await user.deleteInvitationKey(userData.email, userData.token);
+    const next = req.session.returnTo || `${nconf.get(&#039;relative_path&#039;)}/`;
+    const complete = await plugins.hooks.fire(&#039;filter:register.complete&#039;, { uid: uid, next: next });
+    req.session.returnTo = complete.next;
+    return complete;
+}
+
+authenticationController.register = async function (req, res) {
+    const registrationType = meta.config.registrationType || &#039;normal&#039;;
+
+    if (registrationType === &#039;disabled&#039;) {
+        return res.sendStatus(403);
+    }
+
+    const userData = req.body;
+    try {
+        if (userData.token || registrationType === &#039;invite-only&#039; || registrationType === &#039;admin-invite-only&#039;) {
+            await user.verifyInvitation(userData);
+        }
+
+        if (
+            !userData.username ||
+            userData.username.length &lt; meta.config.minimumUsernameLength ||
+            slugify(userData.username).length &lt; meta.config.minimumUsernameLength
+        ) {
+            throw new Error(&#039;[[error:username-too-short]]&#039;);
+        }
+
+        if (userData.username.length &gt; meta.config.maximumUsernameLength) {
+            throw new Error(&#039;[[error:username-too-long]]&#039;);
+        }
+
+        if (userData.password !== userData[&#039;password-confirm&#039;]) {
+            throw new Error(&#039;[[user:change_password_error_match]]&#039;);
+        }
+
+        if (userData.password.length &gt; 512) {
+            throw new Error(&#039;[[error:password-too-long]]&#039;);
+        }
+
+        if (!userData[&#039;account-type&#039;] ||
+            (userData[&#039;account-type&#039;] !== &#039;student&#039; &amp;&amp; userData[&#039;account-type&#039;] !== &#039;instructor&#039;)) {
+            throw new Error(&#039;Invalid account type&#039;);
+        }
+
+        user.isPasswordValid(userData.password);
+
+        res.locals.processLogin = true; // set it to false in plugin if you wish to just register only
+        await plugins.hooks.fire(&#039;filter:register.check&#039;, { req: req, res: res, userData: userData });
+
+        const data = await registerAndLoginUser(req, res, userData);
+        if (data) {
+            if (data.uid &amp;&amp; req.body.userLang) {
+                await user.setSetting(data.uid, &#039;userLang&#039;, req.body.userLang);
+            }
+            res.json(data);
+        }
+    } catch (err) {
+        helpers.noScriptErrors(req, res, err.message, 400);
+    }
+};
+
+async function addToApprovalQueue(req, userData) {
+    userData.ip = req.ip;
+    await user.addToApprovalQueue(userData);
+    let message = &#039;[[register:registration-added-to-queue]]&#039;;
+    if (meta.config.showAverageApprovalTime) {
+        const average_time = await db.getObjectField(&#039;registration:queue:approval:times&#039;, &#039;average&#039;);
+        if (average_time &gt; 0) {
+            message += ` [[register:registration-queue-average-time, ${Math.floor(average_time / 60)}, ${Math.floor(average_time % 60)}]]`;
+        }
+    }
+    if (meta.config.autoApproveTime &gt; 0) {
+        message += ` [[register:registration-queue-auto-approve-time, ${meta.config.autoApproveTime}]]`;
+    }
+    return { message: message };
+}
+
+authenticationController.registerComplete = async function (req, res) {
+    try {
+        // For the interstitials that respond, execute the callback with the form body
+        const data = await plugins.hooks.fire(&#039;filter:register.interstitial&#039;, {
+            req,
+            userData: req.session.registration,
+            interstitials: [],
+        });
+
+        const callbacks = data.interstitials.reduce((memo, cur) =&gt; {
+            if (cur.hasOwnProperty(&#039;callback&#039;) &amp;&amp; typeof cur.callback === &#039;function&#039;) {
+                req.body.files = req.files;
+                if (
+                    (cur.callback.constructor &amp;&amp; cur.callback.constructor.name === &#039;AsyncFunction&#039;) ||
+                    cur.callback.length === 2 // non-async function w/o callback
+                ) {
+                    memo.push(cur.callback);
+                } else {
+                    memo.push(util.promisify(cur.callback));
+                }
+            }
+
+            return memo;
+        }, []);
+
+        const done = function (data) {
+            delete req.session.registration;
+            const relative_path = nconf.get(&#039;relative_path&#039;);
+            if (data &amp;&amp; data.message) {
+                return res.redirect(`${relative_path}/?register=${encodeURIComponent(data.message)}`);
+            }
+
+            if (req.session.returnTo) {
+                res.redirect(relative_path + req.session.returnTo.replace(new RegExp(`^${relative_path}`), &#039;&#039;));
+            } else {
+                res.redirect(`${relative_path}/`);
+            }
+        };
+
+        const results = await Promise.allSettled(callbacks.map(async (cb) =&gt; {
+            await cb(req.session.registration, req.body);
+        }));
+        const errors = results.map(result =&gt; result.status === &#039;rejected&#039; &amp;&amp; result.reason &amp;&amp; result.reason.message).filter(Boolean);
+        if (errors.length) {
+            req.flash(&#039;errors&#039;, errors);
+            return req.session.save(() =&gt; {
+                res.redirect(`${nconf.get(&#039;relative_path&#039;)}/register/complete`);
+            });
+        }
+
+        if (req.session.registration.register === true) {
+            res.locals.processLogin = true;
+            req.body.noscript = &#039;true&#039;; // trigger full page load on error
+
+            const data = await registerAndLoginUser(req, res, req.session.registration);
+            if (!data) {
+                return winston.warn(&#039;[register] Interstitial callbacks processed with no errors, but one or more interstitials remain. This is likely an issue with one of the interstitials not properly handling a null case or invalid value.&#039;);
+            }
+            done(data);
+        } else {
+            // Update user hash, clear registration data in session
+            const payload = req.session.registration;
+            const { uid } = payload;
+            delete payload.uid;
+            delete payload.returnTo;
+
+            Object.keys(payload).forEach((prop) =&gt; {
+                if (typeof payload[prop] === &#039;boolean&#039;) {
+                    payload[prop] = payload[prop] ? 1 : 0;
+                }
+            });
+
+            await user.setUserFields(uid, payload);
+            done();
+        }
+    } catch (err) {
+        delete req.session.registration;
+        res.redirect(`${nconf.get(&#039;relative_path&#039;)}/?register=${encodeURIComponent(err.message)}`);
+    }
+};
+
+authenticationController.registerAbort = function (req, res) {
+    if (req.uid) {
+        // Clear interstitial data and continue on...
+        delete req.session.registration;
+        res.redirect(nconf.get(&#039;relative_path&#039;) + (req.session.returnTo || &#039;/&#039;));
+    } else {
+        // End the session and redirect to home
+        req.session.destroy(() =&gt; {
+            res.clearCookie(nconf.get(&#039;sessionKey&#039;), meta.configs.cookie.get());
+            res.redirect(`${nconf.get(&#039;relative_path&#039;)}/`);
+        });
+    }
+};
+
+authenticationController.login = async (req, res, next) =&gt; {
+    let { strategy } = await plugins.hooks.fire(&#039;filter:login.override&#039;, { req, strategy: &#039;local&#039; });
+    if (!passport._strategy(strategy)) {
+        winston.error(`[auth/override] Requested login strategy &quot;${strategy}&quot; not found, reverting back to local login strategy.`);
+        strategy = &#039;local&#039;;
+    }
+
+    if (plugins.hooks.hasListeners(&#039;action:auth.overrideLogin&#039;)) {
+        return continueLogin(strategy, req, res, next);
+    }
+
+    const loginWith = meta.config.allowLoginWith || &#039;username-email&#039;;
+    req.body.username = String(req.body.username).trim();
+    const errorHandler = res.locals.noScriptErrors || helpers.noScriptErrors;
+    try {
+        await plugins.hooks.fire(&#039;filter:login.check&#039;, { req: req, res: res, userData: req.body });
+    } catch (err) {
+        return errorHandler(req, res, err.message, 403);
+    }
+    try {
+        const isEmailLogin = loginWith.includes(&#039;email&#039;) &amp;&amp; req.body.username &amp;&amp; utils.isEmailValid(req.body.username);
+        const isUsernameLogin = loginWith.includes(&#039;username&#039;) &amp;&amp; !validator.isEmail(req.body.username);
+        if (isEmailLogin) {
+            const username = await user.getUsernameByEmail(req.body.username);
+            if (username !== &#039;[[global:guest]]&#039;) {
+                req.body.username = username;
+            }
+        }
+        if (isEmailLogin || isUsernameLogin) {
+            continueLogin(strategy, req, res, next);
+        } else {
+            errorHandler(req, res, `[[error:wrong-login-type-${loginWith}]]`, 400);
+        }
+    } catch (err) {
+        return errorHandler(req, res, err.message, 500);
+    }
+};
+
+function continueLogin(strategy, req, res, next) {
+    passport.authenticate(strategy, async (err, userData, info) =&gt; {
+        if (err) {
+            plugins.hooks.fire(&#039;action:login.continue&#039;, { req, strategy, userData, error: err });
+            return helpers.noScriptErrors(req, res, err.data || err.message, 403);
+        }
+
+        if (!userData) {
+            if (info instanceof Error) {
+                info = info.message;
+            } else if (typeof info === &#039;object&#039;) {
+                info = &#039;[[error:invalid-username-or-password]]&#039;;
+            }
+
+            plugins.hooks.fire(&#039;action:login.continue&#039;, { req, strategy, userData, error: new Error(info) });
+            return helpers.noScriptErrors(req, res, info, 403);
+        }
+
+        // Alter user cookie depending on passed-in option
+        if (req.body.remember === &#039;on&#039;) {
+            const duration = meta.getSessionTTLSeconds() * 1000;
+            req.session.cookie.maxAge = duration;
+            req.session.cookie.expires = new Date(Date.now() + duration);
+        } else {
+            req.session.cookie.maxAge = false;
+            req.session.cookie.expires = false;
+        }
+
+        plugins.hooks.fire(&#039;action:login.continue&#039;, { req, strategy, userData, error: null });
+
+        if (userData.passwordExpiry &amp;&amp; userData.passwordExpiry &lt; Date.now()) {
+            winston.verbose(`[auth] Triggering password reset for uid ${userData.uid} due to password policy`);
+            req.session.passwordExpired = true;
+
+            const code = await user.reset.generate(userData.uid);
+            (res.locals.redirectAfterLogin || redirectAfterLogin)(req, res, `${nconf.get(&#039;relative_path&#039;)}/reset/${code}`);
+        } else {
+            delete req.query.lang;
+            await authenticationController.doLogin(req, userData.uid);
+            let destination;
+            if (req.session.returnTo) {
+                destination = req.session.returnTo.startsWith(&#039;http&#039;) ?
+                    req.session.returnTo :
+                    nconf.get(&#039;relative_path&#039;) + req.session.returnTo;
+                delete req.session.returnTo;
+            } else {
+                destination = `${nconf.get(&#039;relative_path&#039;)}/`;
+            }
+
+            (res.locals.redirectAfterLogin || redirectAfterLogin)(req, res, destination);
+        }
+    })(req, res, next);
+}
+
+function redirectAfterLogin(req, res, destination) {
+    if (req.body.noscript === &#039;true&#039;) {
+        res.redirect(`${destination}?loggedin`);
+    } else {
+        res.status(200).send({
+            next: destination,
+        });
+    }
+}
+
+authenticationController.doLogin = async function (req, uid) {
+    if (!uid) {
+        return;
+    }
+    const loginAsync = util.promisify(req.login).bind(req);
+    await loginAsync({ uid: uid }, { keepSessionInfo: req.res.locals !== false });
+    await authenticationController.onSuccessfulLogin(req, uid);
+};
+
+authenticationController.onSuccessfulLogin = async function (req, uid) {
+    /*
+     * Older code required that this method be called from within the SSO plugin.
+     * That behaviour is no longer required, onSuccessfulLogin is now automatically
+     * called in NodeBB core. However, if already called, return prematurely
+     */
+    if (req.loggedIn &amp;&amp; !req.session.forceLogin) {
+        return true;
+    }
+
+    try {
+        const uuid = utils.generateUUID();
+
+        req.uid = uid;
+        req.loggedIn = true;
+        await meta.blacklist.test(req.ip);
+        await user.logIP(uid, req.ip);
+        await user.bans.unbanIfExpired([uid]);
+        await user.reset.cleanByUid(uid);
+
+        req.session.meta = {};
+
+        delete req.session.forceLogin;
+        // Associate IP used during login with user account
+        req.session.meta.ip = req.ip;
+
+        // Associate metadata retrieved via user-agent
+        req.session.meta = _.extend(req.session.meta, {
+            uuid: uuid,
+            datetime: Date.now(),
+            platform: req.useragent.platform,
+            browser: req.useragent.browser,
+            version: req.useragent.version,
+        });
+        await Promise.all([
+            new Promise((resolve) =&gt; {
+                req.session.save(resolve);
+            }),
+            user.auth.addSession(uid, req.sessionID),
+            user.updateLastOnlineTime(uid),
+            user.updateOnlineUsers(uid),
+            analytics.increment(&#039;logins&#039;),
+            db.incrObjectFieldBy(&#039;global&#039;, &#039;loginCount&#039;, 1),
+        ]);
+        if (uid &gt; 0) {
+            await db.setObjectField(`uid:${uid}:sessionUUID:sessionId`, uuid, req.sessionID);
+        }
+
+        // Force session check for all connected socket.io clients with the same session id
+        sockets.in(`sess_${req.sessionID}`).emit(&#039;checkSession&#039;, uid);
+
+        plugins.hooks.fire(&#039;action:user.loggedIn&#039;, { uid: uid, req: req });
+    } catch (err) {
+        req.session.destroy();
+        throw err;
+    }
+};
+
+authenticationController.localLogin = async function (req, username, password, next) {
+    if (!username) {
+        return next(new Error(&#039;[[error:invalid-username]]&#039;));
+    }
+
+    if (!password || !utils.isPasswordValid(password)) {
+        return next(new Error(&#039;[[error:invalid-password]]&#039;));
+    }
+
+    if (password.length &gt; 512) {
+        return next(new Error(&#039;[[error:password-too-long]]&#039;));
+    }
+
+    const userslug = slugify(username);
+    const uid = await user.getUidByUserslug(userslug);
+    try {
+        const [userData, isAdminOrGlobalMod, canLoginIfBanned] = await Promise.all([
+            user.getUserFields(uid, [&#039;uid&#039;, &#039;passwordExpiry&#039;]),
+            user.isAdminOrGlobalMod(uid),
+            user.bans.canLoginIfBanned(uid),
+        ]);
+
+        userData.isAdminOrGlobalMod = isAdminOrGlobalMod;
+
+        if (!canLoginIfBanned) {
+            return next(await getBanError(uid));
+        }
+
+        // Doing this after the ban check, because user&#039;s privileges might change after a ban expires
+        const hasLoginPrivilege = await privileges.global.can(&#039;local:login&#039;, uid);
+        if (parseInt(uid, 10) &amp;&amp; !hasLoginPrivilege) {
+            return next(new Error(&#039;[[error:local-login-disabled]]&#039;));
+        }
+
+        const passwordMatch = await user.isPasswordCorrect(uid, password, req.ip);
+        if (!passwordMatch) {
+            return next(new Error(&#039;[[error:invalid-login-credentials]]&#039;));
+        }
+
+        next(null, userData, &#039;[[success:authentication-successful]]&#039;);
+    } catch (err) {
+        next(err);
+    }
+};
+
+const destroyAsync = util.promisify((req, callback) =&gt; req.session.destroy(callback));
+const logoutAsync = util.promisify((req, callback) =&gt; req.logout(callback));
+
+authenticationController.logout = async function (req, res, next) {
+    if (!req.loggedIn || !req.sessionID) {
+        res.clearCookie(nconf.get(&#039;sessionKey&#039;), meta.configs.cookie.get());
+        return res.status(200).send(&#039;not-logged-in&#039;);
+    }
+    const { uid } = req;
+    const { sessionID } = req;
+
+    try {
+        await user.auth.revokeSession(sessionID, uid);
+        await logoutAsync(req);
+
+        await destroyAsync(req);
+        res.clearCookie(nconf.get(&#039;sessionKey&#039;), meta.configs.cookie.get());
+
+        await user.setUserField(uid, &#039;lastonline&#039;, Date.now() - (meta.config.onlineCutoff * 60000));
+        await db.sortedSetAdd(&#039;users:online&#039;, Date.now() - (meta.config.onlineCutoff * 60000), uid);
+        await plugins.hooks.fire(&#039;static:user.loggedOut&#039;, { req: req, res: res, uid: uid, sessionID: sessionID });
+
+        // Force session check for all connected socket.io clients with the same session id
+        sockets.in(`sess_${sessionID}`).emit(&#039;checkSession&#039;, 0);
+        const payload = {
+            next: `${nconf.get(&#039;relative_path&#039;)}/`,
+        };
+        plugins.hooks.fire(&#039;filter:user.logout&#039;, payload);
+
+        if (req.body.noscript === &#039;true&#039;) {
+            return res.redirect(payload.next);
+        }
+        res.status(200).send(payload);
+    } catch (err) {
+        next(err);
+    }
+};
+
+async function getBanError(uid) {
+    try {
+        const banInfo = await user.getLatestBanInfo(uid);
+
+        if (!banInfo.reason) {
+            banInfo.reason = &#039;[[user:info.banned-no-reason]]&#039;;
+        }
+        const err = new Error(banInfo.reason);
+        err.data = banInfo;
+        return err;
+    } catch (err) {
+        if (err.message === &#039;no-ban-info&#039;) {
+            return new Error(&#039;[[error:user-banned]]&#039;);
+        }
+        throw err;
+    }
+}
+
+require(&#039;../promisify&#039;)(authenticationController, [&#039;register&#039;, &#039;registerComplete&#039;, &#039;registerAbort&#039;, &#039;login&#039;, &#039;localLogin&#039;, &#039;logout&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

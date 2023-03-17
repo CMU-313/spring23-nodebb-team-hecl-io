@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/settings/sorted-list.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/settings/sorted-list.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.42</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">172</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.80</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.97</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;settings/sorted-list&#039;, [
+    &#039;benchpress&#039;,
+    &#039;bootbox&#039;,
+    &#039;hooks&#039;,
+    &#039;jquery-ui/widgets/sortable&#039;,
+], function (benchpress, bootbox, hooks) {
+    let Settings;
+
+
+    const SortedList = {
+        types: [&#039;sorted-list&#039;],
+        use: function () {
+            Settings = this;
+        },
+        set: function ($container, values) {
+            const key = $container.attr(&#039;data-sorted-list&#039;);
+
+            values[key] = [];
+            $container.find(&#039;[data-type=&quot;item&quot;]&#039;).each(function (idx, item) {
+                const itemUUID = $(item).attr(&#039;data-sorted-list-uuid&#039;);
+
+                const formData = Settings.helper.serializeForm($(&#039;[data-sorted-list-object=&quot;&#039; + key + &#039;&quot;][data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;]&#039;));
+                stripTags(formData);
+                values[key].push(formData);
+            });
+        },
+        get: async ($container, hash) =&gt; {
+            const { listEl, key, formTpl, formValues } = await hooks.fire(&#039;filter:settings.sorted-list.load&#039;, {
+                listEl: $container.find(&#039;[data-type=&quot;list&quot;]&#039;),
+                key: $container.attr(&#039;data-sorted-list&#039;),
+                formTpl: $container.attr(&#039;data-form-template&#039;),
+                formValues: {},
+            });
+
+            const formHtml = await benchpress.render(formTpl, formValues);
+
+            const addBtn = $(&#039;[data-sorted-list=&quot;&#039; + key + &#039;&quot;] [data-type=&quot;add&quot;]&#039;);
+
+            addBtn.on(&#039;click&#039;, function () {
+                const modal = bootbox.confirm(formHtml, function (save) {
+                    if (save) {
+                        SortedList.addItem(modal.find(&#039;form&#039;).children(), $container);
+                    }
+                });
+                hooks.fire(&#039;action:settings.sorted-list.modal&#039;, { modal });
+            });
+
+            const call = $container.parents(&#039;form&#039;).attr(&#039;data-socket-get&#039;);
+            const list = ajaxify.data[call ? hash : &#039;settings&#039;][key];
+
+            if (Array.isArray(list) &amp;&amp; typeof list[0] !== &#039;string&#039;) {
+                const items = await Promise.all(list.map(async (item) =&gt; {
+                    ({ item } = await hooks.fire(&#039;filter:settings.sorted-list.loadItem&#039;, { item }));
+
+                    const itemUUID = utils.generateUUID();
+                    const form = $(formHtml).deserialize(item);
+                    form.attr(&#039;data-sorted-list-uuid&#039;, itemUUID);
+                    form.attr(&#039;data-sorted-list-object&#039;, key);
+                    $(&#039;#content&#039;).append(form.hide());
+
+                    return { itemUUID, item };
+                }));
+
+                // todo: parse() needs to be refactored to return the html, so multiple calls can be parallelized
+                // eslint-disable-next-line no-restricted-syntax
+                for (const { itemUUID, item } of items) {
+                    // eslint-disable-next-line no-await-in-loop
+                    await parse($container, itemUUID, item);
+                    hooks.fire(&#039;action:settings.sorted-list.itemLoaded&#039;, { element: listEl.get(0) });
+                }
+
+                hooks.fire(&#039;action:settings.sorted-list.loaded&#039;, {
+                    containerEl: $container.get(0),
+                    listEl: listEl.get(0),
+                    hash,
+                    key,
+                });
+            }
+
+            listEl.sortable().addClass(&#039;pointer&#039;);
+        },
+        addItem: async ($formElements, $target) =&gt; {
+            const key = $target.attr(&#039;data-sorted-list&#039;);
+            const itemUUID = utils.generateUUID();
+            const form = $(&#039;&lt;form class=&quot;&quot; data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot; data-sorted-list-object=&quot;&#039; + key + &#039;&quot;&gt;&lt;/form&gt;&#039;);
+            form.append($formElements);
+
+            $(&#039;#content&#039;).append(form.hide());
+
+            let data = Settings.helper.serializeForm(form);
+            ({ item: data } = await hooks.fire(&#039;filter:settings.sorted-list.loadItem&#039;, { item: data }));
+            parse($target, itemUUID, data);
+        },
+    };
+
+    function setupRemoveButton($container, itemUUID) {
+        const removeBtn = $container.find(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;] [data-type=&quot;remove&quot;]&#039;);
+        removeBtn.on(&#039;click&#039;, function () {
+            $(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;]&#039;).remove();
+        });
+    }
+
+    function setupEditButton($container, itemUUID) {
+        const $list = $container.find(&#039;[data-type=&quot;list&quot;]&#039;);
+        const key = $container.attr(&#039;data-sorted-list&#039;);
+        const editBtn = $(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;] [data-type=&quot;edit&quot;]&#039;);
+
+        editBtn.on(&#039;click&#039;, function () {
+            const form = $(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;][data-sorted-list-object=&quot;&#039; + key + &#039;&quot;]&#039;);
+            const clone = form.clone(true).show();
+
+            // .clone() doesn&#039;t preserve the state of `select` elements, fixing after the fact
+            clone.find(&#039;select&#039;).each((idx, el) =&gt; {
+                el.value = form.find(`select#${el.id}`).val();
+            });
+
+            const modal = bootbox.confirm(clone, async (save) =&gt; {
+                if (save) {
+                    const form = $(&#039;&lt;form class=&quot;&quot; data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot; data-sorted-list-object=&quot;&#039; + key + &#039;&quot;&gt;&lt;/form&gt;&#039;);
+                    form.append(modal.find(&#039;form&#039;).children());
+
+                    $(&#039;#content&#039;).find(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;][data-sorted-list-object=&quot;&#039; + key + &#039;&quot;]&#039;).remove();
+                    $(&#039;#content&#039;).append(form.hide());
+
+
+                    let data = Settings.helper.serializeForm(form);
+                    ({ item: data } = await hooks.fire(&#039;filter:settings.sorted-list.loadItem&#039;, { item: data }));
+                    stripTags(data);
+
+                    const oldItem = $list.find(&#039;[data-sorted-list-uuid=&quot;&#039; + itemUUID + &#039;&quot;]&#039;);
+                    parse($container, itemUUID, data, oldItem);
+                }
+            });
+            hooks.fire(&#039;action:settings.sorted-list.modal&#039;, { modal });
+        });
+    }
+
+    function parse($container, itemUUID, data, replaceEl) {
+        // replaceEl is optional
+        const $list = $container.find(&#039;[data-type=&quot;list&quot;]&#039;);
+        const itemTpl = $container.attr(&#039;data-item-template&#039;);
+
+        stripTags(data);
+
+        return new Promise((resolve) =&gt; {
+            app.parseAndTranslate(itemTpl, data, function (itemHtml) {
+                itemHtml = $(itemHtml);
+                if (replaceEl) {
+                    replaceEl.replaceWith(itemHtml);
+                } else {
+                    $list.append(itemHtml);
+                }
+                itemHtml.attr(&#039;data-sorted-list-uuid&#039;, itemUUID);
+
+                setupRemoveButton($container, itemUUID);
+                setupEditButton($container, itemUUID);
+                hooks.fire(&#039;action:settings.sorted-list.parse&#039;, { itemHtml });
+                resolve();
+            });
+        });
+    }
+
+    function stripTags(data) {
+        return Object.entries(data || {}).forEach(([field, value]) =&gt; {
+            data[field] = typeof value === &#039;string&#039; ? utils.stripHTMLTags(value, utils.stripTags) : value;
+        });
+    }
+
+    return SortedList;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

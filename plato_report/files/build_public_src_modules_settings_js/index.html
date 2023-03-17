@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/settings.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/settings.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">609</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">86.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.31</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;settings&#039;, [&#039;hooks&#039;, &#039;alerts&#039;], function (hooks, alerts) {
+    // eslint-disable-next-line prefer-const
+    let Settings;
+    let onReady = [];
+    let waitingJobs = 0;
+    // eslint-disable-next-line prefer-const
+    let helper;
+
+    /**
+     Returns the hook of given name that matches the given type or element.
+     @param type The type of the element to get the matching hook for, or the element itself.
+     @param name The name of the hook.
+     */
+    function getHook(type, name) {
+        if (typeof type !== &#039;string&#039;) {
+            type = $(type);
+            type = type.data(&#039;type&#039;) || type.attr(&#039;type&#039;) || type.prop(&#039;tagName&#039;);
+        }
+        const plugin = Settings.plugins[type.toLowerCase()];
+        if (plugin == null) {
+            return;
+        }
+        const hook = plugin[name];
+        if (typeof hook === &#039;function&#039;) {
+            return hook;
+        }
+        return null;
+    }
+
+    // eslint-disable-next-line prefer-const
+    helper = {
+        /**
+         @returns Object A deep clone of the given object.
+         */
+        deepClone: function (obj) {
+            if (typeof obj === &#039;object&#039;) {
+                return JSON.parse(JSON.stringify(obj));
+            }
+            return obj;
+        },
+        /**
+         Creates a new Element with given data.
+         @param tagName The tag-name of the element to create.
+         @param data The attributes to set.
+         @param text The text to add into the element.
+         @returns HTMLElement The created element.
+         */
+        createElement: function (tagName, data, text) {
+            const element = document.createElement(tagName);
+            for (const k in data) {
+                if (data.hasOwnProperty(k)) {
+                    element.setAttribute(k, data[k]);
+                }
+            }
+            if (text) {
+                element.appendChild(document.createTextNode(text));
+            }
+            return element;
+        },
+        /**
+         Calls the init-hook of the given element.
+         @param element The element to initialize.
+         */
+        initElement: function (element) {
+            const hook = getHook(element, &#039;init&#039;);
+            if (hook != null) {
+                hook.call(Settings, $(element));
+            }
+        },
+        /**
+         Calls the destruct-hook of the given element.
+         @param element The element to destruct.
+         */
+        destructElement: function (element) {
+            const hook = getHook(element, &#039;destruct&#039;);
+            if (hook != null) {
+                hook.call(Settings, $(element));
+            }
+        },
+        /**
+         Creates and initializes a new element.
+         @param type The type of the new element.
+         @param tagName The tag-name of the new element.
+         @param data The data to forward to create-hook or use as attributes.
+         @returns JQuery The created element.
+         */
+        createElementOfType: function (type, tagName, data) {
+            let element;
+            const hook = getHook(type, &#039;create&#039;);
+            if (hook != null) {
+                element = $(hook.call(Settings, type, tagName, data));
+            } else {
+                if (data == null) {
+                    data = {};
+                }
+                if (type != null) {
+                    data.type = type;
+                }
+                element = $(helper.createElement(tagName || &#039;input&#039;, data));
+            }
+            element.data(&#039;type&#039;, type);
+            helper.initElement(element);
+            return element;
+        },
+        /**
+         Creates a new Array that contains values of given Array depending on trim and empty.
+         @param array The array to clean.
+         @param trim Whether to trim each value if it has a trim-function.
+         @param empty Whether empty values should get added.
+         @returns Array The filtered and/or modified Array.
+         */
+        cleanArray: function (array, trim, empty) {
+            const cleaned = [];
+            if (!trim &amp;&amp; empty) {
+                return array;
+            }
+            for (let i = 0; i &lt; array.length; i += 1) {
+                let value = array[i];
+                if (trim) {
+                    if (value === !!value) {
+                        value = +value;
+                    } else if (value &amp;&amp; typeof value.trim === &#039;function&#039;) {
+                        value = value.trim();
+                    }
+                }
+                if (empty || (value != null &amp;&amp; value.length)) {
+                    cleaned.push(value);
+                }
+            }
+            return cleaned;
+        },
+        isTrue: function (value) {
+            return value === &#039;true&#039; || +value === 1;
+        },
+        isFalse: function (value) {
+            return value === &#039;false&#039; || +value === 0;
+        },
+        /**
+         Calls the get-hook of the given element and returns its result.
+         If no hook is specified it gets treated as input-field.
+         @param element The element of that the value should get read.
+         @returns Object The value of the element.
+         */
+        readValue: function (element) {
+            let empty = !helper.isFalse(element.data(&#039;empty&#039;));
+            const trim = !helper.isFalse(element.data(&#039;trim&#039;));
+            const split = element.data(&#039;split&#039;);
+            const hook = getHook(element, &#039;get&#039;);
+            let value;
+            if (hook != null) {
+                return hook.call(Settings, element, trim, empty);
+            }
+            if (split != null) {
+                empty = helper.isTrue(element.data(&#039;empty&#039;)); // default empty-value is false for arrays
+                value = element.val();
+                const array = (value != null &amp;&amp; value.split(split || &#039;,&#039;)) || [];
+                return helper.cleanArray(array, trim, empty);
+            }
+            value = element.val();
+            if (trim &amp;&amp; value != null &amp;&amp; typeof value.trim === &#039;function&#039;) {
+                value = value.trim();
+            }
+            if (empty || (value !== undefined &amp;&amp; (value == null || value.length !== 0))) {
+                return value;
+            }
+        },
+        /**
+         Calls the set-hook of the given element.
+         If no hook is specified it gets treated as input-field.
+         @param element The JQuery-Object of the element to fill.
+         @param value The value to set.
+         */
+        fillField: function (element, value) {
+            const hook = getHook(element, &#039;set&#039;);
+            let trim = element.data(&#039;trim&#039;);
+            trim = trim !== &#039;false&#039; &amp;&amp; +trim !== 0;
+            if (hook != null) {
+                return hook.call(Settings, element, value, trim);
+            }
+            if (value instanceof Array) {
+                value = value.join(element.data(&#039;split&#039;) || (trim ? &#039;, &#039; : &#039;,&#039;));
+            }
+            if (trim &amp;&amp; value &amp;&amp; typeof value.trim === &#039;function&#039;) {
+                value = value.trim();
+                if (typeof value.toString === &#039;function&#039;) {
+                    value = value.toString();
+                }
+            } else if (value != null) {
+                if (typeof value.toString === &#039;function&#039;) {
+                    value = value.toString();
+                }
+                if (trim) {
+                    value = value.trim();
+                }
+            } else {
+                value = &#039;&#039;;
+            }
+            if (value !== undefined) {
+                element.val(value);
+            }
+        },
+        /**
+         Calls the init-hook and {@link helper.fillField} on each field within wrapper-object.
+         @param wrapper The wrapper-element to set settings within.
+         */
+        initFields: function (wrapper) {
+            $(&#039;[data-key]&#039;, wrapper).each(function (ignored, field) {
+                field = $(field);
+                const hook = getHook(field, &#039;init&#039;);
+                const keyParts = field.data(&#039;key&#039;).split(&#039;.&#039;);
+                let value = Settings.get();
+                if (hook != null) {
+                    hook.call(Settings, field);
+                }
+                for (let i = 0; i &lt; keyParts.length; i += 1) {
+                    const part = keyParts[i];
+                    if (part &amp;&amp; value != null) {
+                        value = value[part];
+                    }
+                }
+                helper.fillField(field, value);
+            });
+        },
+        /**
+         Increases the amount of jobs before settings are ready by given amount.
+         @param amount The amount of jobs to register.
+         */
+        registerReadyJobs: function (amount) {
+            waitingJobs += amount;
+            return waitingJobs;
+        },
+        /**
+         Decreases the amount of jobs before settings are ready by given amount or 1.
+         If the amount is less or equal 0 all callbacks registered by {@link helper.whenReady} get called.
+         @param amount The amount of jobs that finished.
+         */
+        beforeReadyJobsDecreased: function (amount) {
+            if (amount == null) {
+                amount = 1;
+            }
+            if (waitingJobs &gt; 0) {
+                waitingJobs -= amount;
+                if (waitingJobs &lt;= 0) {
+                    for (let i = 0; i &lt; onReady.length; i += 1) {
+                        onReady[i]();
+                    }
+                    onReady = [];
+                }
+            }
+        },
+        /**
+         Calls the given callback when the settings are ready.
+         @param callback The callback.
+         */
+        whenReady: function (callback) {
+            if (waitingJobs &lt;= 0) {
+                callback();
+            } else {
+                onReady.push(callback);
+            }
+        },
+        serializeForm: function (formEl) {
+            const values = formEl.serializeObject();
+
+            // &quot;Fix&quot; checkbox values, so that unchecked options are not omitted
+            formEl.find(&#039;input[type=&quot;checkbox&quot;]&#039;).each(function (idx, inputEl) {
+                inputEl = $(inputEl);
+                if (!inputEl.is(&#039;:checked&#039;)) {
+                    values[inputEl.attr(&#039;name&#039;)] = &#039;off&#039;;
+                }
+            });
+
+            // save multiple selects as json arrays
+            formEl.find(&#039;select[multiple]&#039;).each(function (idx, selectEl) {
+                selectEl = $(selectEl);
+                values[selectEl.attr(&#039;name&#039;)] = JSON.stringify(selectEl.val());
+            });
+
+            return values;
+        },
+        /**
+         Persists the given settings with given hash.
+         @param hash The hash to use as settings-id.
+         @param settings The settings-object to persist.
+         @param notify Whether to send notification when settings got saved.
+         @param callback The callback to call when done.
+         */
+        persistSettings: function (hash, settings, notify, callback) {
+            if (settings != null &amp;&amp; settings._ != null &amp;&amp; typeof settings._ !== &#039;string&#039;) {
+                settings = helper.deepClone(settings);
+                settings._ = JSON.stringify(settings._);
+            }
+            socket.emit(&#039;admin.settings.set&#039;, {
+                hash: hash,
+                values: settings,
+            }, function (err) {
+                if (notify) {
+                    if (err) {
+                        alerts.alert({
+                            title: &#039;[[admin/admin:changes-not-saved]]&#039;,
+                            type: &#039;danger&#039;,
+                            message: `[[admin/admin/changes-not-saved-message, ${err.message}]]`,
+                            timeout: 5000,
+                        });
+                    } else {
+                        alerts.alert({
+                            title: &#039;[[admin/admin:changes-saved]]&#039;,
+                            type: &#039;success&#039;,
+                            message: &#039;[[admin/admin:changes-saved-message]]&#039;,
+                            timeout: 2500,
+                        });
+                    }
+                }
+                if (typeof callback === &#039;function&#039;) {
+                    callback(err);
+                }
+            });
+        },
+        /**
+         Sets the settings to use to given settings.
+         @param settings The settings to use.
+         */
+        use: function (settings) {
+            try {
+                settings._ = JSON.parse(settings._);
+            } catch (_error) {}
+            Settings.cfg = settings;
+        },
+    };
+
+    // eslint-disable-next-line prefer-const
+    Settings = {
+        helper: helper,
+        plugins: {},
+        cfg: {},
+
+        /**
+         Returns the saved settings.
+         @returns Object The settings.
+         */
+        get: function () {
+            if (Settings.cfg != null &amp;&amp; Settings.cfg._ !== undefined) {
+                return Settings.cfg._;
+            }
+            return Settings.cfg;
+        },
+        /**
+         Registers a new plugin and calls its use-hook.
+         @param service The plugin to register.
+         @param types The types to bind the plugin to.
+         */
+        registerPlugin: function (service, types) {
+            if (types == null) {
+                types = service.types;
+            } else {
+                service.types = types;
+            }
+            if (typeof service.use === &#039;function&#039;) {
+                service.use.call(Settings);
+            }
+            for (let i = 0; i &lt; types.length; i += 1) {
+                const type = types[i].toLowerCase();
+                if (Settings.plugins[type] == null) {
+                    Settings.plugins[type] = service;
+                }
+            }
+        },
+        /**
+         Sets the settings to given ones, resets the fields within given wrapper and saves the settings server-side.
+         @param hash The hash to use as settings-id.
+         @param settings The settings to set.
+         @param wrapper The wrapper-element to find settings within.
+         @param callback The callback to call when done.
+         @param notify Whether to send notification when settings got saved.
+         */
+        set: function (hash, settings, wrapper, callback, notify) {
+            if (notify == null) {
+                notify = true;
+            }
+            helper.whenReady(function () {
+                helper.use(settings);
+                helper.initFields(wrapper || &#039;form&#039;);
+                helper.persistSettings(hash, settings, notify, callback);
+            });
+        },
+        /**
+         Fetches the settings from server and calls {@link Settings.helper.initFields} once the settings are ready.
+         @param hash The hash to use as settings-id.
+         @param wrapper The wrapper-element to set settings within.
+         @param callback The callback to call when done.
+         */
+        sync: function (hash, wrapper, callback) {
+            socket.emit(&#039;admin.settings.get&#039;, {
+                hash: hash,
+            }, function (err, values) {
+                if (err) {
+                    if (typeof callback === &#039;function&#039;) {
+                        callback(err);
+                    }
+                } else {
+                    helper.whenReady(function () {
+                        helper.use(values);
+                        helper.initFields(wrapper || &#039;form&#039;);
+                        if (typeof callback === &#039;function&#039;) {
+                            callback();
+                        }
+                    });
+                }
+            });
+        },
+        /**
+         Reads the settings from fields and saves them server-side.
+         @param hash The hash to use as settings-id.
+         @param wrapper The wrapper-element to find settings within.
+         @param callback The callback to call when done.
+         @param notify Whether to send notification when settings got saved.
+         */
+        persist: function (hash, wrapper, callback, notify) {
+            const notSaved = [];
+            const fields = $(&#039;[data-key]&#039;, wrapper || &#039;form&#039;).toArray();
+            if (notify == null) {
+                notify = true;
+            }
+            for (let i = 0; i &lt; fields.length; i += 1) {
+                const field = $(fields[i]);
+                const value = helper.readValue(field);
+                let parentCfg = Settings.get();
+                const keyParts = field.data(&#039;key&#039;).split(&#039;.&#039;);
+                const lastKey = keyParts[keyParts.length - 1];
+                if (keyParts.length &gt; 1) {
+                    for (let j = 0; j &lt; keyParts.length - 1; j += 1) {
+                        const part = keyParts[j];
+                        if (part &amp;&amp; parentCfg != null) {
+                            parentCfg = parentCfg[part];
+                        }
+                    }
+                }
+                if (parentCfg != null) {
+                    if (value != null) {
+                        parentCfg[lastKey] = value;
+                    } else {
+                        delete parentCfg[lastKey];
+                    }
+                } else {
+                    notSaved.push(field.data(&#039;key&#039;));
+                }
+            }
+            if (notSaved.length) {
+                alerts.alert({
+                    title: &#039;Attributes Not Saved&#039;,
+                    message: &quot;&#039;&quot; + (notSaved.join(&#039;, &#039;)) + &quot;&#039; could not be saved. Please contact the plugin-author!&quot;,
+                    type: &#039;danger&#039;,
+                    timeout: 5000,
+                });
+            }
+            helper.persistSettings(hash, Settings.cfg, notify, callback);
+        },
+        load: function (hash, formEl, callback) {
+            callback = callback || function () {};
+            const call = formEl.attr(&#039;data-socket-get&#039;);
+
+            socket.emit(call || &#039;admin.settings.get&#039;, {
+                hash: hash,
+            }, function (err, values) {
+                if (err) {
+                    return callback(err);
+                }
+                // multipe selects are saved as json arrays, parse them here
+                $(formEl).find(&#039;select[multiple]&#039;).each(function (idx, selectEl) {
+                    const key = $(selectEl).attr(&#039;name&#039;);
+                    if (key &amp;&amp; values.hasOwnProperty(key)) {
+                        try {
+                            values[key] = JSON.parse(values[key]);
+                        } catch (e) {
+                            // Leave the value as is
+                        }
+                    }
+                });
+
+                // Save loaded settings into ajaxify.data for use client-side
+                ajaxify.data[call ? hash : &#039;settings&#039;] = values;
+
+                helper.whenReady(function () {
+                    $(formEl).find(&#039;[data-sorted-list]&#039;).each(function (idx, el) {
+                        getHook(el, &#039;get&#039;).call(Settings, $(el), hash);
+                    });
+                });
+
+                $(formEl).deserialize(values);
+                $(formEl).find(&#039;input[type=&quot;checkbox&quot;]&#039;).each(function () {
+                    $(this).parents(&#039;.mdl-switch&#039;).toggleClass(&#039;is-checked&#039;, $(this).is(&#039;:checked&#039;));
+                });
+                hooks.fire(&#039;action:admin.settingsLoaded&#039;);
+
+                // Handle unsaved changes
+                $(formEl).on(&#039;change&#039;, &#039;input, select, textarea&#039;, function () {
+                    app.flags = app.flags || {};
+                    app.flags._unsaved = true;
+                });
+
+                const saveEl = document.getElementById(&#039;save&#039;);
+                if (saveEl) {
+                    require([&#039;mousetrap&#039;], function (mousetrap) {
+                        mousetrap.bind(&#039;ctrl+s&#039;, function (ev) {
+                            saveEl.click();
+                            ev.preventDefault();
+                        });
+                    });
+                }
+
+                callback(null, values);
+            });
+        },
+        save: function (hash, formEl, callback) {
+            formEl = $(formEl);
+
+            const controls = formEl.get(0).elements;
+            const ok = Settings.check(controls);
+            if (!ok) {
+                return;
+            }
+
+            if (formEl.length) {
+                const values = helper.serializeForm(formEl);
+
+                helper.whenReady(function () {
+                    const list = formEl.find(&#039;[data-sorted-list]&#039;);
+                    if (list.length) {
+                        list.each((idx, item) =&gt; {
+                            getHook(item, &#039;set&#039;).call(Settings, $(item), values);
+                        });
+                    }
+                });
+
+                const call = formEl.attr(&#039;data-socket-set&#039;);
+                socket.emit(call || &#039;admin.settings.set&#039;, {
+                    hash: hash,
+                    values: values,
+                }, function (err) {
+                    // Remove unsaved flag to re-enable ajaxify
+                    app.flags._unsaved = false;
+
+                    // Also save to local ajaxify.data
+                    ajaxify.data[call ? hash : &#039;settings&#039;] = values;
+
+                    if (typeof callback === &#039;function&#039;) {
+                        callback(err);
+                    } else if (err) {
+                        alerts.alert({
+                            title: &#039;[[admin/admin:changes-not-saved]]&#039;,
+                            message: `[[admin/admin:changes-not-saved-message, ${err.message}]]`,
+                            type: &#039;error&#039;,
+                            timeout: 2500,
+                        });
+                    } else {
+                        alerts.alert({
+                            title: &#039;[[admin/admin:changes-saved]]&#039;,
+                            type: &#039;success&#039;,
+                            timeout: 2500,
+                        });
+                    }
+                });
+            }
+        },
+        check: function (controls) {
+            const onTrigger = (e) =&gt; {
+                const wrapper = e.target.closest(&#039;.form-group&#039;);
+                if (wrapper) {
+                    wrapper.classList.add(&#039;has-error&#039;);
+                }
+
+                e.target.removeEventListener(&#039;invalid&#039;, onTrigger);
+            };
+
+            return Array.prototype.map.call(controls, (controlEl) =&gt; {
+                const wrapper = controlEl.closest(&#039;.form-group&#039;);
+                if (wrapper) {
+                    wrapper.classList.remove(&#039;has-error&#039;);
+                }
+
+                controlEl.addEventListener(&#039;invalid&#039;, onTrigger);
+                return controlEl.reportValidity();
+            }).every(Boolean);
+        },
+    };
+
+
+    helper.registerReadyJobs(1);
+    require([
+        &#039;settings/checkbox&#039;,
+        &#039;settings/number&#039;,
+        &#039;settings/textarea&#039;,
+        &#039;settings/select&#039;,
+        &#039;settings/array&#039;,
+        &#039;settings/key&#039;,
+        &#039;settings/object&#039;,
+        &#039;settings/sorted-list&#039;,
+    ], function () {
+        for (let i = 0; i &lt; arguments.length; i += 1) {
+            Settings.registerPlugin(arguments[i]);
+        }
+        helper.beforeReadyJobsDecreased();
+    });
+
+    return Settings;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

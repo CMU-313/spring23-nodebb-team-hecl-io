@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/cli/reset.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/cli/reset.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">157</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">20.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.19</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const winston = require(&#039;winston&#039;);
+const fs = require(&#039;fs&#039;);
+const chalk = require(&#039;chalk&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../database&#039;);
+const events = require(&#039;../events&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const widgets = require(&#039;../widgets&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const { paths, pluginNamePattern, themeNamePattern } = require(&#039;../constants&#039;);
+
+exports.reset = async function (options) {
+    const map = {
+        theme: async function () {
+            let themeId = options.theme;
+            if (themeId === true) {
+                await resetThemes();
+            } else {
+                if (!themeNamePattern.test(themeId)) {
+                    // Allow omission of `nodebb-theme-`
+                    themeId = `nodebb-theme-${themeId}`;
+                }
+
+                themeId = await plugins.autocomplete(themeId);
+                await resetTheme(themeId);
+            }
+        },
+        plugin: async function () {
+            let pluginId = options.plugin;
+            if (pluginId === true) {
+                await resetPlugins();
+            } else {
+                if (!pluginNamePattern.test(pluginId)) {
+                    // Allow omission of `nodebb-plugin-`
+                    pluginId = `nodebb-plugin-${pluginId}`;
+                }
+
+                pluginId = await plugins.autocomplete(pluginId);
+                await resetPlugin(pluginId);
+            }
+        },
+        widgets: resetWidgets,
+        settings: resetSettings,
+        all: async function () {
+            await resetWidgets();
+            await resetThemes();
+            await resetPlugin();
+            await resetSettings();
+        },
+    };
+
+    const tasks = Object.keys(map).filter(x =&gt; options[x]).map(x =&gt; map[x]);
+
+    if (!tasks.length) {
+        console.log([
+            chalk.yellow(&#039;No arguments passed in, so nothing was reset.\n&#039;),
+            `Use ./nodebb reset ${chalk.red(&#039;{-t|-p|-w|-s|-a}&#039;)}`,
+            &#039;    -t\tthemes&#039;,
+            &#039;    -p\tplugins&#039;,
+            &#039;    -w\twidgets&#039;,
+            &#039;    -s\tsettings&#039;,
+            &#039;    -a\tall of the above&#039;,
+            &#039;&#039;,
+            &#039;Plugin and theme reset flags (-p &amp; -t) can take a single argument&#039;,
+            &#039;    e.g. ./nodebb reset -p nodebb-plugin-mentions, ./nodebb reset -t nodebb-theme-persona&#039;,
+            &#039;         Prefix is optional, e.g. ./nodebb reset -p markdown, ./nodebb reset -t persona&#039;,
+        ].join(&#039;\n&#039;));
+
+        process.exit(0);
+    }
+
+    try {
+        await db.init();
+        for (const task of tasks) {
+            /* eslint-disable no-await-in-loop */
+            await task();
+        }
+        winston.info(&#039;[reset] Reset complete. Please run `./nodebb build` to rebuild assets.&#039;);
+        process.exit(0);
+    } catch (err) {
+        winston.error(`[reset] Errors were encountered during reset -- ${err.message}`);
+        process.exit(1);
+    }
+};
+
+async function resetSettings() {
+    await privileges.global.give([&#039;groups:local:login&#039;], &#039;registered-users&#039;);
+    winston.info(&#039;[reset] registered-users given login privilege&#039;);
+    winston.info(&#039;[reset] Settings reset to default&#039;);
+}
+
+async function resetTheme(themeId) {
+    try {
+        await fs.promises.access(path.join(paths.nodeModules, themeId, &#039;package.json&#039;));
+    } catch (err) {
+        winston.warn(&#039;[reset] Theme `%s` is not installed on this forum&#039;, themeId);
+        throw new Error(&#039;theme-not-found&#039;);
+    }
+    await resetThemeTo(themeId);
+}
+
+async function resetThemes() {
+    await resetThemeTo(&#039;nodebb-theme-persona&#039;);
+}
+
+async function resetThemeTo(themeId) {
+    await meta.themes.set({
+        type: &#039;local&#039;,
+        id: themeId,
+    });
+    await meta.configs.set(&#039;bootswatchSkin&#039;, &#039;&#039;);
+    winston.info(`[reset] Theme reset to ${themeId} and default skin`);
+}
+
+async function resetPlugin(pluginId) {
+    try {
+        if (nconf.get(&#039;plugins:active&#039;)) {
+            winston.error(&#039;Cannot reset plugins while plugin state is set in the configuration (config.json, environmental variables or terminal arguments), please modify the configuration instead&#039;);
+            process.exit(1);
+        }
+        const isActive = await db.isSortedSetMember(&#039;plugins:active&#039;, pluginId);
+        if (isActive) {
+            await db.sortedSetRemove(&#039;plugins:active&#039;, pluginId);
+            await events.log({
+                type: &#039;plugin-deactivate&#039;,
+                text: pluginId,
+            });
+            winston.info(&#039;[reset] Plugin `%s` disabled&#039;, pluginId);
+        } else {
+            winston.warn(&#039;[reset] Plugin `%s` was not active on this forum&#039;, pluginId);
+            winston.info(&#039;[reset] No action taken.&#039;);
+        }
+    } catch (err) {
+        winston.error(`[reset] Could not disable plugin: ${pluginId} encountered error %s\n${err.stack}`);
+        throw err;
+    }
+}
+
+async function resetPlugins() {
+    if (nconf.get(&#039;plugins:active&#039;)) {
+        winston.error(&#039;Cannot reset plugins while plugin state is set in the configuration (config.json, environmental variables or terminal arguments), please modify the configuration instead&#039;);
+        process.exit(1);
+    }
+    await db.delete(&#039;plugins:active&#039;);
+    winston.info(&#039;[reset] All Plugins De-activated&#039;);
+}
+
+async function resetWidgets() {
+    await plugins.reload();
+    await widgets.reset();
+    winston.info(&#039;[reset] All Widgets moved to Draft Zone&#039;);
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

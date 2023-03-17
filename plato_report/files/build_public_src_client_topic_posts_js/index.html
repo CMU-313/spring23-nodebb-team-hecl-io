@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/topic/posts.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/topic/posts.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.51</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">443</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">61.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.36</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/topic/posts&#039;, [
+    &#039;forum/pagination&#039;,
+    &#039;forum/infinitescroll&#039;,
+    &#039;forum/topic/postTools&#039;,
+    &#039;forum/topic/images&#039;,
+    &#039;navigator&#039;,
+    &#039;components&#039;,
+    &#039;translator&#039;,
+    &#039;hooks&#039;,
+    &#039;helpers&#039;,
+], function (pagination, infinitescroll, postTools, images, navigator, components, translator, hooks, helpers) {
+    const Posts = { };
+
+    Posts.signaturesShown = {};
+
+    Posts.onNewPost = function (data) {
+        if (
+            !data ||
+            !data.posts ||
+            !data.posts.length ||
+            parseInt(data.posts[0].tid, 10) !== parseInt(ajaxify.data.tid, 10)
+        ) {
+            return;
+        }
+
+        data.loggedIn = !!app.user.uid;
+        data.privileges = ajaxify.data.privileges;
+
+        // if not a scheduled topic, prevent timeago in future by setting timestamp to 1 sec behind now
+        data.posts[0].timestamp = data.posts[0].topic.scheduled ? data.posts[0].timestamp : Date.now() - 1000;
+        data.posts[0].timestampISO = utils.toISOString(data.posts[0].timestamp);
+
+        Posts.modifyPostsByPrivileges(data.posts);
+
+        updatePostCounts(data.posts);
+
+        updatePostIndices(data.posts);
+
+        ajaxify.data.postcount += 1;
+        postTools.updatePostCount(ajaxify.data.postcount);
+
+        if (config.usePagination) {
+            onNewPostPagination(data);
+        } else {
+            onNewPostInfiniteScroll(data);
+        }
+
+        require([&#039;forum/topic/replies&#039;], function (replies) {
+            replies.onNewPost(data);
+        });
+    };
+
+    Posts.modifyPostsByPrivileges = function (posts) {
+        posts.forEach(function (post) {
+            post.selfPost = !!app.user.uid &amp;&amp; parseInt(post.uid, 10) === parseInt(app.user.uid, 10);
+            post.topicOwnerPost = parseInt(post.uid, 10) === parseInt(ajaxify.data.uid, 10);
+
+            post.display_edit_tools = (ajaxify.data.privileges[&#039;posts:edit&#039;] &amp;&amp; post.selfPost) || ajaxify.data.privileges.isAdminOrMod;
+            post.display_delete_tools = (ajaxify.data.privileges[&#039;posts:delete&#039;] &amp;&amp; post.selfPost) || ajaxify.data.privileges.isAdminOrMod;
+            post.display_moderator_tools = post.display_edit_tools || post.display_delete_tools;
+            post.display_move_tools = ajaxify.data.privileges.isAdminOrMod;
+            post.display_post_menu = ajaxify.data.privileges.isAdminOrMod ||
+                (post.selfPost &amp;&amp; !ajaxify.data.locked &amp;&amp; !post.deleted) ||
+                (post.selfPost &amp;&amp; post.deleted &amp;&amp; parseInt(post.deleterUid, 10) === parseInt(app.user.uid, 10)) ||
+                ((app.user.uid || ajaxify.data.postSharing.length) &amp;&amp; !post.deleted);
+        });
+    };
+
+    function updatePostCounts(posts) {
+        for (let i = 0; i &lt; posts.length; i += 1) {
+            const cmp = components.get(&#039;user/postcount&#039;, posts[i].uid);
+            cmp.html(parseInt(cmp.attr(&#039;data-postcount&#039;), 10) + 1);
+            utils.addCommasToNumbers(cmp);
+        }
+    }
+
+    function updatePostIndices(posts) {
+        if (config.topicPostSort === &#039;newest_to_oldest&#039;) {
+            posts[0].index = 1;
+            components.get(&#039;post&#039;).not(&#039;[data-index=0]&#039;).each(function () {
+                const newIndex = parseInt($(this).attr(&#039;data-index&#039;), 10) + 1;
+                $(this).attr(&#039;data-index&#039;, newIndex);
+            });
+        }
+    }
+
+    function onNewPostPagination(data) {
+        function scrollToPost() {
+            scrollToPostIfSelf(data.posts[0]);
+        }
+
+        const posts = data.posts;
+
+        ajaxify.data.pagination.pageCount = Math.max(1, Math.ceil(posts[0].topic.postcount / config.postsPerPage));
+        const direction = config.topicPostSort === &#039;oldest_to_newest&#039; || config.topicPostSort === &#039;most_votes&#039; ? 1 : -1;
+
+        const isPostVisible = (
+            ajaxify.data.pagination.currentPage === ajaxify.data.pagination.pageCount &amp;&amp;
+            direction === 1
+        ) || (ajaxify.data.pagination.currentPage === 1 &amp;&amp; direction === -1);
+
+        if (isPostVisible) {
+            const repliesSelector = $(&#039;[component=&quot;post&quot;]:not([data-index=0]), [component=&quot;topic/event&quot;]&#039;);
+            createNewPosts(data, repliesSelector, direction, false, scrollToPost);
+        } else if (ajaxify.data.scrollToMyPost &amp;&amp; parseInt(posts[0].uid, 10) === parseInt(app.user.uid, 10)) {
+            // https://github.com/NodeBB/NodeBB/issues/5004#issuecomment-247157441
+            setTimeout(function () {
+                pagination.loadPage(ajaxify.data.pagination.pageCount, scrollToPost);
+            }, 250);
+        } else {
+            updatePagination();
+        }
+    }
+
+    function updatePagination() {
+        $.get(config.relative_path + &#039;/api/topic/pagination/&#039; + ajaxify.data.tid, { page: ajaxify.data.pagination.currentPage }, function (paginationData) {
+            app.parseAndTranslate(&#039;partials/paginator&#039;, paginationData, function (html) {
+                $(&#039;[component=&quot;pagination&quot;]&#039;).after(html).remove();
+            });
+        });
+    }
+
+    function onNewPostInfiniteScroll(data) {
+        const direction = (config.topicPostSort === &#039;oldest_to_newest&#039; || config.topicPostSort === &#039;most_votes&#039;) ? 1 : -1;
+
+        const isPreviousPostAdded = $(&#039;[component=&quot;post&quot;][data-index=&quot;&#039; + (data.posts[0].index - 1) + &#039;&quot;]&#039;).length;
+        if (!isPreviousPostAdded &amp;&amp; (!data.posts[0].selfPost || !ajaxify.data.scrollToMyPost)) {
+            return;
+        }
+
+        if (!isPreviousPostAdded &amp;&amp; data.posts[0].selfPost) {
+            return ajaxify.go(&#039;post/&#039; + data.posts[0].pid);
+        }
+        const repliesSelector = $(&#039;[component=&quot;topic&quot;]&gt;[component=&quot;post&quot;]:not([data-index=0]), [component=&quot;topic&quot;]&gt;[component=&quot;topic/event&quot;]&#039;);
+        createNewPosts(data, repliesSelector, direction, false, function (html) {
+            if (html) {
+                html.addClass(&#039;new&#039;);
+            }
+            scrollToPostIfSelf(data.posts[0]);
+        });
+    }
+
+    function scrollToPostIfSelf(post) {
+        if (post.selfPost &amp;&amp; ajaxify.data.scrollToMyPost) {
+            navigator.scrollBottom(post.index);
+        }
+    }
+
+    function createNewPosts(data, repliesSelector, direction, userScrolled, callback) {
+        callback = callback || function () {};
+        if (!data || (data.posts &amp;&amp; !data.posts.length)) {
+            return callback();
+        }
+
+        function removeAlreadyAddedPosts() {
+            const newPosts = $(&#039;[component=&quot;post&quot;].new&#039;);
+
+            if (newPosts.length === data.posts.length) {
+                let allSamePids = true;
+                newPosts.each(function (index, el) {
+                    if (parseInt($(el).attr(&#039;data-pid&#039;), 10) !== parseInt(data.posts[index].pid, 10)) {
+                        allSamePids = false;
+                    }
+                });
+
+                if (allSamePids) {
+                    newPosts.each(function () {
+                        $(this).removeClass(&#039;new&#039;);
+                    });
+                    data.posts.length = 0;
+                    return;
+                }
+            }
+
+            if (newPosts.length &amp;&amp; data.posts.length &gt; 1) {
+                data.posts.forEach(function (post) {
+                    const p = components.get(&#039;post&#039;, &#039;pid&#039;, post.pid);
+                    if (p.hasClass(&#039;new&#039;)) {
+                        p.remove();
+                    }
+                });
+            }
+
+            data.posts = data.posts.filter(function (post) {
+                return post.index === -1 || $(&#039;[component=&quot;post&quot;][data-pid=&quot;&#039; + post.pid + &#039;&quot;]&#039;).length === 0;
+            });
+        }
+
+        removeAlreadyAddedPosts();
+
+        if (!data.posts.length) {
+            return callback();
+        }
+
+        let after;
+        let before;
+
+        if (direction &gt; 0 &amp;&amp; repliesSelector.length) {
+            after = repliesSelector.last();
+        } else if (direction &lt; 0 &amp;&amp; repliesSelector.length) {
+            before = repliesSelector.first();
+        }
+
+        hooks.fire(&#039;action:posts.loading&#039;, { posts: data.posts, after: after, before: before });
+
+        app.parseAndTranslate(&#039;topic&#039;, &#039;posts&#039;, Object.assign({}, ajaxify.data, data), function (html) {
+            html = html.filter(function () {
+                const $this = $(this);
+                const pid = $this.attr(&#039;data-pid&#039;);
+                const index = parseInt($this.attr(&#039;data-index&#039;), 10);
+                const isPost = $this.is(&#039;[component=&quot;post&quot;]&#039;);
+                return !isPost || index === -1 || (pid &amp;&amp; $(&#039;[component=&quot;post&quot;][data-pid=&quot;&#039; + pid + &#039;&quot;]&#039;).length === 0);
+            });
+
+            if (after) {
+                html.insertAfter(after);
+            } else if (before) {
+                // Save document height and position for future reference (about 5 lines down)
+                const height = $(document).height();
+                const scrollTop = $(window).scrollTop();
+
+                html.insertBefore(before);
+
+                // Now restore the relative position the user was on prior to new post insertion
+                if (userScrolled || scrollTop &gt; 0) {
+                    $(window).scrollTop(scrollTop + ($(document).height() - height));
+                }
+            } else {
+                components.get(&#039;topic&#039;).append(html);
+            }
+
+            const removedEls = infinitescroll.removeExtra($(&#039;[component=&quot;post&quot;]&#039;), direction, Math.max(20, config.postsPerPage * 2));
+            removeNecroPostMessages(removedEls);
+
+            hooks.fire(&#039;action:posts.loaded&#039;, { posts: data.posts });
+
+            Posts.onNewPostsAddedToDom(html);
+
+            callback(html);
+        });
+    }
+
+    Posts.loadMorePosts = function (direction) {
+        if (!components.get(&#039;topic&#039;).length || navigator.scrollActive) {
+            return;
+        }
+
+        const replies = components.get(&#039;topic&#039;).find(components.get(&#039;post&#039;).not(&#039;[data-index=0]&#039;).not(&#039;.new&#039;));
+        const afterEl = direction &gt; 0 ? replies.last() : replies.first();
+        const after = parseInt(afterEl.attr(&#039;data-index&#039;), 10) || 0;
+
+        const tid = ajaxify.data.tid;
+        if (!utils.isNumber(tid) || !utils.isNumber(after) || (direction &lt; 0 &amp;&amp; components.get(&#039;post&#039;, &#039;index&#039;, 0).length)) {
+            return;
+        }
+
+        const indicatorEl = $(&#039;.loading-indicator&#039;);
+        if (!indicatorEl.is(&#039;:animated&#039;)) {
+            indicatorEl.fadeIn();
+        }
+
+        infinitescroll.loadMore(&#039;topics.loadMore&#039;, {
+            tid: tid,
+            after: after + (direction &gt; 0 ? 1 : 0),
+            count: config.postsPerPage,
+            direction: direction,
+            topicPostSort: config.topicPostSort,
+        }, function (data, done) {
+            indicatorEl.fadeOut();
+
+            if (data &amp;&amp; data.posts &amp;&amp; data.posts.length) {
+                const repliesSelector = $(&#039;[component=&quot;post&quot;]:not([data-index=0]):not(.new), [component=&quot;topic/event&quot;]&#039;);
+                createNewPosts(data, repliesSelector, direction, true, done);
+            } else {
+                navigator.update();
+                done();
+            }
+        });
+    };
+
+    Posts.onTopicPageLoad = function (posts) {
+        handlePrivateUploads(posts);
+        images.wrapImagesInLinks(posts);
+        hideDuplicateSignatures(posts);
+        Posts.showBottomPostBar();
+        posts.find(&#039;[component=&quot;post/content&quot;] img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+        Posts.addBlockquoteEllipses(posts);
+        hidePostToolsForDeletedPosts(posts);
+        addNecroPostMessage();
+    };
+
+    Posts.addTopicEvents = function (events) {
+        if (config.topicPostSort === &#039;most_votes&#039;) {
+            return;
+        }
+        const html = helpers.renderEvents.call(ajaxify.data, events);
+        translator.translate(html, (translated) =&gt; {
+            if (config.topicPostSort === &#039;oldest_to_newest&#039;) {
+                $(&#039;[component=&quot;topic&quot;]&#039;).append(translated);
+            } else if (config.topicPostSort === &#039;newest_to_oldest&#039;) {
+                const mainPost = $(&#039;[component=&quot;topic&quot;] [component=&quot;post&quot;][data-index=&quot;0&quot;]&#039;);
+                if (mainPost.length) {
+                    $(translated).insertAfter(mainPost);
+                } else {
+                    $(&#039;[component=&quot;topic&quot;]&#039;).prepend(translated);
+                }
+            }
+
+            $(&#039;[component=&quot;topic/event&quot;] .timeago&#039;).timeago();
+        });
+    };
+
+    function addNecroPostMessage() {
+        const necroThreshold = ajaxify.data.necroThreshold * 24 * 60 * 60 * 1000;
+        if (!necroThreshold || (config.topicPostSort !== &#039;newest_to_oldest&#039; &amp;&amp; config.topicPostSort !== &#039;oldest_to_newest&#039;)) {
+            return;
+        }
+
+        const postEls = $(&#039;[component=&quot;post&quot;]&#039;).toArray();
+        postEls.forEach(function (post) {
+            post = $(post);
+            const prev = post.prev(&#039;[component=&quot;post&quot;]&#039;);
+            if (post.is(&#039;:has(.necro-post)&#039;) || !prev.length) {
+                return;
+            }
+            if (config.topicPostSort === &#039;newest_to_oldest&#039; &amp;&amp; parseInt(prev.attr(&#039;data-index&#039;), 10) === 0) {
+                return;
+            }
+
+            const diff = post.attr(&#039;data-timestamp&#039;) - prev.attr(&#039;data-timestamp&#039;);
+            if (Math.abs(diff) &gt;= necroThreshold) {
+                const suffixAgo = $.timeago.settings.strings.suffixAgo;
+                const prefixAgo = $.timeago.settings.strings.prefixAgo;
+                const suffixFromNow = $.timeago.settings.strings.suffixFromNow;
+                const prefixFromNow = $.timeago.settings.strings.prefixFromNow;
+
+                $.timeago.settings.strings.suffixAgo = &#039;&#039;;
+                $.timeago.settings.strings.prefixAgo = &#039;&#039;;
+                $.timeago.settings.strings.suffixFromNow = &#039;&#039;;
+                $.timeago.settings.strings.prefixFromNow = &#039;&#039;;
+
+                const translationText = (diff &gt; 0 ? &#039;[[topic:timeago_later,&#039; : &#039;[[topic:timeago_earlier,&#039;) + $.timeago.inWords(diff) + &#039;]]&#039;;
+
+                $.timeago.settings.strings.suffixAgo = suffixAgo;
+                $.timeago.settings.strings.prefixAgo = prefixAgo;
+                $.timeago.settings.strings.suffixFromNow = suffixFromNow;
+                $.timeago.settings.strings.prefixFromNow = prefixFromNow;
+                app.parseAndTranslate(&#039;partials/topic/necro-post&#039;, { text: translationText }, function (html) {
+                    html.attr(&#039;data-necro-post-index&#039;, prev.attr(&#039;data-index&#039;));
+                    html.insertBefore(post);
+                });
+            }
+        });
+    }
+
+    function hideDuplicateSignatures(posts) {
+        if (ajaxify.data[&#039;signatures:hideDuplicates&#039;]) {
+            posts.each((index, el) =&gt; {
+                const signatureEl = $(el).find(&#039;[component=&quot;post/signature&quot;]&#039;);
+                const uid = signatureEl.attr(&#039;data-uid&#039;);
+                if (Posts.signaturesShown[uid]) {
+                    signatureEl.addClass(&#039;hidden&#039;);
+                } else {
+                    Posts.signaturesShown[uid] = true;
+                }
+            });
+        }
+    }
+
+    function removeNecroPostMessages(removedPostEls) {
+        removedPostEls.each((index, el) =&gt; {
+            $(`[data-necro-post-index=&quot;${$(el).attr(&#039;data-index&#039;)}&quot;]`).remove();
+        });
+    }
+
+    function handlePrivateUploads(posts) {
+        if (app.user.uid || !ajaxify.data.privateUploads) {
+            return;
+        }
+
+        // Replace all requests for uploaded images/files with a login link
+        const loginEl = document.createElement(&#039;a&#039;);
+        loginEl.className = &#039;login-required&#039;;
+        loginEl.href = config.relative_path + &#039;/login&#039;;
+
+        translator.translate(&#039;[[topic:login-to-view]]&#039;, function (translated) {
+            loginEl.appendChild(document.createTextNode(translated));
+            posts.each(function (idx, postEl) {
+                $(postEl).find(&#039;[component=&quot;post/content&quot;] img&#039;).each(function (idx, imgEl) {
+                    imgEl = $(imgEl);
+                    if (imgEl.attr(&#039;src&#039;).startsWith(config.relative_path + config.upload_url)) {
+                        imgEl.replaceWith(loginEl.cloneNode(true));
+                    }
+                });
+            });
+        });
+    }
+
+    Posts.onNewPostsAddedToDom = function (posts) {
+        Posts.onTopicPageLoad(posts);
+
+        app.createUserTooltips(posts);
+
+        utils.addCommasToNumbers(posts.find(&#039;.formatted-number&#039;));
+        utils.makeNumbersHumanReadable(posts.find(&#039;.human-readable-number&#039;));
+        posts.find(&#039;.timeago&#039;).timeago();
+    };
+
+    Posts.showBottomPostBar = function () {
+        const mainPost = components.get(&#039;post&#039;, &#039;index&#039;, 0);
+        const placeHolder = $(&#039;.post-bar-placeholder&#039;);
+        const posts = $(&#039;[component=&quot;post&quot;]&#039;);
+        if (!!mainPost.length &amp;&amp; posts.length &gt; 1 &amp;&amp; $(&#039;.post-bar&#039;).length &lt; 2 &amp;&amp; placeHolder.length) {
+            $(&#039;.post-bar&#039;).clone().insertAfter(placeHolder);
+            placeHolder.remove();
+        } else if (mainPost.length &amp;&amp; posts.length &lt; 2) {
+            mainPost.find(&#039;.post-bar&#039;).remove();
+        }
+    };
+
+    function hidePostToolsForDeletedPosts(posts) {
+        posts.each(function () {
+            if ($(this).hasClass(&#039;deleted&#039;)) {
+                postTools.toggle($(this).attr(&#039;data-pid&#039;), true);
+            }
+        });
+    }
+
+    Posts.addBlockquoteEllipses = function (posts) {
+        const blockquotes = posts.find(&#039;[component=&quot;post/content&quot;] &gt; blockquote &gt; blockquote&#039;);
+        blockquotes.each(function () {
+            const $this = $(this);
+            if ($this.find(&#039;:hidden:not(br)&#039;).length &amp;&amp; !$this.find(&#039;.toggle&#039;).length) {
+                $this.append(&#039;&lt;i class=&quot;fa fa-angle-down pointer toggle&quot;&gt;&lt;/i&gt;&#039;);
+            }
+        });
+    };
+
+    return Posts;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

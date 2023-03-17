@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - loader.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>loader.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.54</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">249</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">51.12</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.54</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const fs = require(&#039;fs&#039;);
+const url = require(&#039;url&#039;);
+const path = require(&#039;path&#039;);
+const { fork } = require(&#039;child_process&#039;);
+const logrotate = require(&#039;logrotate-stream&#039;);
+const mkdirp = require(&#039;mkdirp&#039;);
+
+const file = require(&#039;./src/file&#039;);
+const pkg = require(&#039;./package.json&#039;);
+
+const pathToConfig = path.resolve(__dirname, process.env.CONFIG || &#039;config.json&#039;);
+
+nconf.argv().env().file({
+    file: pathToConfig,
+});
+
+const pidFilePath = path.join(__dirname, &#039;pidfile&#039;);
+
+const outputLogFilePath = path.join(__dirname, nconf.get(&#039;logFile&#039;) || &#039;logs/output.log&#039;);
+
+const logDir = path.dirname(outputLogFilePath);
+if (!fs.existsSync(logDir)) {
+    mkdirp.sync(path.dirname(outputLogFilePath));
+}
+
+const output = logrotate({ file: outputLogFilePath, size: &#039;1m&#039;, keep: 3, compress: true });
+const silent = nconf.get(&#039;silent&#039;) === &#039;false&#039; ? false : nconf.get(&#039;silent&#039;) !== false;
+let numProcs;
+const workers = [];
+const Loader = {
+    timesStarted: 0,
+};
+const appPath = path.join(__dirname, &#039;app.js&#039;);
+
+Loader.init = function () {
+    if (silent) {
+        console.log = (...args) =&gt; {
+            output.write(`${args.join(&#039; &#039;)}\n`);
+        };
+    }
+
+    process.on(&#039;SIGHUP&#039;, Loader.restart);
+    process.on(&#039;SIGTERM&#039;, Loader.stop);
+};
+
+Loader.displayStartupMessages = function () {
+    console.log(&#039;&#039;);
+    console.log(`NodeBB v${pkg.version} Copyright (C) 2013-${(new Date()).getFullYear()} NodeBB Inc.`);
+    console.log(&#039;This program comes with ABSOLUTELY NO WARRANTY.&#039;);
+    console.log(&#039;This is free software, and you are welcome to redistribute it under certain conditions.&#039;);
+    console.log(&#039;For the full license, please visit: http://www.gnu.org/copyleft/gpl.html&#039;);
+    console.log(&#039;&#039;);
+};
+
+Loader.addWorkerEvents = function (worker) {
+    worker.on(&#039;exit&#039;, (code, signal) =&gt; {
+        if (code !== 0) {
+            if (Loader.timesStarted &lt; numProcs * 3) {
+                Loader.timesStarted += 1;
+                if (Loader.crashTimer) {
+                    clearTimeout(Loader.crashTimer);
+                }
+                Loader.crashTimer = setTimeout(() =&gt; {
+                    Loader.timesStarted = 0;
+                }, 10000);
+            } else {
+                console.log(`${numProcs * 3} restarts in 10 seconds, most likely an error on startup. Halting.`);
+                process.exit();
+            }
+        }
+
+        console.log(`[cluster] Child Process (${worker.pid}) has exited (code: ${code}, signal: ${signal})`);
+        if (!(worker.suicide || code === 0)) {
+            console.log(&#039;[cluster] Spinning up another process...&#039;);
+
+            forkWorker(worker.index, worker.isPrimary);
+        }
+    });
+
+    worker.on(&#039;message&#039;, (message) =&gt; {
+        if (message &amp;&amp; typeof message === &#039;object&#039; &amp;&amp; message.action) {
+            switch (message.action) {
+            case &#039;restart&#039;:
+                console.log(&#039;[cluster] Restarting...&#039;);
+                Loader.restart();
+                break;
+            case &#039;pubsub&#039;:
+                workers.forEach((w) =&gt; {
+                    w.send(message);
+                });
+                break;
+            case &#039;socket.io&#039;:
+                workers.forEach((w) =&gt; {
+                    if (w !== worker) {
+                        w.send(message);
+                    }
+                });
+                break;
+            }
+        }
+    });
+};
+
+Loader.start = function () {
+    numProcs = getPorts().length;
+    console.log(`Clustering enabled: Spinning up ${numProcs} process(es).\n`);
+
+    for (let x = 0; x &lt; numProcs; x += 1) {
+        forkWorker(x, x === 0);
+    }
+};
+
+function forkWorker(index, isPrimary) {
+    const ports = getPorts();
+    const args = [];
+
+    if (!ports[index]) {
+        return console.log(`[cluster] invalid port for worker : ${index} ports: ${ports.length}`);
+    }
+
+    process.env.isPrimary = isPrimary;
+    process.env.isCluster = nconf.get(&#039;isCluster&#039;) || ports.length &gt; 1;
+    process.env.port = ports[index];
+
+    const worker = fork(appPath, args, {
+        silent: silent,
+        env: process.env,
+    });
+
+    worker.index = index;
+    worker.isPrimary = isPrimary;
+
+    workers[index] = worker;
+
+    Loader.addWorkerEvents(worker);
+
+    if (silent) {
+        const output = logrotate({ file: outputLogFilePath, size: &#039;1m&#039;, keep: 3, compress: true });
+        worker.stdout.pipe(output);
+        worker.stderr.pipe(output);
+    }
+}
+
+function getPorts() {
+    const _url = nconf.get(&#039;url&#039;);
+    if (!_url) {
+        console.log(&#039;[cluster] url is undefined, please check your config.json&#039;);
+        process.exit();
+    }
+    const urlObject = url.parse(_url);
+    let port = nconf.get(&#039;PORT&#039;) || nconf.get(&#039;port&#039;) || urlObject.port || 4567;
+    if (!Array.isArray(port)) {
+        port = [port];
+    }
+    return port;
+}
+
+Loader.restart = function () {
+    killWorkers();
+
+    nconf.remove(&#039;file&#039;);
+    nconf.use(&#039;file&#039;, { file: pathToConfig });
+
+    fs.readFile(pathToConfig, { encoding: &#039;utf-8&#039; }, (err, configFile) =&gt; {
+        if (err) {
+            console.error(&#039;Error reading config&#039;);
+            throw err;
+        }
+
+        const conf = JSON.parse(configFile);
+
+        nconf.stores.env.readOnly = false;
+        nconf.set(&#039;url&#039;, conf.url);
+        nconf.stores.env.readOnly = true;
+
+        if (process.env.url !== conf.url) {
+            process.env.url = conf.url;
+        }
+        Loader.start();
+    });
+};
+
+Loader.stop = function () {
+    killWorkers();
+
+    // Clean up the pidfile
+    if (nconf.get(&#039;daemon&#039;) !== &#039;false&#039; &amp;&amp; nconf.get(&#039;daemon&#039;) !== false) {
+        fs.unlinkSync(pidFilePath);
+    }
+};
+
+function killWorkers() {
+    workers.forEach((worker) =&gt; {
+        worker.suicide = true;
+        worker.kill();
+    });
+}
+
+fs.open(pathToConfig, &#039;r&#039;, (err) =&gt; {
+    if (err) {
+        // No config detected, kickstart web installer
+        fork(&#039;app&#039;);
+        return;
+    }
+
+    if (nconf.get(&#039;daemon&#039;) !== &#039;false&#039; &amp;&amp; nconf.get(&#039;daemon&#039;) !== false) {
+        if (file.existsSync(pidFilePath)) {
+            let pid = 0;
+            try {
+                pid = fs.readFileSync(pidFilePath, { encoding: &#039;utf-8&#039; });
+                if (pid) {
+                    process.kill(pid, 0);
+                    console.info(`Process &quot;${pid}&quot; from pidfile already running, exiting`);
+                    process.exit();
+                } else {
+                    console.info(`Invalid pid &quot;${pid}&quot; from pidfile, deleting pidfile`);
+                    fs.unlinkSync(pidFilePath);
+                }
+            } catch (err) {
+                if (err.code === &#039;ESRCH&#039;) {
+                    console.info(`Process &quot;${pid}&quot; from pidfile not found, deleting pidfile`);
+                    fs.unlinkSync(pidFilePath);
+                } else {
+                    console.error(err.stack);
+                    throw err;
+                }
+            }
+        }
+
+        require(&#039;daemon&#039;)({
+            stdout: process.stdout,
+            stderr: process.stderr,
+            cwd: process.cwd(),
+        });
+
+        fs.writeFileSync(pidFilePath, String(process.pid));
+    }
+    try {
+        Loader.init();
+        Loader.displayStartupMessages();
+        Loader.start();
+    } catch (err) {
+        console.error(&#039;[loader] Error during startup&#039;);
+        throw err;
+    }
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/settings/email.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/settings/email.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">76.93</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">66</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.28</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.68</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;settings\&quot;&gt;\n    &lt;div class=\&quot;row\&quot;&gt;\n        &lt;div class=\&quot;col-sm-2 col-xs-12 content-header\&quot;&gt;\n            [[admin/admin:settings-header-contents]]\n        &lt;/div&gt;\n        &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n            &lt;nav class=\&quot;section-content\&quot;&gt;\n                &lt;ul&gt;&lt;/ul&gt;\n            &lt;/nav&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:email-settings]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;email:from\&quot;&gt;&lt;strong&gt;[[admin/settings/email:address]]&lt;/strong&gt;&lt;/label&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/email:address-help]]\n                &lt;/p&gt;\n                &lt;input type=\&quot;text\&quot; class=\&quot;form-control input-lg\&quot; id=\&quot;email:from\&quot; data-field=\&quot;email:from\&quot; placeholder=\&quot;info@example.org\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;email:from_name\&quot;&gt;&lt;strong&gt;From Name&lt;/strong&gt;&lt;/label&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/email:from-help]]\n                &lt;/p&gt;\n                &lt;input type=\&quot;text\&quot; class=\&quot;form-control input-lg\&quot; id=\&quot;email:from_name\&quot; data-field=\&quot;email:from_name\&quot; placeholder=\&quot;NodeBB\&quot; /&gt;&lt;br /&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label for=\&quot;requireEmailAddress\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;requireEmailAddress\&quot; data-field=\&quot;requireEmailAddress\&quot; name=\&quot;requireEmailAddress\&quot; /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:require-email-address]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/email:require-email-address-warning]]&lt;/p&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label for=\&quot;sendEmailToBanned\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;sendEmailToBanned\&quot; data-field=\&quot;sendEmailToBanned\&quot; name=\&quot;sendEmailToBanned\&quot; /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:sendEmailToBanned]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label for=\&quot;removeEmailNotificationImages\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;removeEmailNotificationImages\&quot; data-field=\&quot;removeEmailNotificationImages\&quot; name=\&quot;removeEmailNotificationImages\&quot; /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:notifications.remove-images]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:confirmation-settings]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;div class=\&quot;form-group form-inline\&quot;&gt;\n            &lt;label for=\&quot;emailConfirmInterval\&quot;&gt;[[admin/settings/user:email-confirm-interval]]&lt;/label&gt;\n            &lt;input class=\&quot;form-control\&quot; data-field=\&quot;emailConfirmInterval\&quot; type=\&quot;number\&quot; id=\&quot;emailConfirmInterval\&quot; placeholder=\&quot;10\&quot; /&gt;\n            &lt;label for=\&quot;emailConfirmInterval\&quot;&gt;[[admin/settings/user:email-confirm-interval2]]&lt;/label&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;form-group\&quot;&gt;\n            &lt;label for=\&quot;emailConfirmExpiry\&quot;&gt;[[admin/settings/email:confirmation.expiry]]&lt;/label&gt;\n            &lt;input class=\&quot;form-control\&quot; data-field=\&quot;emailConfirmExpiry\&quot; type=\&quot;number\&quot; id=\&quot;emailConfirmExpiry\&quot; placeholder=\&quot;24\&quot; /&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;checkbox\&quot;&gt;\n            &lt;label for=\&quot;sendValidationEmail\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;sendValidationEmail\&quot; data-field=\&quot;sendValidationEmail\&quot; name=\&quot;sendValidationEmail\&quot; /&gt;\n                &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:send-validation-email]]&lt;/span&gt;\n            &lt;/label&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;checkbox\&quot;&gt;\n            &lt;label for=\&quot;includeUnverifiedEmails\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;includeUnverifiedEmails\&quot; data-field=\&quot;includeUnverifiedEmails\&quot; name=\&quot;includeUnverifiedEmails\&quot; /&gt;\n                &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:include-unverified-emails]]&lt;/span&gt;\n            &lt;/label&gt;\n        &lt;/div&gt;\n        &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/email:include-unverified-warning]]&lt;/p&gt;\n\n        &lt;div class=\&quot;checkbox\&quot;&gt;\n            &lt;label for=\&quot;emailPrompt\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;emailPrompt\&quot; data-field=\&quot;emailPrompt\&quot; name=\&quot;emailPrompt\&quot; /&gt;\n                &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:prompt]]&lt;/span&gt;\n            &lt;/label&gt;\n        &lt;/div&gt;\n        &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/email:prompt-help]]&lt;/p&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:subscriptions]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label for=\&quot;disableEmailSubscriptions\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;disableEmailSubscriptions\&quot; data-field=\&quot;disableEmailSubscriptions\&quot; name=\&quot;disableEmailSubscriptions\&quot; /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:subscriptions.disable]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;digestHour\&quot;&gt;&lt;strong&gt;[[admin/settings/email:subscriptions.hour]]&lt;/strong&gt;&lt;/label&gt;\n                &lt;input type=\&quot;number\&quot; class=\&quot;form-control input-lg\&quot; id=\&quot;digestHour\&quot; data-field=\&quot;digestHour\&quot; placeholder=\&quot;17\&quot; min=\&quot;0\&quot; max=\&quot;24\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/email:subscriptions.hour-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:smtp-transport]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;div class=\&quot;alert alert-warning\&quot;&gt;\n            &lt;p&gt;\n                [[admin/settings/email:smtp-transport-help]]\n            &lt;/p&gt;\n        &lt;/div&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label for=\&quot;email:smtpTransport:enabled\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;email:smtpTransport:enabled\&quot; data-field=\&quot;email:smtpTransport:enabled\&quot; name=\&quot;email:smtpTransport:enabled\&quot; /&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:smtp-transport.enabled]]&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;div class=\&quot;checkbox\&quot;&gt;\n                    &lt;label for=\&quot;email:smtpTransport:pool\&quot; class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                        &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; id=\&quot;email:smtpTransport:pool\&quot; data-field=\&quot;email:smtpTransport:pool\&quot; name=\&quot;email:smtpTransport:pool\&quot; /&gt;\n                        &lt;span class=\&quot;mdl-switch__label\&quot;&gt;[[admin/settings/email:smtp-transport.pool]]&lt;/span&gt;\n                    &lt;/label&gt;\n                &lt;/div&gt;\n                &lt;p class=\&quot;col-xs-12 help-block\&quot;&gt;\n                    [[admin/settings/email:smtp-transport.pool-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;email:smtpTransport:service\&quot;&gt;&lt;strong&gt;[[admin/settings/email:smtp-transport.service]]&lt;/strong&gt;&lt;/label&gt;\n                &lt;select class=\&quot;form-control input-lg\&quot; id=\&quot;email:smtpTransport:service\&quot; data-field=\&quot;email:smtpTransport:service\&quot;&gt;\n                    &lt;option value=\&quot;nodebb-custom-smtp\&quot; style=\&quot;font-weight: bold\&quot;&gt;[[admin/settings/email:smtp-transport.service-custom]]&lt;/option&gt;\n                    &lt;option style=\&quot;font-size: 10px\&quot; disabled&gt;&amp;nbsp;&lt;/option&gt;\n\n                    &quot; + 
+      compiled.blocks[&#039;services&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                &lt;/select&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/email:smtp-transport.service-help]]\n                    &lt;br&gt;\n                    [[admin/settings/email:smtp-transport.gmail-warning1]]\n                    &lt;br&gt;\n                    [[admin/settings/email:smtp-transport.gmail-warning2]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group well\&quot; id=\&quot;email:smtpTransport:custom-service\&quot; style=\&quot;display: none\&quot;&gt;\n                &lt;h5&gt;Custom Service&lt;/h5&gt;\n\n                &lt;label for=\&quot;email:smtpTransport:host\&quot;&gt;[[admin/settings/email:smtp-transport.host]]&lt;/label&gt;\n                &lt;input type=\&quot;text\&quot; class=\&quot;form-control input-md\&quot; id=\&quot;email:smtpTransport:host\&quot; data-field=\&quot;email:smtpTransport:host\&quot; placeholder=\&quot;smtp.example.org\&quot;&gt;\n\n                &lt;label for=\&quot;email:smtpTransport:port\&quot;&gt;[[admin/settings/email:smtp-transport.port]]&lt;/label&gt;\n                &lt;input type=\&quot;text\&quot; class=\&quot;form-control input-md\&quot; id=\&quot;email:smtpTransport:port\&quot; data-field=\&quot;email:smtpTransport:port\&quot; placeholder=\&quot;5555\&quot;&gt;\n\n                &lt;label for=\&quot;email:smtpTransport:security\&quot;&gt;[[admin/settings/email:smtp-transport.security]]&lt;/label&gt;\n                &lt;select class=\&quot;form-control\&quot; id=\&quot;email:smtpTransport:security\&quot; data-field=\&quot;email:smtpTransport:security\&quot;&gt;\n                    &lt;option value=\&quot;ENCRYPTED\&quot;&gt;[[admin/settings/email:smtp-transport.security-encrypted]]&lt;/option&gt;\n                    &lt;option value=\&quot;STARTTLS\&quot;&gt;[[admin/settings/email:smtp-transport.security-starttls]]&lt;/option&gt;\n                    &lt;option value=\&quot;NONE\&quot;&gt;[[admin/settings/email:smtp-transport.security-none]]&lt;/option&gt;\n                &lt;/select&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;email:smtpTransport:user\&quot;&gt;&lt;strong&gt;[[admin/settings/email:smtp-transport.username]]&lt;/strong&gt;&lt;/label&gt;\n                &lt;input id=\&quot;email:smtpTransport:user\&quot; type=\&quot;text\&quot; class=\&quot;form-control input-lg\&quot; data-field=\&quot;email:smtpTransport:user\&quot; placeholder=\&quot;admin@example.org\&quot; autocomplete=\&quot;off\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/email:smtp-transport.username-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;email:smtpTransport:pass\&quot;&gt;&lt;strong&gt;[[admin/settings/email:smtp-transport.password]]&lt;/strong&gt;&lt;/label&gt;\n                &lt;input id=\&quot;email:smtpTransport:pass\&quot; type=\&quot;password\&quot; class=\&quot;form-control input-lg\&quot; data-field=\&quot;email:smtpTransport:pass\&quot; autocomplete=\&quot;off\&quot; /&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:template]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;label for=\&quot;email-editor-selector\&quot;&gt;[[admin/settings/email:template.select]]&lt;/label&gt;&lt;br /&gt;\n        &lt;select id=\&quot;email-editor-selector\&quot; class=\&quot;form-control\&quot;&gt;\n            &quot; + 
+      compiled.blocks[&#039;emails&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n        &lt;/select&gt;\n        &lt;br /&gt;\n        &lt;div id=\&quot;email-editor\&quot;&gt;&lt;/div&gt;\n        &lt;input type=\&quot;hidden\&quot; id=\&quot;email-editor-holder\&quot; value=\&quot;\&quot; data-field=\&quot;\&quot; /&gt;\n        &lt;br /&gt;\n        &lt;button class=\&quot;btn btn-warning\&quot; type=\&quot;button\&quot; data-action=\&quot;email.revert\&quot;&gt;[[admin/settings/email:template.revert]]&lt;/button&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/email:testing]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;div class=\&quot;form-group\&quot;&gt;\n            &lt;label for=\&quot;test-email\&quot;&gt;[[admin/settings/email:testing.select]]&lt;/label&gt;\n            &lt;select id=\&quot;test-email\&quot; class=\&quot;form-control\&quot;&gt;\n                &quot; + 
+      compiled.blocks[&#039;sendable&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n            &lt;/select&gt;\n        &lt;/div&gt;\n        &lt;button class=\&quot;btn btn-primary\&quot; type=\&quot;button\&quot; data-action=\&quot;email.test\&quot;&gt;[[admin/settings/email:testing.send]]&lt;/button&gt;\n        &lt;p class=\&quot;help-block\&quot;&gt;\n            [[admin/settings/email:testing.send-help]]\n        &lt;/p&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;\n\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;services&#039;: function services(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;services&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;option value=\&quot;&quot; + 
+          __escape(guard(value)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard(value)) + 
+          &quot;&lt;/option&gt;\n                    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;emails&#039;: function emails(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;emails&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;option value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;emails&#039;] != null &amp;&amp; context[&#039;emails&#039;][key0] != null) ? context[&#039;emails&#039;][key0][&#039;path&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;emails&#039;] != null &amp;&amp; context[&#039;emails&#039;][key0] != null) ? context[&#039;emails&#039;][key0][&#039;path&#039;] : null)) + 
+          &quot;&lt;/option&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;sendable&#039;: function sendable(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;sendable&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                &lt;option value=\&quot;&quot; + 
+          __escape(guard(value)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard(value)) + 
+          &quot;&lt;/option&gt;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

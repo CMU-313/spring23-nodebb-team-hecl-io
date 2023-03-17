@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres/main.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres/main.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">244</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">39.05</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.74</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+
+    module.flushdb = async function () {
+        await module.pool.query(`DROP SCHEMA &quot;public&quot; CASCADE`);
+        await module.pool.query(`CREATE SCHEMA &quot;public&quot;`);
+    };
+
+    module.emptydb = async function () {
+        await module.pool.query(`DELETE FROM &quot;legacy_object&quot;`);
+    };
+
+    module.exists = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        // Redis/Mongo consider empty zsets as non-existent, match that behaviour
+        const type = await module.type(key);
+        if (type === &#039;zset&#039;) {
+            if (Array.isArray(key)) {
+                const members = await Promise.all(key.map(key =&gt; module.getSortedSetRange(key, 0, 0)));
+                return members.map(member =&gt; member.length &gt; 0);
+            }
+            const members = await module.getSortedSetRange(key, 0, 0);
+            return members.length &gt; 0;
+        }
+
+        if (Array.isArray(key)) {
+            const res = await module.pool.query({
+                name: &#039;existsArray&#039;,
+                text: `
+                SELECT o.&quot;_key&quot; k
+                  FROM &quot;legacy_object_live&quot; o
+                 WHERE o.&quot;_key&quot; = ANY($1::TEXT[])`,
+                values: [key],
+            });
+            return key.map(k =&gt; res.rows.some(r =&gt; r.k === k));
+        }
+        const res = await module.pool.query({
+            name: &#039;exists&#039;,
+            text: `
+            SELECT EXISTS(SELECT *
+                    FROM &quot;legacy_object_live&quot;
+                   WHERE &quot;_key&quot; = $1::TEXT
+                   LIMIT 1) e`,
+            values: [key],
+        });
+        return res.rows[0].e;
+    };
+
+    module.scan = async function (params) {
+        let { match } = params;
+        if (match.startsWith(&#039;*&#039;)) {
+            match = `%${match.substring(1)}`;
+        }
+        if (match.endsWith(&#039;*&#039;)) {
+            match = `${match.substring(0, match.length - 1)}%`;
+        }
+
+        const res = await module.pool.query({
+            text: `
+        SELECT o.&quot;_key&quot;
+        FROM &quot;legacy_object_live&quot; o
+        WHERE o.&quot;_key&quot; LIKE &#039;${match}&#039;`,
+        });
+
+        return res.rows.map(r =&gt; r._key);
+    };
+
+    module.delete = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        await module.pool.query({
+            name: &#039;delete&#039;,
+            text: `
+DELETE FROM &quot;legacy_object&quot;
+ WHERE &quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        });
+    };
+
+    module.deleteAll = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return;
+        }
+
+        await module.pool.query({
+            name: &#039;deleteAll&#039;,
+            text: `
+DELETE FROM &quot;legacy_object&quot;
+ WHERE &quot;_key&quot; = ANY($1::TEXT[])`,
+            values: [keys],
+        });
+    };
+
+    module.get = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;get&#039;,
+            text: `
+SELECT s.&quot;data&quot; t
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_string&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].t : null;
+    };
+
+    module.set = async function (key, value) {
+        if (!key) {
+            return;
+        }
+
+        await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectType(client, key, &#039;string&#039;);
+            await client.query({
+                name: &#039;set&#039;,
+                text: `
+INSERT INTO &quot;legacy_string&quot; (&quot;_key&quot;, &quot;data&quot;)
+VALUES ($1::TEXT, $2::TEXT)
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;data&quot; = $2::TEXT`,
+                values: [key, value],
+            });
+        });
+    };
+
+    module.increment = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        return await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectType(client, key, &#039;string&#039;);
+            const res = await client.query({
+                name: &#039;increment&#039;,
+                text: `
+INSERT INTO &quot;legacy_string&quot; (&quot;_key&quot;, &quot;data&quot;)
+VALUES ($1::TEXT, &#039;1&#039;)
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;data&quot; = (&quot;legacy_string&quot;.&quot;data&quot;::NUMERIC + 1)::TEXT
+RETURNING &quot;data&quot; d`,
+                values: [key],
+            });
+            return parseFloat(res.rows[0].d);
+        });
+    };
+
+    module.rename = async function (oldKey, newKey) {
+        await module.transaction(async (client) =&gt; {
+            await client.query({
+                name: &#039;deleteRename&#039;,
+                text: `
+    DELETE FROM &quot;legacy_object&quot;
+     WHERE &quot;_key&quot; = $1::TEXT`,
+                values: [newKey],
+            });
+            await client.query({
+                name: &#039;rename&#039;,
+                text: `
+UPDATE &quot;legacy_object&quot;
+SET &quot;_key&quot; = $2::TEXT
+WHERE &quot;_key&quot; = $1::TEXT`,
+                values: [oldKey, newKey],
+            });
+        });
+    };
+
+    module.type = async function (key) {
+        const res = await module.pool.query({
+            name: &#039;type&#039;,
+            text: `
+SELECT &quot;type&quot;::TEXT t
+  FROM &quot;legacy_object_live&quot;
+ WHERE &quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].t : null;
+    };
+
+    async function doExpire(key, date) {
+        await module.pool.query({
+            name: &#039;expire&#039;,
+            text: `
+UPDATE &quot;legacy_object&quot;
+   SET &quot;expireAt&quot; = $2::TIMESTAMPTZ
+ WHERE &quot;_key&quot; = $1::TEXT`,
+            values: [key, date],
+        });
+    }
+
+    module.expire = async function (key, seconds) {
+        await doExpire(key, new Date(((Date.now() / 1000) + seconds) * 1000));
+    };
+
+    module.expireAt = async function (key, timestamp) {
+        await doExpire(key, new Date(timestamp * 1000));
+    };
+
+    module.pexpire = async function (key, ms) {
+        await doExpire(key, new Date(Date.now() + parseInt(ms, 10)));
+    };
+
+    module.pexpireAt = async function (key, timestamp) {
+        await doExpire(key, new Date(timestamp));
+    };
+
+    async function getExpire(key) {
+        const res = await module.pool.query({
+            name: &#039;ttl&#039;,
+            text: `
+SELECT &quot;expireAt&quot;::TEXT
+  FROM &quot;legacy_object&quot;
+ WHERE &quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key],
+        });
+
+        return res.rows.length ? new Date(res.rows[0].expireAt).getTime() : null;
+    }
+
+    module.ttl = async function (key) {
+        return Math.round((await getExpire(key) - Date.now()) / 1000);
+    };
+
+    module.pttl = async function (key) {
+        return await getExpire(key) - Date.now();
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

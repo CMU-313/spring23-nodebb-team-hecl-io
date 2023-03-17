@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/composer.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/composer.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.63</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">866</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">59.44</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">10.88</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;composer&#039;, [
+	&#039;taskbar&#039;,
+	&#039;translator&#039;,
+	&#039;composer/uploads&#039;,
+	&#039;composer/formatting&#039;,
+	&#039;composer/drafts&#039;,
+	&#039;composer/tags&#039;,
+	&#039;composer/categoryList&#039;,
+	&#039;composer/preview&#039;,
+	&#039;composer/resize&#039;,
+	&#039;composer/autocomplete&#039;,
+	&#039;composer/scheduler&#039;,
+	&#039;scrollStop&#039;,
+	&#039;topicThumbs&#039;,
+	&#039;api&#039;,
+	&#039;bootbox&#039;,
+	&#039;alerts&#039;,
+	&#039;hooks&#039;,
+	&#039;messages&#039;,
+	&#039;search&#039;,
+	&#039;screenfull&#039;,
+], function (taskbar, translator, uploads, formatting, drafts, tags,
+	categoryList, preview, resize, autocomplete, scheduler, scrollStop,
+	topicThumbs, api, bootbox, alerts, hooks, messagesModule, search, screenfull) {
+	var composer = {
+		active: undefined,
+		posts: {},
+		bsEnvironment: undefined,
+		formatting: undefined,
+	};
+
+	$(window).off(&#039;resize&#039;, onWindowResize).on(&#039;resize&#039;, onWindowResize);
+	onWindowResize();
+
+	$(window).on(&#039;action:composer.topics.post&#039;, function (ev, data) {
+		localStorage.removeItem(&#039;category:&#039; + data.data.cid + &#039;:bookmark&#039;);
+		localStorage.removeItem(&#039;category:&#039; + data.data.cid + &#039;:bookmark:clicked&#039;);
+	});
+
+	$(window).on(&#039;popstate&#039;, function () {
+		var env = utils.findBootstrapEnvironment();
+		if (composer.active &amp;&amp; (env === &#039;xs&#039; || env === &#039;sm&#039;)) {
+			if (!composer.posts[composer.active].modified) {
+				composer.discard(composer.active);
+				if (composer.discardConfirm &amp;&amp; composer.discardConfirm.length) {
+					composer.discardConfirm.modal(&#039;hide&#039;);
+					delete composer.discardConfirm;
+				}
+				return;
+			}
+
+			translator.translate(&#039;[[modules:composer.discard]]&#039;, function (translated) {
+				composer.discardConfirm = bootbox.confirm(translated, function (confirm) {
+					if (confirm) {
+						composer.discard(composer.active);
+					} else {
+						composer.posts[composer.active].modified = true;
+					}
+				});
+				composer.posts[composer.active].modified = false;
+			});
+		}
+	});
+
+	function removeComposerHistory() {
+		var env = composer.bsEnvironment;
+		if (ajaxify.data.template.compose === true || env === &#039;xs&#039; || env === &#039;sm&#039;) {
+			history.back();
+		}
+	}
+
+	function onWindowResize() {
+		var env = utils.findBootstrapEnvironment();
+		var isMobile = env === &#039;xs&#039; || env === &#039;sm&#039;;
+
+		if (preview.toggle) {
+			if (preview.env !== env &amp;&amp; isMobile) {
+				preview.env = env;
+				preview.toggle(false);
+			}
+			preview.env = env;
+		}
+
+		if (composer.active !== undefined) {
+			resize.reposition($(&#039;.composer[data-uuid=&quot;&#039; + composer.active + &#039;&quot;]&#039;));
+
+			if (!isMobile &amp;&amp; window.location.pathname.startsWith(config.relative_path + &#039;/compose&#039;)) {
+				/*
+				 *	If this conditional is met, we&#039;re no longer in mobile/tablet
+				 *	resolution but we&#039;ve somehow managed to have a mobile
+				 *	composer load, so let&#039;s go back to the topic
+				 */
+				history.back();
+			} else if (isMobile &amp;&amp; !window.location.pathname.startsWith(config.relative_path + &#039;/compose&#039;)) {
+				/*
+				 *	In this case, we&#039;re in mobile/tablet resolution but the composer
+				 *	that loaded was a regular composer, so let&#039;s fix the address bar
+				 */
+				mobileHistoryAppend();
+			}
+		}
+		composer.bsEnvironment = env;
+	}
+
+	function alreadyOpen(post) {
+		// If a composer for the same cid/tid/pid is already open, return the uuid, else return bool false
+		var type;
+		var id;
+
+		if (post.hasOwnProperty(&#039;cid&#039;)) {
+			type = &#039;cid&#039;;
+		} else if (post.hasOwnProperty(&#039;tid&#039;)) {
+			type = &#039;tid&#039;;
+		} else if (post.hasOwnProperty(&#039;pid&#039;)) {
+			type = &#039;pid&#039;;
+		}
+
+		id = post[type];
+
+		// Find a match
+		for (var uuid in composer.posts) {
+			if (composer.posts[uuid].hasOwnProperty(type) &amp;&amp; id === composer.posts[uuid][type]) {
+				return uuid;
+			}
+		}
+
+		// No matches...
+		return false;
+	}
+
+	function push(post) {
+		var uuid = utils.generateUUID();
+		var existingUUID = alreadyOpen(post);
+
+		if (existingUUID) {
+			taskbar.updateActive(existingUUID);
+			return composer.load(existingUUID);
+		}
+
+		var actionText = &#039;[[topic:composer.new_topic]]&#039;;
+		if (post.action === &#039;posts.reply&#039;) {
+			actionText = &#039;[[topic:composer.replying_to]]&#039;;
+		} else if (post.action === &#039;posts.edit&#039;) {
+			actionText = &#039;[[topic:composer.editing]]&#039;;
+		}
+
+		translator.translate(actionText, function (translatedAction) {
+			taskbar.push(&#039;composer&#039;, uuid, {
+				title: translatedAction.replace(&#039;%1&#039;, &#039;&quot;&#039; + post.title + &#039;&quot;&#039;),
+			});
+		});
+
+		// Construct a save_id
+		if (post.hasOwnProperty(&#039;cid&#039;)) {
+			post.save_id = [&#039;composer&#039;, app.user.uid, &#039;cid&#039;, post.cid].join(&#039;:&#039;);
+		} else if (post.hasOwnProperty(&#039;tid&#039;)) {
+			post.save_id = [&#039;composer&#039;, app.user.uid, &#039;tid&#039;, post.tid].join(&#039;:&#039;);
+		} else if (post.hasOwnProperty(&#039;pid&#039;)) {
+			post.save_id = [&#039;composer&#039;, app.user.uid, &#039;pid&#039;, post.pid].join(&#039;:&#039;);
+		}
+
+		composer.posts[uuid] = post;
+		composer.load(uuid);
+	}
+
+	async function composerAlert(post_uuid, message) {
+		$(&#039;.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;).find(&#039;.composer-submit&#039;).removeAttr(&#039;disabled&#039;);
+
+		const { showAlert } = await hooks.fire(&#039;filter:composer.error&#039;, { post_uuid, message, showAlert: true });
+
+		if (showAlert) {
+			alerts.alert({
+				type: &#039;danger&#039;,
+				timeout: 10000,
+				title: &#039;&#039;,
+				message: message,
+				alert_id: &#039;post_error&#039;,
+			});
+		}
+	}
+
+	composer.findByTid = function (tid) {
+		// Iterates through the initialised composers and returns the uuid of the matching composer
+		for (var uuid in composer.posts) {
+			if (composer.posts.hasOwnProperty(uuid) &amp;&amp; composer.posts[uuid].hasOwnProperty(&#039;tid&#039;) &amp;&amp; parseInt(composer.posts[uuid].tid, 10) === parseInt(tid, 10)) {
+				return uuid;
+			}
+		}
+
+		return null;
+	};
+
+	composer.addButton = function (iconClass, onClick, title) {
+		formatting.addButton(iconClass, onClick, title);
+	};
+
+	composer.newTopic = async (data) =&gt; {
+		var pushData = {
+			action: &#039;topics.post&#039;,
+			cid: data.cid,
+			handle: data.handle,
+			title: data.title || &#039;&#039;,
+			body: data.body || &#039;&#039;,
+			tags: data.tags || [],
+			modified: !!((data.title &amp;&amp; data.title.length) || (data.body &amp;&amp; data.body.length)),
+			isMain: true,
+		};
+
+		({ pushData } = await hooks.fire(&#039;filter:composer.topic.push&#039;, {
+			data: data,
+			pushData: pushData,
+		}));
+
+		push(pushData);
+	};
+
+	composer.addQuote = function (tid, toPid, selectedPid, title, username, text, uuid) {
+		uuid = uuid || composer.active;
+
+		var escapedTitle = (title || &#039;&#039;)
+			.replace(/([\\`*_{}[\]()#+\-.!])/g, &#039;\\$1&#039;)
+			.replace(/\[/g, &#039;&amp;#91;&#039;)
+			.replace(/\]/g, &#039;&amp;#93;&#039;)
+			.replace(/%/g, &#039;&amp;#37;&#039;)
+			.replace(/,/g, &#039;&amp;#44;&#039;);
+
+		if (text) {
+			text = &#039;&gt; &#039; + text.replace(/\n/g, &#039;\n&gt; &#039;) + &#039;\n\n&#039;;
+		}
+		var link = &#039;[&#039; + escapedTitle + &#039;](&#039; + config.relative_path + &#039;/post/&#039; + (selectedPid || toPid) + &#039;)&#039;;
+		if (uuid === undefined) {
+			if (title &amp;&amp; (selectedPid || toPid)) {
+				composer.newReply(tid, toPid, title, &#039;[[modules:composer.user_said_in, &#039; + username + &#039;, &#039; + link + &#039;]]\n&#039; + text);
+			} else {
+				composer.newReply(tid, toPid, title, &#039;[[modules:composer.user_said, &#039; + username + &#039;]]\n&#039; + text);
+			}
+			return;
+		} else if (uuid !== composer.active) {
+			// If the composer is not currently active, activate it
+			composer.load(uuid);
+		}
+
+		var postContainer = $(&#039;.composer[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+		var bodyEl = postContainer.find(&#039;textarea&#039;);
+		var prevText = bodyEl.val();
+		if (title &amp;&amp; (selectedPid || toPid)) {
+			translator.translate(&#039;[[modules:composer.user_said_in, &#039; + username + &#039;, &#039; + link + &#039;]]\n&#039;, config.defaultLang, onTranslated);
+		} else {
+			translator.translate(&#039;[[modules:composer.user_said, &#039; + username + &#039;]]\n&#039;, config.defaultLang, onTranslated);
+		}
+
+		function onTranslated(translated) {
+			composer.posts[uuid].body = (prevText.length ? prevText + &#039;\n\n&#039; : &#039;&#039;) + translated + text;
+			bodyEl.val(composer.posts[uuid].body);
+			focusElements(postContainer);
+			preview.render(postContainer);
+		}
+	};
+
+	composer.newReply = function (tid, toPid, title, text) {
+		translator.translate(text, config.defaultLang, function (translated) {
+			push({
+				action: &#039;posts.reply&#039;,
+				tid: tid,
+				toPid: toPid,
+				title: title,
+				body: translated,
+				modified: !!((title &amp;&amp; title.length) || (translated &amp;&amp; translated.length)),
+				isMain: false,
+			});
+		});
+	};
+
+	composer.editPost = function (pid) {
+		socket.emit(&#039;plugins.composer.push&#039;, pid, function (err, threadData) {
+			if (err) {
+				return alerts.error(err);
+			}
+			threadData.action = &#039;posts.edit&#039;;
+			threadData.pid = pid;
+			threadData.modified = false;
+			push(threadData);
+		});
+	};
+
+	composer.load = function (post_uuid) {
+		var postContainer = $(&#039;.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;);
+		if (postContainer.length) {
+			activate(post_uuid);
+			resize.reposition(postContainer);
+			focusElements(postContainer);
+			onShow();
+		} else if (composer.formatting) {
+			createNewComposer(post_uuid);
+		} else {
+			socket.emit(&#039;plugins.composer.getFormattingOptions&#039;, function (err, options) {
+				if (err) {
+					return alerts.error(err);
+				}
+				composer.formatting = options;
+				createNewComposer(post_uuid);
+			});
+		}
+	};
+
+	composer.enhance = function (postContainer, post_uuid, postData) {
+		/*
+			This method enhances a composer container with client-side sugar (preview, etc)
+			Everything in here also applies to the /compose route
+		*/
+
+		if (!post_uuid &amp;&amp; !postData) {
+			post_uuid = utils.generateUUID();
+			composer.posts[post_uuid] = ajaxify.data;
+			postData = ajaxify.data;
+			postContainer.attr(&#039;data-uuid&#039;, post_uuid);
+		}
+
+		var bodyEl = postContainer.find(&#039;textarea&#039;);
+		var submitBtn = postContainer.find(&#039;.composer-submit&#039;);
+
+		categoryList.init(postContainer, composer.posts[post_uuid]);
+		scheduler.init(postContainer, composer.posts);
+
+		formatting.addHandler(postContainer);
+		formatting.addComposerButtons();
+		preview.handleToggler(postContainer);
+
+		uploads.initialize(post_uuid);
+		tags.init(postContainer, composer.posts[post_uuid]);
+		autocomplete.init(postContainer, post_uuid);
+
+		postContainer.on(&#039;change&#039;, &#039;input, textarea&#039;, function () {
+			composer.posts[post_uuid].modified = true;
+
+			// Post is modified, save to list of opened drafts
+			drafts.updateVisibility(&#039;available&#039;, composer.posts[post_uuid].save_id, true);
+			drafts.updateVisibility(&#039;open&#039;, composer.posts[post_uuid].save_id, true);
+		});
+
+		submitBtn.on(&#039;click&#039;, function (e) {
+			e.preventDefault();
+			e.stopPropagation();	// Other click events bring composer back to active state which is undesired on submit
+
+			$(this).attr(&#039;disabled&#039;, true);
+			post(post_uuid);
+		});
+
+		require([&#039;mousetrap&#039;], function (mousetrap) {
+			mousetrap(postContainer.get(0)).bind(&#039;mod+enter&#039;, function () {
+				submitBtn.attr(&#039;disabled&#039;, true);
+				post(post_uuid);
+			});
+		});
+
+		postContainer.find(&#039;.composer-discard&#039;).on(&#039;click&#039;, function (e) {
+			e.preventDefault();
+
+			if (!composer.posts[post_uuid].modified) {
+				composer.discard(post_uuid);
+				return removeComposerHistory();
+			}
+
+			formatting.exitFullscreen();
+
+			var btn = $(this).prop(&#039;disabled&#039;, true);
+			translator.translate(&#039;[[modules:composer.discard]]&#039;, function (translated) {
+				bootbox.confirm(translated, function (confirm) {
+					if (confirm) {
+						composer.discard(post_uuid);
+						removeComposerHistory();
+					}
+					btn.prop(&#039;disabled&#039;, false);
+				});
+			});
+		});
+
+		postContainer.find(&#039;.composer-minimize, .minimize .trigger&#039;).on(&#039;click&#039;, function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			composer.minimize(post_uuid);
+		});
+
+		bodyEl.on(&#039;input propertychange&#039;, utils.debounce(function () {
+			preview.render(postContainer);
+		}, 250));
+
+		bodyEl.on(&#039;scroll&#039;, function () {
+			preview.matchScroll(postContainer);
+		});
+
+		drafts.init(postContainer, postData);
+		const draft = drafts.get(postData.save_id);
+
+		preview.render(postContainer, function () {
+			preview.matchScroll(postContainer);
+		});
+
+		handleHelp(postContainer);
+		handleSearch(postContainer);
+		focusElements(postContainer);
+		if (postData.action === &#039;posts.edit&#039;) {
+			composer.updateThumbCount(post_uuid, postContainer);
+		}
+
+		// Hide &quot;zen mode&quot; if fullscreen API is not enabled/available (ahem, iOS...)
+		if (!screenfull.isEnabled) {
+			$(&#039;[data-format=&quot;zen&quot;]&#039;).addClass(&#039;hidden&#039;);
+		}
+
+		hooks.fire(&#039;action:composer.enhanced&#039;, { postContainer, postData, draft });
+	};
+
+	async function getSelectedCategory(postData) {
+		if (ajaxify.data.template.category) {
+			// no need to load data if we are already on the category page
+			return ajaxify.data;
+		} else if (parseInt(postData.cid, 10)) {
+			return await api.get(`/api/category/${postData.cid}`, {});
+		}
+		return null;
+	}
+
+	async function createNewComposer(post_uuid) {
+		var postData = composer.posts[post_uuid];
+
+		var isTopic = postData ? postData.hasOwnProperty(&#039;cid&#039;) : false;
+		var isMain = postData ? !!postData.isMain : false;
+		var isEditing = postData ? !!postData.pid : false;
+		var isGuestPost = postData ? parseInt(postData.uid, 10) === 0 : false;
+		const isScheduled = postData.timestamp &gt; Date.now();
+
+		// see
+		// https://github.com/NodeBB/NodeBB/issues/2994 and
+		// https://github.com/NodeBB/NodeBB/issues/1951
+		// remove when 1951 is resolved
+
+		var title = postData.title.replace(/%/g, &#039;&amp;#37;&#039;).replace(/,/g, &#039;&amp;#44;&#039;);
+		postData.category = await getSelectedCategory(postData);
+		const privileges = postData.category ? postData.category.privileges : ajaxify.data.privileges;
+		var data = {
+			title: title,
+			titleLength: title.length,
+			body: postData.body,
+			mobile: composer.bsEnvironment === &#039;xs&#039; || composer.bsEnvironment === &#039;sm&#039;,
+			resizable: true,
+			thumb: postData.thumb,
+			isTopicOrMain: isTopic || isMain,
+			maximumTitleLength: config.maximumTitleLength,
+			maximumPostLength: config.maximumPostLength,
+			minimumTagLength: config.minimumTagLength,
+			maximumTagLength: config.maximumTagLength,
+			isTopic: isTopic,
+			isEditing: isEditing,
+			canSchedule: !!(isMain &amp;&amp; privileges &amp;&amp;
+				((privileges[&#039;topics:schedule&#039;] &amp;&amp; !isEditing) || (isScheduled &amp;&amp; privileges.view_scheduled))),
+			showHandleInput: config.allowGuestHandles &amp;&amp;
+				(app.user.uid === 0 || (isEditing &amp;&amp; isGuestPost &amp;&amp; app.user.isAdmin)),
+			handle: postData ? postData.handle || &#039;&#039; : undefined,
+			formatting: composer.formatting,
+			tagWhitelist: postData.category ? postData.category.tagWhitelist : ajaxify.data.tagWhitelist,
+			privileges: app.user.privileges,
+			selectedCategory: postData.category,
+			submitOptions: [
+				// Add items using `filter:composer.create`, or just add them to the &lt;ul&gt; in DOM
+				// {
+				// 	action: &#039;foobar&#039;,
+				// 	text: &#039;Text Label&#039;,
+				// }
+			],
+		};
+
+		if (data.mobile) {
+			mobileHistoryAppend();
+
+			app.toggleNavbar(false);
+		}
+
+		postData.mobile = composer.bsEnvironment === &#039;xs&#039; || composer.bsEnvironment === &#039;sm&#039;;
+
+		({ postData, createData: data } = await hooks.fire(&#039;filter:composer.create&#039;, {
+			postData: postData,
+			createData: data,
+		}));
+
+		app.parseAndTranslate(&#039;composer&#039;, data, function (composerTemplate) {
+			if ($(&#039;.composer.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;).length) {
+				return;
+			}
+			composerTemplate = $(composerTemplate);
+
+			composerTemplate.find(&#039;.title&#039;).each(function () {
+				$(this).text(translator.unescape($(this).text()));
+			});
+
+			composerTemplate.attr(&#039;data-uuid&#039;, post_uuid);
+
+			$(document.body).append(composerTemplate);
+
+			var postContainer = $(composerTemplate[0]);
+
+			resize.reposition(postContainer);
+			composer.enhance(postContainer, post_uuid, postData);
+			/*
+				Everything after this line is applied to the resizable composer only
+				Want something done to both resizable composer and the one in /compose?
+				Put it in composer.enhance().
+
+				Eventually, stuff after this line should be moved into composer.enhance().
+			*/
+
+			activate(post_uuid);
+
+			postContainer.on(&#039;click&#039;, function () {
+				if (!taskbar.isActive(post_uuid)) {
+					taskbar.updateActive(post_uuid);
+				}
+			});
+
+			resize.handleResize(postContainer);
+
+			if (composer.bsEnvironment === &#039;xs&#039; || composer.bsEnvironment === &#039;sm&#039;) {
+				var submitBtns = postContainer.find(&#039;.composer-submit&#039;);
+				var mobileSubmitBtn = postContainer.find(&#039;.mobile-navbar .composer-submit&#039;);
+				var textareaEl = postContainer.find(&#039;.write&#039;);
+				var idx = textareaEl.attr(&#039;tabindex&#039;);
+
+				submitBtns.removeAttr(&#039;tabindex&#039;);
+				mobileSubmitBtn.attr(&#039;tabindex&#039;, parseInt(idx, 10) + 1);
+
+				$(&#039;.category-name-container&#039;).on(&#039;click&#039;, function () {
+					$(&#039;.category-selector&#039;).toggleClass(&#039;open&#039;);
+				});
+			}
+
+			$(window).trigger(&#039;action:composer.loaded&#039;, {
+				postContainer: postContainer,
+				post_uuid: post_uuid,
+				composerData: composer.posts[post_uuid],
+				formatting: composer.formatting,
+			});
+
+			scrollStop.apply(postContainer.find(&#039;.write&#039;));
+			focusElements(postContainer);
+			onShow();
+		});
+	}
+
+	function mobileHistoryAppend() {
+		var path = &#039;compose?p=&#039; + window.location.pathname;
+		var returnPath = window.location.pathname.slice(1) + window.location.search;
+
+		// Remove relative path from returnPath
+		if (returnPath.startsWith(config.relative_path.slice(1))) {
+			returnPath = returnPath.slice(config.relative_path.length);
+		}
+
+		// Add in return path to be caught by ajaxify when post is completed, or if back is pressed
+		window.history.replaceState({
+			url: null,
+			returnPath: returnPath,
+		}, returnPath, config.relative_path + &#039;/&#039; + returnPath);
+
+		// Update address bar in case f5 is pressed
+		window.history.pushState({
+			url: path,
+		}, path, `${config.relative_path}/${returnPath}`);
+	}
+
+	function handleHelp(postContainer) {
+		var helpBtn = postContainer.find(&#039;.help&#039;);
+		socket.emit(&#039;plugins.composer.renderHelp&#039;, function (err, html) {
+			if (!err &amp;&amp; html &amp;&amp; html.length &gt; 0) {
+				helpBtn.removeClass(&#039;hidden&#039;);
+				helpBtn.on(&#039;click&#039;, function () {
+					bootbox.alert(html);
+				});
+			}
+		});
+	}
+
+	function handleSearch(postContainer) {
+		var uuid = postContainer.attr(&#039;data-uuid&#039;);
+		var isEditing = composer.posts[uuid] &amp;&amp; composer.posts[uuid].action === &#039;posts.edit&#039;;
+		var env = utils.findBootstrapEnvironment();
+		var isMobile = env === &#039;xs&#039; || env === &#039;sm&#039;;
+		if (isEditing || isMobile) {
+			return;
+		}
+
+		search.enableQuickSearch({
+			searchElements: {
+				inputEl: postContainer.find(&#039;input.title&#039;),
+				resultEl: postContainer.find(&#039;.quick-search-container&#039;),
+			},
+			hideOnNoMatches: true,
+		});
+	}
+
+	function activate(post_uuid) {
+		if (composer.active &amp;&amp; composer.active !== post_uuid) {
+			composer.minimize(composer.active);
+		}
+
+		composer.active = post_uuid;
+		$(window).trigger(&#039;action:composer.activate&#039;, {
+			post_uuid: post_uuid,
+		});
+	}
+
+	function focusElements(postContainer) {
+		setTimeout(function () {
+			var title = postContainer.find(&#039;input.title&#039;);
+
+			if (title.length) {
+				title.focus();
+			} else {
+				postContainer.find(&#039;textarea&#039;).focus().putCursorAtEnd();
+			}
+		}, 20);
+	}
+
+	async function post(post_uuid) {
+		var postData = composer.posts[post_uuid];
+		var postContainer = $(&#039;.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;);
+		var handleEl = postContainer.find(&#039;.handle&#039;);
+		var titleEl = postContainer.find(&#039;.title&#039;);
+		var bodyEl = postContainer.find(&#039;textarea&#039;);
+		var thumbEl = postContainer.find(&#039;input#topic-thumb-url&#039;);
+		var onComposeRoute = postData.hasOwnProperty(&#039;template&#039;) &amp;&amp; postData.template.compose === true;
+		const submitBtn = postContainer.find(&#039;.composer-submit&#039;);
+
+		titleEl.val(titleEl.val().trim());
+		bodyEl.val(utils.rtrim(bodyEl.val()));
+		if (thumbEl.length) {
+			thumbEl.val(thumbEl.val().trim());
+		}
+
+		var action = postData.action;
+
+		var checkTitle = (postData.hasOwnProperty(&#039;cid&#039;) || parseInt(postData.pid, 10)) &amp;&amp; postContainer.find(&#039;input.title&#039;).length;
+		var isCategorySelected = !checkTitle || (checkTitle &amp;&amp; parseInt(postData.cid, 10));
+
+		// Specifically for checking title/body length via plugins
+		var payload = {
+			post_uuid: post_uuid,
+			postData: postData,
+			postContainer: postContainer,
+			titleEl: titleEl,
+			titleLen: titleEl.val().length,
+			bodyEl: bodyEl,
+			bodyLen: bodyEl.val().length,
+		};
+
+		await hooks.fire(&#039;filter:composer.check&#039;, payload);
+		$(window).trigger(&#039;action:composer.check&#039;, payload);
+
+		if (payload.error) {
+			return composerAlert(post_uuid, payload.error);
+		}
+
+		if (uploads.inProgress[post_uuid] &amp;&amp; uploads.inProgress[post_uuid].length) {
+			return composerAlert(post_uuid, &#039;[[error:still-uploading]]&#039;);
+		} else if (checkTitle &amp;&amp; payload.titleLen &lt; parseInt(config.minimumTitleLength, 10)) {
+			return composerAlert(post_uuid, &#039;[[error:title-too-short, &#039; + config.minimumTitleLength + &#039;]]&#039;);
+		} else if (checkTitle &amp;&amp; payload.titleLen &gt; parseInt(config.maximumTitleLength, 10)) {
+			return composerAlert(post_uuid, &#039;[[error:title-too-long, &#039; + config.maximumTitleLength + &#039;]]&#039;);
+		} else if (action === &#039;topics.post&#039; &amp;&amp; !isCategorySelected) {
+			return composerAlert(post_uuid, &#039;[[error:category-not-selected]]&#039;);
+		} else if (payload.bodyLen &lt; parseInt(config.minimumPostLength, 10)) {
+			return composerAlert(post_uuid, &#039;[[error:content-too-short, &#039; + config.minimumPostLength + &#039;]]&#039;);
+		} else if (payload.bodyLen &gt; parseInt(config.maximumPostLength, 10)) {
+			return composerAlert(post_uuid, &#039;[[error:content-too-long, &#039; + config.maximumPostLength + &#039;]]&#039;);
+		} else if (checkTitle &amp;&amp; !tags.isEnoughTags(post_uuid)) {
+			return composerAlert(post_uuid, &#039;[[error:not-enough-tags, &#039; + tags.minTagCount() + &#039;]]&#039;);
+		} else if (scheduler.isActive() &amp;&amp; scheduler.getTimestamp() &lt;= Date.now()) {
+			return composerAlert(post_uuid, &#039;[[error:scheduling-to-past]]&#039;);
+		}
+
+		let composerData = {
+			uuid: post_uuid,
+		};
+		let method = &#039;post&#039;;
+		let route = &#039;&#039;;
+
+		if (action === &#039;topics.post&#039;) {
+			route = &#039;/topics&#039;;
+			composerData = {
+				...composerData,
+				handle: handleEl ? handleEl.val() : undefined,
+				title: titleEl.val(),
+				content: bodyEl.val(),
+				thumb: thumbEl.val() || &#039;&#039;,
+				cid: categoryList.getSelectedCid(),
+				tags: tags.getTags(post_uuid),
+				timestamp: scheduler.getTimestamp(),
+			};
+		} else if (action === &#039;posts.reply&#039;) {
+			route = `/topics/${postData.tid}`;
+			composerData = {
+				...composerData,
+				tid: postData.tid,
+				handle: handleEl ? handleEl.val() : undefined,
+				content: bodyEl.val(),
+				toPid: postData.toPid,
+			};
+		} else if (action === &#039;posts.edit&#039;) {
+			method = &#039;put&#039;;
+			route = `/posts/${postData.pid}`;
+			composerData = {
+				...composerData,
+				pid: postData.pid,
+				handle: handleEl ? handleEl.val() : undefined,
+				content: bodyEl.val(),
+				title: titleEl.val(),
+				thumb: thumbEl.val() || &#039;&#039;,
+				tags: tags.getTags(post_uuid),
+				timestamp: scheduler.getTimestamp(),
+			};
+		}
+		var submitHookData = {
+			composerEl: postContainer,
+			action: action,
+			composerData: composerData,
+			postData: postData,
+			redirect: true,
+		};
+
+		await hooks.fire(&#039;filter:composer.submit&#039;, submitHookData);
+		hooks.fire(&#039;action:composer.submit&#039;, Object.freeze(submitHookData));
+
+		// Minimize composer (and set textarea as readonly) while submitting
+		var taskbarIconEl = $(&#039;#taskbar .composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;] i&#039;);
+		var textareaEl = postContainer.find(&#039;.write&#039;);
+		taskbarIconEl.removeClass(&#039;fa-plus&#039;).addClass(&#039;fa-circle-o-notch fa-spin&#039;);
+		composer.minimize(post_uuid);
+		textareaEl.prop(&#039;readonly&#039;, true);
+
+		api[method](route, composerData)
+			.then((data) =&gt; {
+				submitBtn.removeAttr(&#039;disabled&#039;);
+				postData.submitted = true;
+
+				composer.discard(post_uuid);
+				drafts.removeDraft(postData.save_id);
+
+				if (data.queued) {
+					alerts.alert({
+						type: &#039;success&#039;,
+						title: &#039;[[global:alert.success]]&#039;,
+						message: data.message,
+						timeout: 10000,
+						clickfn: function () {
+							ajaxify.go(`/post-queue/${data.id}`);
+						},
+					});
+				} else if (action === &#039;topics.post&#039;) {
+					if (submitHookData.redirect) {
+						ajaxify.go(&#039;topic/&#039; + data.slug, undefined, (onComposeRoute || composer.bsEnvironment === &#039;xs&#039; || composer.bsEnvironment === &#039;sm&#039;));
+					}
+				} else if (action === &#039;posts.reply&#039;) {
+					if (onComposeRoute || composer.bsEnvironment === &#039;xs&#039; || composer.bsEnvironment === &#039;sm&#039;) {
+						window.history.back();
+					} else if (submitHookData.redirect &amp;&amp;
+						((ajaxify.data.template.name !== &#039;topic&#039;) ||
+						(ajaxify.data.template.topic &amp;&amp; parseInt(postData.tid, 10) !== parseInt(ajaxify.data.tid, 10)))
+					) {
+						ajaxify.go(&#039;post/&#039; + data.pid);
+					}
+				} else {
+					removeComposerHistory();
+				}
+
+				hooks.fire(&#039;action:composer.&#039; + action, { composerData: composerData, data: data });
+			})
+			.catch((err) =&gt; {
+				// Restore composer on error
+				composer.load(post_uuid);
+				textareaEl.prop(&#039;readonly&#039;, false);
+				if (err.message === &#039;[[error:email-not-confirmed]]&#039;) {
+					return messagesModule.showEmailConfirmWarning(err.message);
+				}
+				composerAlert(post_uuid, err.message);
+			});
+	}
+
+	function onShow() {
+		$(&#039;html&#039;).addClass(&#039;composing&#039;);
+	}
+
+	function onHide() {
+		$(&#039;body&#039;).css({ paddingBottom: 0 });
+		$(&#039;html&#039;).removeClass(&#039;composing&#039;);
+		app.toggleNavbar(true);
+	}
+
+	composer.discard = function (post_uuid) {
+		if (composer.posts[post_uuid]) {
+			var postData = composer.posts[post_uuid];
+			var postContainer = $(&#039;.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;);
+			postContainer.remove();
+			drafts.removeDraft(postData.save_id);
+			topicThumbs.deleteAll(post_uuid);
+
+			taskbar.discard(&#039;composer&#039;, post_uuid);
+			$(&#039;[data-action=&quot;post&quot;]&#039;).removeAttr(&#039;disabled&#039;);
+
+			hooks.fire(&#039;action:composer.discard&#039;, {
+				post_uuid: post_uuid,
+				postData: postData,
+			});
+			delete composer.posts[post_uuid];
+			composer.active = undefined;
+		}
+		scheduler.reset();
+		onHide();
+	};
+
+	// Alias to .discard();
+	composer.close = composer.discard;
+
+	composer.minimize = function (post_uuid) {
+		var postContainer = $(&#039;.composer[data-uuid=&quot;&#039; + post_uuid + &#039;&quot;]&#039;);
+		postContainer.css(&#039;visibility&#039;, &#039;hidden&#039;);
+		composer.active = undefined;
+		taskbar.minimize(&#039;composer&#039;, post_uuid);
+		$(window).trigger(&#039;action:composer.minimize&#039;, {
+			post_uuid: post_uuid,
+		});
+
+		onHide();
+	};
+
+	composer.minimizeActive = function () {
+		if (composer.active) {
+			composer.miminize(composer.active);
+		}
+	};
+
+	composer.updateThumbCount = function (uuid, postContainer) {
+		const composerObj = composer.posts[uuid];
+		if (composerObj.action === &#039;topics.post&#039; || (composerObj.action === &#039;posts.edit&#039; &amp;&amp; composerObj.isMain)) {
+			const calls = [
+				topicThumbs.get(uuid),
+			];
+			if (composerObj.pid) {
+				calls.push(topicThumbs.getByPid(composerObj.pid));
+			}
+			Promise.all(calls).then((thumbs) =&gt; {
+				thumbs = thumbs.reduce((memo, cur) =&gt; {
+					memo = memo.concat(cur);
+					return memo;
+				});
+
+				if (thumbs.length) {
+					const formatEl = postContainer.find(&#039;[data-format=&quot;thumbs&quot;]&#039;);
+					formatEl.attr(&#039;data-count&#039;, thumbs.length);
+				}
+			});
+		}
+	};
+
+	return composer;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

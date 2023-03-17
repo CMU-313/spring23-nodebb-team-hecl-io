@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/plugins/install.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/plugins/install.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">180</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.50</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.79</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const path = require(&#039;path&#039;);
+const fs = require(&#039;fs&#039;).promises;
+const nconf = require(&#039;nconf&#039;);
+const os = require(&#039;os&#039;);
+const cproc = require(&#039;child_process&#039;);
+const util = require(&#039;util&#039;);
+const request = require(&#039;request-promise-native&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const pubsub = require(&#039;../pubsub&#039;);
+const { paths } = require(&#039;../constants&#039;);
+const pkgInstall = require(&#039;../cli/package-install&#039;);
+
+const packageManager = pkgInstall.getPackageManager();
+let packageManagerExecutable = packageManager;
+const packageManagerCommands = {
+    yarn: {
+        install: &#039;add&#039;,
+        uninstall: &#039;remove&#039;,
+    },
+    npm: {
+        install: &#039;install&#039;,
+        uninstall: &#039;uninstall&#039;,
+    },
+    cnpm: {
+        install: &#039;install&#039;,
+        uninstall: &#039;uninstall&#039;,
+    },
+    pnpm: {
+        install: &#039;install&#039;,
+        uninstall: &#039;uninstall&#039;,
+    },
+};
+
+if (process.platform === &#039;win32&#039;) {
+    packageManagerExecutable += &#039;.cmd&#039;;
+}
+
+module.exports = function (Plugins) {
+    if (nconf.get(&#039;isPrimary&#039;)) {
+        pubsub.on(&#039;plugins:toggleInstall&#039;, (data) =&gt; {
+            if (data.hostname !== os.hostname()) {
+                toggleInstall(data.id, data.version);
+            }
+        });
+
+        pubsub.on(&#039;plugins:upgrade&#039;, (data) =&gt; {
+            if (data.hostname !== os.hostname()) {
+                upgrade(data.id, data.version);
+            }
+        });
+    }
+
+    Plugins.toggleActive = async function (id) {
+        if (nconf.get(&#039;plugins:active&#039;)) {
+            winston.error(&#039;Cannot activate plugins while plugin state is set in the configuration (config.json, environmental variables or terminal arguments), please modify the configuration instead&#039;);
+            throw new Error(&#039;[[error:plugins-set-in-configuration]]&#039;);
+        }
+        const isActive = await Plugins.isActive(id);
+        if (isActive) {
+            await db.sortedSetRemove(&#039;plugins:active&#039;, id);
+        } else {
+            const count = await db.sortedSetCard(&#039;plugins:active&#039;);
+            await db.sortedSetAdd(&#039;plugins:active&#039;, count, id);
+        }
+        meta.reloadRequired = true;
+        const hook = isActive ? &#039;deactivate&#039; : &#039;activate&#039;;
+        Plugins.hooks.fire(`action:plugin.${hook}`, { id: id });
+        return { id: id, active: !isActive };
+    };
+
+    Plugins.checkWhitelist = async function (id, version) {
+        const body = await request({
+            method: &#039;GET&#039;,
+            url: `https://packages.nodebb.org/api/v1/plugins/${encodeURIComponent(id)}`,
+            json: true,
+        });
+
+        if (body &amp;&amp; body.code === &#039;ok&#039; &amp;&amp; (version === &#039;latest&#039; || body.payload.valid.includes(version))) {
+            return;
+        }
+
+        throw new Error(&#039;[[error:plugin-not-whitelisted]]&#039;);
+    };
+
+    Plugins.suggest = async function (pluginId, nbbVersion) {
+        const body = await request({
+            method: &#039;GET&#039;,
+            url: `https://packages.nodebb.org/api/v1/suggest?package=${encodeURIComponent(pluginId)}&amp;version=${encodeURIComponent(nbbVersion)}`,
+            json: true,
+        });
+        return body;
+    };
+
+    Plugins.toggleInstall = async function (id, version) {
+        pubsub.publish(&#039;plugins:toggleInstall&#039;, { hostname: os.hostname(), id: id, version: version });
+        return await toggleInstall(id, version);
+    };
+
+    const runPackageManagerCommandAsync = util.promisify(runPackageManagerCommand);
+
+    async function toggleInstall(id, version) {
+        const [installed, active] = await Promise.all([
+            Plugins.isInstalled(id),
+            Plugins.isActive(id),
+        ]);
+        const type = installed ? &#039;uninstall&#039; : &#039;install&#039;;
+        if (active) {
+            await Plugins.toggleActive(id);
+        }
+        await runPackageManagerCommandAsync(type, id, version || &#039;latest&#039;);
+        const pluginData = await Plugins.get(id);
+        Plugins.hooks.fire(`action:plugin.${type}`, { id: id, version: version });
+        return pluginData;
+    }
+
+    function runPackageManagerCommand(command, pkgName, version, callback) {
+        cproc.execFile(packageManagerExecutable, [
+            packageManagerCommands[packageManager][command],
+            pkgName + (command === &#039;install&#039; ? `@${version}` : &#039;&#039;),
+            &#039;--save&#039;,
+        ], (err, stdout) =&gt; {
+            if (err) {
+                return callback(err);
+            }
+
+            winston.verbose(`[plugins/${command}] ${stdout}`);
+            callback();
+        });
+    }
+
+
+    Plugins.upgrade = async function (id, version) {
+        pubsub.publish(&#039;plugins:upgrade&#039;, { hostname: os.hostname(), id: id, version: version });
+        return await upgrade(id, version);
+    };
+
+    async function upgrade(id, version) {
+        await runPackageManagerCommandAsync(&#039;install&#039;, id, version || &#039;latest&#039;);
+        const isActive = await Plugins.isActive(id);
+        meta.reloadRequired = isActive;
+        return isActive;
+    }
+
+    Plugins.isInstalled = async function (id) {
+        const pluginDir = path.join(paths.nodeModules, id);
+        try {
+            const stats = await fs.stat(pluginDir);
+            return stats.isDirectory();
+        } catch (err) {
+            return false;
+        }
+    };
+
+    Plugins.isActive = async function (id) {
+        if (nconf.get(&#039;plugins:active&#039;)) {
+            return nconf.get(&#039;plugins:active&#039;).includes(id);
+        }
+        return await db.isSortedSetMember(&#039;plugins:active&#039;, id);
+    };
+
+    Plugins.getActive = async function () {
+        if (nconf.get(&#039;plugins:active&#039;)) {
+            return nconf.get(&#039;plugins:active&#039;);
+        }
+        return await db.getSortedSetRange(&#039;plugins:active&#039;, 0, -1);
+    };
+
+    Plugins.autocomplete = async (fragment) =&gt; {
+        const pluginDir = paths.nodeModules;
+        const plugins = (await fs.readdir(pluginDir)).filter(filename =&gt; filename.startsWith(fragment));
+
+        // Autocomplete only if single match
+        return plugins.length === 1 ? plugins.pop() : fragment;
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

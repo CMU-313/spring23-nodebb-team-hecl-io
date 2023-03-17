@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/accounts/helpers.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/accounts/helpers.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">56.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">267</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">43.72</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.05</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../../database&#039;);
+const user = require(&#039;../../user&#039;);
+const groups = require(&#039;../../groups&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const meta = require(&#039;../../meta&#039;);
+const utils = require(&#039;../../utils&#039;);
+const privileges = require(&#039;../../privileges&#039;);
+const translator = require(&#039;../../translator&#039;);
+const messaging = require(&#039;../../messaging&#039;);
+const categories = require(&#039;../../categories&#039;);
+
+const helpers = module.exports;
+
+helpers.getUserDataByUserSlug = async function (userslug, callerUID, query = {}) {
+    const uid = await user.getUidByUserslug(userslug);
+    if (!uid) {
+        return null;
+    }
+
+    const results = await getAllData(uid, callerUID);
+    if (!results.userData) {
+        throw new Error(&#039;[[error:invalid-uid]]&#039;);
+    }
+    await parseAboutMe(results.userData);
+
+    let { userData } = results;
+    const { userSettings } = results;
+    const { isAdmin } = results;
+    const { isGlobalModerator } = results;
+    const { isModerator } = results;
+    const { canViewInfo } = results;
+    const isSelf = parseInt(callerUID, 10) === parseInt(userData.uid, 10);
+
+    userData.age = Math.max(
+        0,
+        userData.birthday ? Math.floor((new Date().getTime() - new Date(userData.birthday).getTime()) / 31536000000) : 0
+    );
+
+    userData = await user.hidePrivateData(userData, callerUID);
+    userData.emailClass = userSettings.showemail ? &#039;hide&#039; : &#039;&#039;;
+
+    // If email unconfirmed, hide from result set
+    if (!userData[&#039;email:confirmed&#039;]) {
+        userData.email = &#039;&#039;;
+    }
+
+    if (isAdmin || isSelf || (canViewInfo &amp;&amp; !results.isTargetAdmin)) {
+        userData.ips = results.ips;
+    }
+
+    if (!isAdmin &amp;&amp; !isGlobalModerator &amp;&amp; !isModerator) {
+        userData.moderationNote = undefined;
+    }
+
+    userData.isBlocked = results.isBlocked;
+    userData.yourid = callerUID;
+    userData.theirid = userData.uid;
+    userData.isTargetAdmin = results.isTargetAdmin;
+    userData.isAdmin = isAdmin;
+    userData.isGlobalModerator = isGlobalModerator;
+    userData.isModerator = isModerator;
+    userData.isAdminOrGlobalModerator = isAdmin || isGlobalModerator;
+    userData.isAdminOrGlobalModeratorOrModerator = isAdmin || isGlobalModerator || isModerator;
+    userData.isSelfOrAdminOrGlobalModerator = isSelf || isAdmin || isGlobalModerator;
+    userData.canEdit = results.canEdit;
+    userData.canBan = results.canBanUser;
+    userData.canMute = results.canMuteUser;
+    userData.canFlag = (await privileges.users.canFlag(callerUID, userData.uid)).flag;
+    userData.canChangePassword = isAdmin || (isSelf &amp;&amp; !meta.config[&#039;password:disableEdit&#039;]);
+    userData.isSelf = isSelf;
+    userData.isFollowing = results.isFollowing;
+    userData.hasPrivateChat = results.hasPrivateChat;
+    userData.showHidden = results.canEdit; // remove in v1.19.0
+    userData.groups = Array.isArray(results.groups) &amp;&amp; results.groups.length ? results.groups[0] : [];
+    userData.disableSignatures = meta.config.disableSignatures === 1;
+    userData[&#039;reputation:disabled&#039;] = meta.config[&#039;reputation:disabled&#039;] === 1;
+    userData[&#039;downvote:disabled&#039;] = meta.config[&#039;downvote:disabled&#039;] === 1;
+    userData[&#039;email:confirmed&#039;] = !!userData[&#039;email:confirmed&#039;];
+    userData.profile_links = filterLinks(results.profile_menu.links, {
+        self: isSelf,
+        other: !isSelf,
+        moderator: isModerator,
+        globalMod: isGlobalModerator,
+        admin: isAdmin,
+        canViewInfo: canViewInfo,
+    });
+
+    userData.sso = results.sso.associations;
+    userData.banned = Boolean(userData.banned);
+    userData.muted = parseInt(userData.mutedUntil, 10) &gt; Date.now();
+    userData.website = escape(userData.website);
+    userData.websiteLink = !userData.website.startsWith(&#039;http&#039;) ? `http://${userData.website}` : userData.website;
+    userData.websiteName = userData.website.replace(validator.escape(&#039;http://&#039;), &#039;&#039;).replace(validator.escape(&#039;https://&#039;), &#039;&#039;);
+
+    userData.fullname = escape(userData.fullname);
+    userData.location = escape(userData.location);
+    userData.signature = escape(userData.signature);
+    userData.birthday = validator.escape(String(userData.birthday || &#039;&#039;));
+    userData.moderationNote = validator.escape(String(userData.moderationNote || &#039;&#039;));
+
+    if (userData[&#039;cover:url&#039;]) {
+        userData[&#039;cover:url&#039;] = userData[&#039;cover:url&#039;].startsWith(&#039;http&#039;) ? userData[&#039;cover:url&#039;] : (nconf.get(&#039;relative_path&#039;) + userData[&#039;cover:url&#039;]);
+    } else {
+        userData[&#039;cover:url&#039;] = require(&#039;../../coverPhoto&#039;).getDefaultProfileCover(userData.uid);
+    }
+
+    userData[&#039;cover:position&#039;] = validator.escape(String(userData[&#039;cover:position&#039;] || &#039;50% 50%&#039;));
+    userData[&#039;username:disableEdit&#039;] = !userData.isAdmin &amp;&amp; meta.config[&#039;username:disableEdit&#039;];
+    userData[&#039;email:disableEdit&#039;] = !userData.isAdmin &amp;&amp; meta.config[&#039;email:disableEdit&#039;];
+
+    await getCounts(userData, callerUID);
+
+    const hookData = await plugins.hooks.fire(&#039;filter:helpers.getUserDataByUserSlug&#039;, {
+        userData: userData,
+        callerUID: callerUID,
+        query: query,
+    });
+    return hookData.userData;
+};
+
+function escape(value) {
+    return translator.escape(validator.escape(String(value || &#039;&#039;)));
+}
+
+async function getAllData(uid, callerUID) {
+    return await utils.promiseParallel({
+        userData: user.getUserData(uid),
+        isTargetAdmin: user.isAdministrator(uid),
+        userSettings: user.getSettings(uid),
+        isAdmin: user.isAdministrator(callerUID),
+        isGlobalModerator: user.isGlobalModerator(callerUID),
+        isModerator: user.isModeratorOfAnyCategory(callerUID),
+        isFollowing: user.isFollowing(callerUID, uid),
+        ips: user.getIPs(uid, 4),
+        profile_menu: getProfileMenu(uid, callerUID),
+        groups: groups.getUserGroups([uid]),
+        sso: plugins.hooks.fire(&#039;filter:auth.list&#039;, { uid: uid, associations: [] }),
+        canEdit: privileges.users.canEdit(callerUID, uid),
+        canBanUser: privileges.users.canBanUser(callerUID, uid),
+        canMuteUser: privileges.users.canMuteUser(callerUID, uid),
+        isBlocked: user.blocks.is(uid, callerUID),
+        canViewInfo: privileges.global.can(&#039;view:users:info&#039;, callerUID),
+        hasPrivateChat: messaging.hasPrivateChat(callerUID, uid),
+    });
+}
+
+async function getCounts(userData, callerUID) {
+    const { uid } = userData;
+    const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, callerUID, &#039;topics:read&#039;);
+    const promises = {
+        posts: db.sortedSetsCardSum(cids.map(c =&gt; `cid:${c}:uid:${uid}:pids`)),
+        best: Promise.all(cids.map(async c =&gt; db.sortedSetCount(`cid:${c}:uid:${uid}:pids:votes`, 1, &#039;+inf&#039;))),
+        controversial: Promise.all(cids.map(async c =&gt; db.sortedSetCount(`cid:${c}:uid:${uid}:pids:votes`, &#039;-inf&#039;, -1))),
+        topics: db.sortedSetsCardSum(cids.map(c =&gt; `cid:${c}:uid:${uid}:tids`)),
+    };
+    if (userData.isAdmin || userData.isSelf) {
+        promises.ignored = db.sortedSetCard(`uid:${uid}:ignored_tids`);
+        promises.watched = db.sortedSetCard(`uid:${uid}:followed_tids`);
+        promises.upvoted = db.sortedSetCard(`uid:${uid}:upvote`);
+        promises.downvoted = db.sortedSetCard(`uid:${uid}:downvote`);
+        promises.bookmarks = db.sortedSetCard(`uid:${uid}:bookmarks`);
+        promises.uploaded = db.sortedSetCard(`uid:${uid}:uploads`);
+        promises.categoriesWatched = user.getWatchedCategories(uid);
+        promises.blocks = user.getUserField(userData.uid, &#039;blocksCount&#039;);
+    }
+    const counts = await utils.promiseParallel(promises);
+    counts.best = counts.best.reduce((sum, count) =&gt; sum + count, 0);
+    counts.controversial = counts.controversial.reduce((sum, count) =&gt; sum + count, 0);
+    counts.categoriesWatched = counts.categoriesWatched &amp;&amp; counts.categoriesWatched.length;
+    counts.groups = userData.groups.length;
+    counts.following = userData.followingCount;
+    counts.followers = userData.followerCount;
+    userData.blocksCount = counts.blocks || 0; // for backwards compatibility, remove in 1.16.0
+    userData.counts = counts;
+}
+
+async function getProfileMenu(uid, callerUID) {
+    const links = [{
+        id: &#039;info&#039;,
+        route: &#039;info&#039;,
+        name: &#039;[[user:account_info]]&#039;,
+        icon: &#039;fa-info&#039;,
+        visibility: {
+            self: false,
+            other: false,
+            moderator: false,
+            globalMod: false,
+            admin: true,
+            canViewInfo: true,
+        },
+    }, {
+        id: &#039;sessions&#039;,
+        route: &#039;sessions&#039;,
+        name: &#039;[[pages:account/sessions]]&#039;,
+        icon: &#039;fa-group&#039;,
+        visibility: {
+            self: true,
+            other: false,
+            moderator: false,
+            globalMod: false,
+            admin: false,
+            canViewInfo: false,
+        },
+    }];
+
+    if (meta.config.gdpr_enabled) {
+        links.push({
+            id: &#039;consent&#039;,
+            route: &#039;consent&#039;,
+            name: &#039;[[user:consent.title]]&#039;,
+            icon: &#039;fa-thumbs-o-up&#039;,
+            visibility: {
+                self: true,
+                other: false,
+                moderator: false,
+                globalMod: false,
+                admin: false,
+                canViewInfo: false,
+            },
+        });
+    }
+
+    return await plugins.hooks.fire(&#039;filter:user.profileMenu&#039;, {
+        uid: uid,
+        callerUID: callerUID,
+        links: links,
+    });
+}
+
+async function parseAboutMe(userData) {
+    if (!userData.aboutme) {
+        userData.aboutme = &#039;&#039;;
+        userData.aboutmeParsed = &#039;&#039;;
+        return;
+    }
+    userData.aboutme = validator.escape(String(userData.aboutme || &#039;&#039;));
+    const parsed = await plugins.hooks.fire(&#039;filter:parse.aboutme&#039;, userData.aboutme);
+    userData.aboutme = translator.escape(userData.aboutme);
+    userData.aboutmeParsed = translator.escape(parsed);
+}
+
+function filterLinks(links, states) {
+    return links.filter((link, index) =&gt; {
+        // Default visibility
+        link.visibility = {
+            self: true,
+            other: true,
+            moderator: true,
+            globalMod: true,
+            admin: true,
+            canViewInfo: true,
+            ...link.visibility,
+        };
+
+        const permit = Object.keys(states).some(state =&gt; states[state] &amp;&amp; link.visibility[state]);
+
+        links[index].public = permit;
+        return permit;
+    });
+}
+
+require(&#039;../../promisify&#039;)(helpers);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

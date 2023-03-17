@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/groups/data.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/groups/data.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.49</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">108</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">25.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.46</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const translator = require(&#039;../translator&#039;);
+
+const intFields = [
+    &#039;createtime&#039;, &#039;memberCount&#039;, &#039;hidden&#039;, &#039;system&#039;, &#039;private&#039;,
+    &#039;userTitleEnabled&#039;, &#039;disableJoinRequests&#039;, &#039;disableLeave&#039;,
+];
+
+module.exports = function (Groups) {
+    Groups.getGroupsFields = async function (groupNames, fields) {
+        if (!Array.isArray(groupNames) || !groupNames.length) {
+            return [];
+        }
+
+        const ephemeralIdx = groupNames.reduce((memo, cur, idx) =&gt; {
+            if (Groups.ephemeralGroups.includes(cur)) {
+                memo.push(idx);
+            }
+            return memo;
+        }, []);
+
+        const keys = groupNames.map(groupName =&gt; `group:${groupName}`);
+        const groupData = await db.getObjects(keys, fields);
+        if (ephemeralIdx.length) {
+            ephemeralIdx.forEach((idx) =&gt; {
+                groupData[idx] = Groups.getEphemeralGroup(groupNames[idx]);
+            });
+        }
+
+        groupData.forEach(group =&gt; modifyGroup(group, fields));
+
+        const results = await plugins.hooks.fire(&#039;filter:groups.get&#039;, { groups: groupData });
+        return results.groups;
+    };
+
+    Groups.getGroupsData = async function (groupNames) {
+        return await Groups.getGroupsFields(groupNames, []);
+    };
+
+    Groups.getGroupData = async function (groupName) {
+        const groupsData = await Groups.getGroupsData([groupName]);
+        return Array.isArray(groupsData) &amp;&amp; groupsData[0] ? groupsData[0] : null;
+    };
+
+    Groups.getGroupField = async function (groupName, field) {
+        const groupData = await Groups.getGroupFields(groupName, [field]);
+        return groupData ? groupData[field] : null;
+    };
+
+    Groups.getGroupFields = async function (groupName, fields) {
+        const groups = await Groups.getGroupsFields([groupName], fields);
+        return groups ? groups[0] : null;
+    };
+
+    Groups.setGroupField = async function (groupName, field, value) {
+        await db.setObjectField(`group:${groupName}`, field, value);
+        plugins.hooks.fire(&#039;action:group.set&#039;, { field: field, value: value, type: &#039;set&#039; });
+    };
+};
+
+function modifyGroup(group, fields) {
+    if (group) {
+        db.parseIntFields(group, intFields, fields);
+
+        escapeGroupData(group);
+        group.userTitleEnabled = ([null, undefined].includes(group.userTitleEnabled)) ? 1 : group.userTitleEnabled;
+        group.labelColor = validator.escape(String(group.labelColor || &#039;#000000&#039;));
+        group.textColor = validator.escape(String(group.textColor || &#039;#ffffff&#039;));
+        group.icon = validator.escape(String(group.icon || &#039;&#039;));
+        group.createtimeISO = utils.toISOString(group.createtime);
+        group.private = ([null, undefined].includes(group.private)) ? 1 : group.private;
+        group.memberPostCids = group.memberPostCids || &#039;&#039;;
+        group.memberPostCidsArray = group.memberPostCids.split(&#039;,&#039;).map(cid =&gt; parseInt(cid, 10)).filter(Boolean);
+
+        group[&#039;cover:thumb:url&#039;] = group[&#039;cover:thumb:url&#039;] || group[&#039;cover:url&#039;];
+
+        if (group[&#039;cover:url&#039;]) {
+            group[&#039;cover:url&#039;] = group[&#039;cover:url&#039;].startsWith(&#039;http&#039;) ? group[&#039;cover:url&#039;] : (nconf.get(&#039;relative_path&#039;) + group[&#039;cover:url&#039;]);
+        } else {
+            group[&#039;cover:url&#039;] = require(&#039;../coverPhoto&#039;).getDefaultGroupCover(group.name);
+        }
+
+        if (group[&#039;cover:thumb:url&#039;]) {
+            group[&#039;cover:thumb:url&#039;] = group[&#039;cover:thumb:url&#039;].startsWith(&#039;http&#039;) ? group[&#039;cover:thumb:url&#039;] : (nconf.get(&#039;relative_path&#039;) + group[&#039;cover:thumb:url&#039;]);
+        } else {
+            group[&#039;cover:thumb:url&#039;] = require(&#039;../coverPhoto&#039;).getDefaultGroupCover(group.name);
+        }
+
+        group[&#039;cover:position&#039;] = validator.escape(String(group[&#039;cover:position&#039;] || &#039;50% 50%&#039;));
+    }
+}
+
+function escapeGroupData(group) {
+    if (group) {
+        group.nameEncoded = encodeURIComponent(group.name);
+        group.displayName = validator.escape(String(group.name));
+        group.description = validator.escape(String(group.description || &#039;&#039;));
+        group.userTitle = validator.escape(String(group.userTitle || &#039;&#039;));
+        group.userTitleEscaped = translator.escape(group.userTitle);
+    }
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

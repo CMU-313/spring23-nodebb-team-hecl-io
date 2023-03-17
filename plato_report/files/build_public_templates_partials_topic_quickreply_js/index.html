@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/partials/topic/quickreply.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/partials/topic/quickreply.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.61</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">44</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">30.30</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.66</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return (guard((context != null &amp;&amp; context[&#039;privileges&#039;] != null) ? context[&#039;privileges&#039;][&#039;topics:reply&#039;] : null) ?
+        &quot;\n&lt;div component=\&quot;topic/quickreply/container\&quot; class=\&quot;clearfix quick-reply\&quot;&gt;\n    &lt;div class=\&quot;icon pull-left hidden-xs\&quot;&gt;\n        &lt;a href=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/user/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;posts&#039;] != null &amp;&amp; context[&#039;posts&#039;][&#039;user&#039;] != null) ? context[&#039;posts&#039;][&#039;user&#039;][&#039;userslug&#039;] : null)) :
+            &quot;#&quot;) + 
+          &quot;\&quot;&gt;\n            &quot; + 
+          __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null) ? context[&#039;loggedInUser&#039;] : null), &quot;46&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;&quot;, &quot;user/picture&quot;])) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;loggedInUser&#039;] != null) ? context[&#039;loggedInUser&#039;][&#039;status&#039;] : null) ?
+            &quot;\n            &lt;i component=\&quot;user/status\&quot; class=\&quot;fa fa-circle status &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;loggedInUser&#039;] != null) ? context[&#039;loggedInUser&#039;][&#039;status&#039;] : null)) + 
+              &quot;\&quot; title=\&quot;[[global:&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;loggedInUser&#039;] != null) ? context[&#039;loggedInUser&#039;][&#039;status&#039;] : null)) + 
+              &quot;]]\&quot;&gt;&lt;/i&gt;\n            &quot; :
+            &quot;&quot;) + 
+          &quot;\n        &lt;/a&gt;\n    &lt;/div&gt;\n    &lt;form method=\&quot;post\&quot; action=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/compose\&quot;&gt;\n        &lt;input type=\&quot;hidden\&quot; name=\&quot;tid\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;tid&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n        &lt;input type=\&quot;hidden\&quot; name=\&quot;_csrf\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;csrf_token&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n        &lt;div class=\&quot;quickreply-message\&quot;&gt;\n            &lt;textarea name=\&quot;content\&quot; component=\&quot;topic/quickreply/text\&quot; class=\&quot;form-control mousetrap\&quot; rows=\&quot;5\&quot; placeholder=\&quot;[[modules:composer.textarea.placeholder]]\&quot;&gt;&lt;/textarea&gt;\n            &lt;div class=\&quot;imagedrop\&quot;&gt;&lt;div&gt;[[topic:composer.drag_and_drop_images]]&lt;/div&gt;&lt;/div&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;btn-group pull-right\&quot;&gt;\n            &lt;button type=\&quot;submit\&quot; component=\&quot;topic/quickreply/button\&quot; class=\&quot;btn btn-primary\&quot;&gt;[[topic:post-quick-reply]]&lt;/button&gt;\n            &lt;button type=\&quot;submit\&quot; component=\&quot;topic/quickreply/expand\&quot; class=\&quot;btn btn-default\&quot; formmethod=\&quot;get\&quot;&gt;&lt;i class=\&quot;fa fa-expand\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n        &lt;/div&gt;\n    &lt;/form&gt;\n    &lt;form component=\&quot;topic/quickreply/upload\&quot; method=\&quot;post\&quot; enctype=\&quot;multipart/form-data\&quot;&gt;\n        &lt;input type=\&quot;file\&quot; name=\&quot;files[]\&quot; multiple class=\&quot;hidden\&quot;/&gt;\n    &lt;/form&gt;\n\n&lt;/div&gt;\n&quot; :
+        &quot;&quot;) + 
+      &quot;\n&quot;;
+  }
+
+  compiled.blocks = {
+    
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

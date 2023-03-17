@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/mongo/sorted.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/mongo/sorted.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">569</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">134.82</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">7.04</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const utils = require(&#039;../../utils&#039;);
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+    const dbHelpers = require(&#039;../helpers&#039;);
+
+    const util = require(&#039;util&#039;);
+    const sleep = util.promisify(setTimeout);
+
+    require(&#039;./sorted/add&#039;)(module);
+    require(&#039;./sorted/remove&#039;)(module);
+    require(&#039;./sorted/union&#039;)(module);
+    require(&#039;./sorted/intersect&#039;)(module);
+
+    module.getSortedSetRange = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, &#039;-inf&#039;, &#039;+inf&#039;, 1, false);
+    };
+
+    module.getSortedSetRevRange = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, &#039;-inf&#039;, &#039;+inf&#039;, -1, false);
+    };
+
+    module.getSortedSetRangeWithScores = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, &#039;-inf&#039;, &#039;+inf&#039;, 1, true);
+    };
+
+    module.getSortedSetRevRangeWithScores = async function (key, start, stop) {
+        return await getSortedSetRange(key, start, stop, &#039;-inf&#039;, &#039;+inf&#039;, -1, true);
+    };
+
+    async function getSortedSetRange(key, start, stop, min, max, sort, withScores) {
+        if (!key) {
+            return;
+        }
+        const isArray = Array.isArray(key);
+        if ((start &lt; 0 &amp;&amp; start &gt; stop) || (isArray &amp;&amp; !key.length)) {
+            return [];
+        }
+        const query = { _key: key };
+        if (isArray) {
+            if (key.length &gt; 1) {
+                query._key = { $in: key };
+            } else {
+                query._key = key[0];
+            }
+        }
+
+        if (min !== &#039;-inf&#039;) {
+            query.score = { $gte: min };
+        }
+        if (max !== &#039;+inf&#039;) {
+            query.score = query.score || {};
+            query.score.$lte = max;
+        }
+
+        if (max === min) {
+            query.score = max;
+        }
+
+        const fields = { _id: 0, _key: 0 };
+        if (!withScores) {
+            fields.score = 0;
+        }
+
+        let reverse = false;
+        if (start === 0 &amp;&amp; stop &lt; -1) {
+            reverse = true;
+            sort *= -1;
+            start = Math.abs(stop + 1);
+            stop = -1;
+        } else if (start &lt; 0 &amp;&amp; stop &gt; start) {
+            const tmp1 = Math.abs(stop + 1);
+            stop = Math.abs(start + 1);
+            start = tmp1;
+        }
+
+        let limit = stop - start + 1;
+        if (limit &lt;= 0) {
+            limit = 0;
+        }
+
+        let result = [];
+        async function doQuery(_key, fields, skip, limit) {
+            return await module.client.collection(&#039;objects&#039;).find({ ...query, ...{ _key: _key } }, { projection: fields })
+                .sort({ score: sort })
+                .skip(skip)
+                .limit(limit)
+                .toArray();
+        }
+
+        if (isArray &amp;&amp; key.length &gt; 100) {
+            const batches = [];
+            const batch = require(&#039;../../batch&#039;);
+            const batchSize = Math.ceil(key.length / Math.ceil(key.length / 100));
+            await batch.processArray(key, async currentBatch =&gt; batches.push(currentBatch), { batch: batchSize });
+            const batchData = await Promise.all(batches.map(
+                batch =&gt; doQuery({ $in: batch }, { _id: 0, _key: 0 }, 0, stop + 1)
+            ));
+            result = dbHelpers.mergeBatch(batchData, 0, stop, sort);
+            if (start &gt; 0) {
+                result = result.slice(start, stop !== -1 ? stop + 1 : undefined);
+            }
+        } else {
+            result = await doQuery(query._key, fields, start, limit);
+        }
+
+        if (reverse) {
+            result.reverse();
+        }
+        if (!withScores) {
+            result = result.map(item =&gt; item.value);
+        }
+
+        return result;
+    }
+
+    module.getSortedSetRangeByScore = async function (key, start, count, min, max) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, 1, false);
+    };
+
+    module.getSortedSetRevRangeByScore = async function (key, start, count, max, min) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, -1, false);
+    };
+
+    module.getSortedSetRangeByScoreWithScores = async function (key, start, count, min, max) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, 1, true);
+    };
+
+    module.getSortedSetRevRangeByScoreWithScores = async function (key, start, count, max, min) {
+        return await getSortedSetRangeByScore(key, start, count, min, max, -1, true);
+    };
+
+    async function getSortedSetRangeByScore(key, start, count, min, max, sort, withScores) {
+        if (parseInt(count, 10) === 0) {
+            return [];
+        }
+        const stop = (parseInt(count, 10) === -1) ? -1 : (start + count - 1);
+        return await getSortedSetRange(key, start, stop, min, max, sort, withScores);
+    }
+
+    module.sortedSetCount = async function (key, min, max) {
+        if (!key) {
+            return;
+        }
+
+        const query = { _key: key };
+        if (min !== &#039;-inf&#039;) {
+            query.score = { $gte: min };
+        }
+        if (max !== &#039;+inf&#039;) {
+            query.score = query.score || {};
+            query.score.$lte = max;
+        }
+
+        const count = await module.client.collection(&#039;objects&#039;).countDocuments(query);
+        return count || 0;
+    };
+
+    module.sortedSetCard = async function (key) {
+        if (!key) {
+            return 0;
+        }
+        const count = await module.client.collection(&#039;objects&#039;).countDocuments({ _key: key });
+        return parseInt(count, 10) || 0;
+    };
+
+    module.sortedSetsCard = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        const promises = keys.map(k =&gt; module.sortedSetCard(k));
+        return await Promise.all(promises);
+    };
+
+    module.sortedSetsCardSum = async function (keys) {
+        if (!keys || (Array.isArray(keys) &amp;&amp; !keys.length)) {
+            return 0;
+        }
+
+        const count = await module.client.collection(&#039;objects&#039;).countDocuments({ _key: Array.isArray(keys) ? { $in: keys } : keys });
+        return parseInt(count, 10) || 0;
+    };
+
+    module.sortedSetRank = async function (key, value) {
+        return await getSortedSetRank(false, key, value);
+    };
+
+    module.sortedSetRevRank = async function (key, value) {
+        return await getSortedSetRank(true, key, value);
+    };
+
+    async function getSortedSetRank(reverse, key, value) {
+        if (!key) {
+            return;
+        }
+        value = helpers.valueToString(value);
+        const score = await module.sortedSetScore(key, value);
+        if (score === null) {
+            return null;
+        }
+
+        return await module.client.collection(&#039;objects&#039;).countDocuments({
+            $or: [
+                {
+                    _key: key,
+                    score: reverse ? { $gt: score } : { $lt: score },
+                },
+                {
+                    _key: key,
+                    score: score,
+                    value: reverse ? { $gt: value } : { $lt: value },
+                },
+            ],
+        });
+    }
+
+    module.sortedSetsRanks = async function (keys, values) {
+        return await sortedSetsRanks(module.sortedSetRank, keys, values);
+    };
+
+    module.sortedSetsRevRanks = async function (keys, values) {
+        return await sortedSetsRanks(module.sortedSetRevRank, keys, values);
+    };
+
+    async function sortedSetsRanks(method, keys, values) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        const data = new Array(values.length);
+        for (let i = 0; i &lt; values.length; i += 1) {
+            data[i] = { key: keys[i], value: values[i] };
+        }
+        const promises = data.map(item =&gt; method(item.key, item.value));
+        return await Promise.all(promises);
+    }
+
+    module.sortedSetRanks = async function (key, values) {
+        return await sortedSetRanks(false, key, values);
+    };
+
+    module.sortedSetRevRanks = async function (key, values) {
+        return await sortedSetRanks(true, key, values);
+    };
+
+    async function sortedSetRanks(reverse, key, values) {
+        if (values.length === 1) {
+            return [await getSortedSetRank(reverse, key, values[0])];
+        }
+        const sortedSet = await module[reverse ? &#039;getSortedSetRevRange&#039; : &#039;getSortedSetRange&#039;](key, 0, -1);
+        return values.map((value) =&gt; {
+            if (!value) {
+                return null;
+            }
+            const index = sortedSet.indexOf(value.toString());
+            return index !== -1 ? index : null;
+        });
+    }
+
+    module.sortedSetScore = async function (key, value) {
+        if (!key) {
+            return null;
+        }
+        value = helpers.valueToString(value);
+        const result = await module.client.collection(&#039;objects&#039;).findOne({ _key: key, value: value }, { projection: { _id: 0, _key: 0, value: 0 } });
+        return result ? result.score : null;
+    };
+
+    module.sortedSetsScore = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        value = helpers.valueToString(value);
+        const result = await module.client.collection(&#039;objects&#039;).find({ _key: { $in: keys }, value: value }, { projection: { _id: 0, value: 0 } }).toArray();
+        const map = {};
+        result.forEach((item) =&gt; {
+            if (item) {
+                map[item._key] = item;
+            }
+        });
+
+        return keys.map(key =&gt; (map[key] ? map[key].score : null));
+    };
+
+    module.sortedSetScores = async function (key, values) {
+        if (!key) {
+            return null;
+        }
+        if (!values.length) {
+            return [];
+        }
+        values = values.map(helpers.valueToString);
+        const result = await module.client.collection(&#039;objects&#039;).find({ _key: key, value: { $in: values } }, { projection: { _id: 0, _key: 0 } }).toArray();
+
+        const valueToScore = {};
+        result.forEach((item) =&gt; {
+            if (item) {
+                valueToScore[item.value] = item.score;
+            }
+        });
+
+        return values.map(v =&gt; (utils.isNumber(valueToScore[v]) ? valueToScore[v] : null));
+    };
+
+    module.isSortedSetMember = async function (key, value) {
+        if (!key) {
+            return;
+        }
+        value = helpers.valueToString(value);
+        const result = await module.client.collection(&#039;objects&#039;).findOne({
+            _key: key, value: value,
+        }, {
+            projection: { _id: 0, value: 1 },
+        });
+        return !!result;
+    };
+
+    module.isSortedSetMembers = async function (key, values) {
+        if (!key) {
+            return;
+        }
+        if (!values.length) {
+            return [];
+        }
+        values = values.map(helpers.valueToString);
+        const results = await module.client.collection(&#039;objects&#039;).find({
+            _key: key, value: { $in: values },
+        }, {
+            projection: { _id: 0, value: 1 },
+        }).toArray();
+
+        const isMember = {};
+        results.forEach((item) =&gt; {
+            if (item) {
+                isMember[item.value] = true;
+            }
+        });
+
+        return values.map(value =&gt; !!isMember[value]);
+    };
+
+    module.isMemberOfSortedSets = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        value = helpers.valueToString(value);
+        const results = await module.client.collection(&#039;objects&#039;).find({
+            _key: { $in: keys }, value: value,
+        }, {
+            projection: { _id: 0, _key: 1, value: 1 },
+        }).toArray();
+
+        const isMember = {};
+        results.forEach((item) =&gt; {
+            if (item) {
+                isMember[item._key] = true;
+            }
+        });
+
+        return keys.map(key =&gt; !!isMember[key]);
+    };
+
+    module.getSortedSetMembers = async function (key) {
+        const data = await module.getSortedSetsMembers([key]);
+        return data &amp;&amp; data[0];
+    };
+
+    module.getSortedSetsMembers = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        const arrayOfKeys = keys.length &gt; 1;
+        const projection = { _id: 0, value: 1 };
+        if (arrayOfKeys) {
+            projection._key = 1;
+        }
+        const data = await module.client.collection(&#039;objects&#039;).find({
+            _key: arrayOfKeys ? { $in: keys } : keys[0],
+        }, { projection: projection }).toArray();
+
+        if (!arrayOfKeys) {
+            return [data.map(item =&gt; item.value)];
+        }
+        const sets = {};
+        data.forEach((item) =&gt; {
+            sets[item._key] = sets[item._key] || [];
+            sets[item._key].push(item.value);
+        });
+
+        return keys.map(k =&gt; sets[k] || []);
+    };
+
+    module.sortedSetIncrBy = async function (key, increment, value) {
+        if (!key) {
+            return;
+        }
+        const data = {};
+        value = helpers.valueToString(value);
+        data.score = parseFloat(increment);
+
+        try {
+            const result = await module.client.collection(&#039;objects&#039;).findOneAndUpdate({
+                _key: key,
+                value: value,
+            }, {
+                $inc: data,
+            }, {
+                returnDocument: &#039;after&#039;,
+                upsert: true,
+            });
+            return result &amp;&amp; result.value ? result.value.score : null;
+        } catch (err) {
+            // if there is duplicate key error retry the upsert
+            // https://github.com/NodeBB/NodeBB/issues/4467
+            // https://jira.mongodb.org/browse/SERVER-14322
+            // https://docs.mongodb.org/manual/reference/command/findAndModify/#upsert-and-unique-index
+            if (err &amp;&amp; err.message.startsWith(&#039;E11000 duplicate key error&#039;)) {
+                return await module.sortedSetIncrBy(key, increment, value);
+            }
+            throw err;
+        }
+    };
+
+    module.sortedSetIncrByBulk = async function (data) {
+        const bulk = module.client.collection(&#039;objects&#039;).initializeUnorderedBulkOp();
+        data.forEach((item) =&gt; {
+            bulk.find({ _key: item[0], value: helpers.valueToString(item[2]) })
+                .upsert()
+                .update({ $inc: { score: parseFloat(item[1]) } });
+        });
+        await bulk.execute();
+        const result = await module.client.collection(&#039;objects&#039;).find({
+            _key: { $in: _.uniq(data.map(i =&gt; i[0])) },
+            value: { $in: _.uniq(data.map(i =&gt; i[2])) },
+        }, {
+            projection: { _id: 0, _key: 1, value: 1, score: 1 },
+        }).toArray();
+
+        const map = {};
+        result.forEach((item) =&gt; {
+            map[`${item._key}:${item.value}`] = item.score;
+        });
+        return data.map(item =&gt; map[`${item[0]}:${item[2]}`]);
+    };
+
+    module.getSortedSetRangeByLex = async function (key, min, max, start, count) {
+        return await sortedSetLex(key, min, max, 1, start, count);
+    };
+
+    module.getSortedSetRevRangeByLex = async function (key, max, min, start, count) {
+        return await sortedSetLex(key, min, max, -1, start, count);
+    };
+
+    module.sortedSetLexCount = async function (key, min, max) {
+        const data = await sortedSetLex(key, min, max, 1, 0, 0);
+        return data ? data.length : null;
+    };
+
+    async function sortedSetLex(key, min, max, sort, start, count) {
+        const query = { _key: key };
+        start = start !== undefined ? start : 0;
+        count = count !== undefined ? count : 0;
+        buildLexQuery(query, min, max);
+
+        const data = await module.client.collection(&#039;objects&#039;).find(query, { projection: { _id: 0, value: 1 } })
+            .sort({ value: sort })
+            .skip(start)
+            .limit(count === -1 ? 0 : count)
+            .toArray();
+
+        return data.map(item =&gt; item &amp;&amp; item.value);
+    }
+
+    module.sortedSetRemoveRangeByLex = async function (key, min, max) {
+        const query = { _key: key };
+        buildLexQuery(query, min, max);
+
+        await module.client.collection(&#039;objects&#039;).deleteMany(query);
+    };
+
+    function buildLexQuery(query, min, max) {
+        if (min !== &#039;-&#039;) {
+            if (min.match(/^\(/)) {
+                query.value = { $gt: min.slice(1) };
+            } else if (min.match(/^\[/)) {
+                query.value = { $gte: min.slice(1) };
+            } else {
+                query.value = { $gte: min };
+            }
+        }
+        if (max !== &#039;+&#039;) {
+            query.value = query.value || {};
+            if (max.match(/^\(/)) {
+                query.value.$lt = max.slice(1);
+            } else if (max.match(/^\[/)) {
+                query.value.$lte = max.slice(1);
+            } else {
+                query.value.$lte = max;
+            }
+        }
+    }
+
+    module.getSortedSetScan = async function (params) {
+        const project = { _id: 0, value: 1 };
+        if (params.withScores) {
+            project.score = 1;
+        }
+
+        const match = helpers.buildMatchQuery(params.match);
+        let regex;
+        try {
+            regex = new RegExp(match);
+        } catch (err) {
+            return [];
+        }
+
+        const cursor = module.client.collection(&#039;objects&#039;).find({
+            _key: params.key, value: { $regex: regex },
+        }, { projection: project });
+
+        if (params.limit) {
+            cursor.limit(params.limit);
+        }
+
+        const data = await cursor.toArray();
+        if (!params.withScores) {
+            return data.map(d =&gt; d.value);
+        }
+        return data;
+    };
+
+    module.processSortedSet = async function (setKey, processFn, options) {
+        let done = false;
+        const ids = [];
+        const project = { _id: 0, _key: 0 };
+
+        if (!options.withScores) {
+            project.score = 0;
+        }
+        const cursor = await module.client.collection(&#039;objects&#039;).find({ _key: setKey }, { projection: project })
+            .sort({ score: 1 })
+            .batchSize(options.batch);
+
+        if (processFn &amp;&amp; processFn.constructor &amp;&amp; processFn.constructor.name !== &#039;AsyncFunction&#039;) {
+            processFn = util.promisify(processFn);
+        }
+
+        while (!done) {
+            /* eslint-disable no-await-in-loop */
+            const item = await cursor.next();
+            if (item === null) {
+                done = true;
+            } else {
+                ids.push(options.withScores ? item : item.value);
+            }
+
+            if (ids.length &gt;= options.batch || (done &amp;&amp; ids.length !== 0)) {
+                await processFn(ids);
+
+                ids.length = 0;
+                if (options.interval) {
+                    await sleep(options.interval);
+                }
+            }
+        }
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/themes.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/themes.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">62.70</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">167</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">37.21</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.73</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+const _ = require(&#039;lodash&#039;);
+const fs = require(&#039;fs&#039;);
+
+const file = require(&#039;../file&#039;);
+const Meta = require(&#039;./index&#039;);
+const events = require(&#039;../events&#039;);
+const utils = require(&#039;../utils&#039;);
+const { themeNamePattern } = require(&#039;../constants&#039;);
+
+const Themes = module.exports;
+
+Themes.get = async () =&gt; {
+    const themePath = nconf.get(&#039;themes_path&#039;);
+    if (typeof themePath !== &#039;string&#039;) {
+        return [];
+    }
+
+    let themes = await getThemes(themePath);
+    themes = _.flatten(themes).filter(Boolean);
+    themes = await Promise.all(themes.map(async (theme) =&gt; {
+        const config = path.join(themePath, theme, &#039;theme.json&#039;);
+        const pack = path.join(themePath, theme, &#039;package.json&#039;);
+        try {
+            const [configFile, packageFile] = await Promise.all([
+                fs.promises.readFile(config, &#039;utf8&#039;),
+                fs.promises.readFile(pack, &#039;utf8&#039;),
+            ]);
+            const configObj = JSON.parse(configFile);
+            const packageObj = JSON.parse(packageFile);
+
+            configObj.id = packageObj.name;
+
+            // Minor adjustments for API output
+            configObj.type = &#039;local&#039;;
+            if (configObj.screenshot) {
+                configObj.screenshot_url = `${nconf.get(&#039;relative_path&#039;)}/css/previews/${encodeURIComponent(configObj.id)}`;
+            } else {
+                configObj.screenshot_url = `${nconf.get(&#039;relative_path&#039;)}/assets/images/themes/default.png`;
+            }
+
+            return configObj;
+        } catch (err) {
+            if (err.code === &#039;ENOENT&#039;) {
+                return false;
+            }
+
+            winston.error(`[themes] Unable to parse theme.json ${theme}`);
+            return false;
+        }
+    }));
+
+    return themes.filter(Boolean);
+};
+
+async function getThemes(themePath) {
+    let dirs = await fs.promises.readdir(themePath);
+    dirs = dirs.filter(dir =&gt; themeNamePattern.test(dir) || dir.startsWith(&#039;@&#039;));
+    return await Promise.all(dirs.map(async (dir) =&gt; {
+        try {
+            const dirpath = path.join(themePath, dir);
+            const stat = await fs.promises.stat(dirpath);
+            if (!stat.isDirectory()) {
+                return false;
+            }
+
+            if (!dir.startsWith(&#039;@&#039;)) {
+                return dir;
+            }
+
+            const themes = await getThemes(path.join(themePath, dir));
+            return themes.map(theme =&gt; path.join(dir, theme));
+        } catch (err) {
+            if (err.code === &#039;ENOENT&#039;) {
+                return false;
+            }
+
+            throw err;
+        }
+    }));
+}
+
+Themes.set = async (data) =&gt; {
+    switch (data.type) {
+    case &#039;local&#039;: {
+        const current = await Meta.configs.get(&#039;theme:id&#039;);
+
+        if (current !== data.id) {
+            const pathToThemeJson = path.join(nconf.get(&#039;themes_path&#039;), data.id, &#039;theme.json&#039;);
+            if (!pathToThemeJson.startsWith(nconf.get(&#039;themes_path&#039;))) {
+                throw new Error(&#039;[[error:invalid-theme-id]]&#039;);
+            }
+
+            let config = await fs.promises.readFile(pathToThemeJson, &#039;utf8&#039;);
+            config = JSON.parse(config);
+
+            // Re-set the themes path (for when NodeBB is reloaded)
+            Themes.setPath(config);
+
+            await Meta.configs.setMultiple({
+                &#039;theme:type&#039;: data.type,
+                &#039;theme:id&#039;: data.id,
+                &#039;theme:staticDir&#039;: config.staticDir ? config.staticDir : &#039;&#039;,
+                &#039;theme:templates&#039;: config.templates ? config.templates : &#039;&#039;,
+                &#039;theme:src&#039;: &#039;&#039;,
+                bootswatchSkin: &#039;&#039;,
+            });
+
+            await events.log({
+                type: &#039;theme-set&#039;,
+                uid: parseInt(data.uid, 10) || 0,
+                ip: data.ip || &#039;127.0.0.1&#039;,
+                text: data.id,
+            });
+
+            Meta.reloadRequired = true;
+        }
+        break;
+    }
+    case &#039;bootswatch&#039;:
+        await Meta.configs.setMultiple({
+            &#039;theme:src&#039;: data.src,
+            bootswatchSkin: data.id.toLowerCase(),
+        });
+        break;
+    }
+};
+
+Themes.setupPaths = async () =&gt; {
+    const data = await utils.promiseParallel({
+        themesData: Themes.get(),
+        currentThemeId: Meta.configs.get(&#039;theme:id&#039;),
+    });
+
+    const themeId = data.currentThemeId || &#039;nodebb-theme-persona&#039;;
+
+    if (process.env.NODE_ENV === &#039;development&#039;) {
+        winston.info(`[themes] Using theme ${themeId}`);
+    }
+
+    const themeObj = data.themesData.find(themeObj =&gt; themeObj.id === themeId);
+
+    if (!themeObj) {
+        throw new Error(&#039;[[error:theme-not-found]]&#039;);
+    }
+
+    Themes.setPath(themeObj);
+};
+
+Themes.setPath = function (themeObj) {
+    // Theme&#039;s templates path
+    let themePath = nconf.get(&#039;base_templates_path&#039;);
+    const fallback = path.join(nconf.get(&#039;themes_path&#039;), themeObj.id, &#039;templates&#039;);
+
+    if (themeObj.templates) {
+        themePath = path.join(nconf.get(&#039;themes_path&#039;), themeObj.id, themeObj.templates);
+    } else if (file.existsSync(fallback)) {
+        themePath = fallback;
+    }
+
+    nconf.set(&#039;theme_templates_path&#039;, themePath);
+    nconf.set(&#039;theme_config&#039;, path.join(nconf.get(&#039;themes_path&#039;), themeObj.id, &#039;theme.json&#039;));
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

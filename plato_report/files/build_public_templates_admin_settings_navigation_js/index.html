@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/settings/navigation.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/settings/navigation.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.95</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">157</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">62.52</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.48</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;row\&quot; id=\&quot;navigation\&quot;&gt;\n    &lt;div class=\&quot;col-lg-9\&quot;&gt;\n        &lt;div class=\&quot;clearfix\&quot;&gt;\n            &lt;ul id=\&quot;active-navigation\&quot; class=\&quot;nav navbar-nav\&quot;&gt;\n                &quot; + 
+      compiled.blocks[&#039;navigation&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n            &lt;/ul&gt;\n        &lt;/div&gt;\n\n        &lt;hr/&gt;\n\n        &lt;ul id=\&quot;enabled\&quot;&gt;\n            &quot; + 
+      compiled.blocks[&#039;enabled&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n        &lt;/ul&gt;\n    &lt;/div&gt;\n\n    &lt;div class=\&quot;col-lg-3\&quot;&gt;\n        &lt;div class=\&quot;panel panel-default\&quot;&gt;\n            &lt;div class=\&quot;panel-heading\&quot;&gt;[[admin/settings/navigation:available-menu-items]]&lt;/div&gt;\n            &lt;div class=\&quot;panel-body\&quot;&gt;\n                &lt;ul id=\&quot;available\&quot;&gt;\n                    &lt;li data-id=\&quot;custom\&quot; class=\&quot;clearfix\&quot;&gt;\n                        &lt;div data-id=\&quot;custom\&quot; class=\&quot;drag-item alert alert-success pull-left\&quot;&gt;\n                            &lt;i class=\&quot;fa fa-fw fa-plus-circle\&quot;&gt;&lt;/i&gt;\n                        &lt;/div&gt;\n                        &lt;p&gt;\n                            &lt;strong&gt;[[admin/settings/navigation:custom-route]]&lt;/strong&gt;\n                        &lt;/p&gt;\n                    &lt;/li&gt;\n                    &quot; + 
+      compiled.blocks[&#039;available&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                &lt;/ul&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;navigation&#039;: function navigation(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;navigation&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                &lt;li data-index=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;class&#039;] : null)) + 
+          &quot; &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;selected&#039;] : null) ?
+            &quot; active &quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;\n                    &lt;a href=\&quot;#\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;route&#039;] : null)) + 
+          &quot;\&quot; id=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;id&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;enabled&#039;] : null) ?
+            &quot;&quot; :
+            &quot;text-muted&quot;) + 
+          &quot;\&quot;&gt;\n                        &lt;i class=\&quot;nav-icon fa fa-fw &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;iconClass&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;iconClass&#039;] : null)) :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;&lt;i class=\&quot;dropdown-icon fa fa-caret-down&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;navigation&#039;] != null &amp;&amp; context[&#039;navigation&#039;][key0] != null) ? context[&#039;navigation&#039;][key0][&#039;dropdown&#039;] : null) ?
+            &quot;&quot; :
+            &quot; hidden&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                    &lt;/a&gt;\n                &lt;/li&gt;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;enabled&#039;: function enabled(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;enabled&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;li data-index=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;well &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;selected&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hidden&quot;) + 
+          &quot;\&quot;&gt;\n                &lt;form&gt;\n                    &lt;div class=\&quot;row\&quot;&gt;\n                        &lt;div class=\&quot;col-sm-12 text-right\&quot;&gt;\n                            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;enabled&#039;] : null) ?
+            &quot;\n                            &lt;button class=\&quot;btn btn-warning toggle\&quot;&gt;[[admin/settings/navigation:btn.disable]]&lt;/button&gt;\n                            &quot; :
+            &quot;\n                            &lt;button class=\&quot;btn btn-success toggle\&quot;&gt;[[admin/settings/navigation:btn.enable]]&lt;/button&gt;\n                            &quot;) + 
+          &quot;\n                            &lt;button class=\&quot;btn btn-danger delete\&quot;&gt;[[admin/settings/navigation:btn.delete]]&lt;/button&gt;\n                            &lt;input type=\&quot;hidden\&quot; name=\&quot;enabled\&quot; value=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;enabled&#039;] : null) ?
+            &quot;on&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; /&gt;\n                        &lt;/div&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;row\&quot;&gt;\n                        &lt;div class=\&quot;col-sm-1\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label&gt;[[admin/settings/navigation:icon]]&lt;/label&gt;\n                                &lt;br/&gt;\n                                &lt;span class=\&quot;iconPicker\&quot;&gt;&lt;i class=\&quot;fa fa-2x &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;iconClass&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                                    &lt;a class=\&quot;change-icon-link &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;iconClass&#039;] : null) ?
+            &quot;hidden&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; href=\&quot;#\&quot;&gt;[[admin/settings/navigation:change-icon]]&lt;/a&gt;\n                                    &lt;input class=\&quot;form-control\&quot; type=\&quot;hidden\&quot; name=\&quot;iconClass\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;iconClass&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                                &lt;/span&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n\n                        &lt;div class=\&quot;col-sm-3\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:route\&quot;&gt;[[admin/settings/navigation:route]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:route\&quot; class=\&quot;form-control\&quot; type=\&quot;text\&quot; name=\&quot;route\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;route&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n\n                        &lt;div class=\&quot;col-sm-4\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:class\&quot;&gt;[[admin/settings/navigation:class]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:class\&quot; class=\&quot;form-control\&quot; type=\&quot;text\&quot; name=\&quot;class\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;class&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n\n                        &lt;div class=\&quot;col-sm-4\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:id\&quot;&gt;[[admin/settings/navigation:id]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:id\&quot; class=\&quot;form-control\&quot; type=\&quot;text\&quot; name=\&quot;id\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;id&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;row\&quot;&gt;\n                        &lt;div class=\&quot;col-sm-4\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:text\&quot;&gt;[[admin/settings/navigation:text]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:text\&quot; class=\&quot;form-control unescape\&quot; type=\&quot;text\&quot; name=\&quot;text\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                        &lt;div class=\&quot;col-sm-4\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:text-class\&quot;&gt;[[admin/settings/navigation:text-class]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:text-class\&quot; class=\&quot;form-control\&quot; type=\&quot;text\&quot; name=\&quot;textClass\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;textClass&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n\n                        &lt;div class=\&quot;col-sm-4\&quot;&gt;\n                            &lt;div class=\&quot;form-group\&quot;&gt;\n                                &lt;label for=\&quot;nav:tooltip\&quot;&gt;[[admin/settings/navigation:tooltip]]&lt;/label&gt;\n                                &lt;input id=\&quot;nav:tooltip\&quot; class=\&quot;form-control unescape\&quot; type=\&quot;text\&quot; name=\&quot;title\&quot; value=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;title&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                            &lt;/div&gt;\n                        &lt;/div&gt;\n                    &lt;/div&gt;\n\n                    &lt;strong&gt;[[admin/settings/navigation:groups]]&lt;/strong&gt;\n                    &lt;div&gt;\n                        &lt;select name=\&quot;groups\&quot; class=\&quot;form-control\&quot; size=\&quot;10\&quot; multiple&gt;\n                            &quot; + 
+          iter(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;groups&#039;] : null), function each(key1, index, length, value) {
+            var key = key1;
+            return &quot;\n                            &lt;option value=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1] != null) ? context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1][&#039;displayName&#039;] : null)) + 
+              &quot;\&quot;&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1] != null) ? context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1][&#039;selected&#039;] : null) ?
+                &quot; selected&quot; :
+                &quot;&quot;) + 
+              &quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1] != null) ? context[&#039;enabled&#039;][key0][&#039;groups&#039;][key1][&#039;displayName&#039;] : null)) + 
+              &quot;&lt;/option&gt;\n                            &quot;;
+          }, function alt() {
+            return &quot;&quot;;
+          }) + 
+          &quot;\n                        &lt;/select&gt;\n                    &lt;/div&gt;\n\n                    &lt;div class=\&quot;checkbox\&quot;&gt;\n                        &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                            &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; name=\&quot;targetBlank\&quot; &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;targetBlank&#039;] : null) ?
+            &quot;checked&quot; :
+            &quot;&quot;) + 
+          &quot;/&gt;\n                            &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/navigation:open-new-window]]&lt;/strong&gt;&lt;/span&gt;\n                        &lt;/label&gt;\n                    &lt;/div&gt;\n\n                    &lt;div class=\&quot;checkbox\&quot;&gt;\n                        &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                            &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; name=\&quot;dropdown\&quot; &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;dropdown&#039;] : null) ?
+            &quot;checked&quot; :
+            &quot;&quot;) + 
+          &quot;/&gt;\n                            &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/navigation:dropdown]]&lt;/strong&gt;&lt;/span&gt;\n                        &lt;/label&gt;\n                    &lt;/div&gt;\n                    &lt;div&gt;\n                        &lt;p class=\&quot;help-block\&quot;&gt;\n                            [[admin/settings/navigation:dropdown-placeholder]]\n                        &lt;/p&gt;\n                        &lt;textarea name=\&quot;dropdownContent\&quot; rows=\&quot;5\&quot; class=\&quot;form-control\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;enabled&#039;] != null &amp;&amp; context[&#039;enabled&#039;][key0] != null) ? context[&#039;enabled&#039;][key0][&#039;dropdownContent&#039;] : null)) + 
+          &quot;&lt;/textarea&gt;\n                    &lt;/div&gt;\n                &lt;/form&gt;\n            &lt;/li&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;available&#039;: function available(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;available&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;li data-id=\&quot;&quot; + 
+          __escape(index) + 
+          &quot;\&quot; class=\&quot;clearfix\&quot;&gt;\n                        &lt;div data-id=\&quot;&quot; + 
+          __escape(index) + 
+          &quot;\&quot; class=\&quot;drag-item alert &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;core&#039;] : null) ?
+            &quot;alert-warning&quot; :
+            &quot;alert-info&quot;) + 
+          &quot; pull-left\&quot;&gt;\n                            &lt;i class=\&quot;fa fa-fw &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;iconClass&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;iconClass&#039;] : null)) :
+            &quot;fa-navicon&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                        &lt;/div&gt;\n                        &lt;p&gt;\n                            &lt;strong&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;&lt;/strong&gt; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;route&#039;] : null)) + 
+          &quot; &lt;br/&gt;\n                            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;available&#039;] != null &amp;&amp; context[&#039;available&#039;][key0] != null) ? context[&#039;available&#039;][key0][&#039;core&#039;] : null) ?
+            &quot; [[admin/settings/navigation:core]] &quot; :
+            &quot; [[admin/settings/navigation:plugin]] &quot;) + 
+          &quot;\n                        &lt;/p&gt;\n                    &lt;/li&gt;\n                    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

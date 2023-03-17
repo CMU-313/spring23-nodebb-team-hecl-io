@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/search.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/search.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">64.10</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">181</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">24.23</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.04</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/search&#039;, [
+    &#039;search&#039;,
+    &#039;autocomplete&#039;,
+    &#039;storage&#039;,
+    &#039;hooks&#039;,
+    &#039;alerts&#039;,
+], function (searchModule, autocomplete, storage, hooks, alerts) {
+    const Search = {};
+
+    Search.init = function () {
+        const searchQuery = $(&#039;#results&#039;).attr(&#039;data-search-query&#039;);
+
+        const searchIn = $(&#039;#search-in&#039;);
+
+        searchIn.on(&#039;change&#039;, function () {
+            updateFormItemVisiblity(searchIn.val());
+        });
+
+        searchModule.highlightMatches(searchQuery, $(&#039;.search-result-text p, .search-result-text.search-result-title a&#039;));
+
+        $(&#039;#advanced-search&#039;).off(&#039;submit&#039;).on(&#039;submit&#039;, function (e) {
+            e.preventDefault();
+            searchModule.query(getSearchDataFromDOM(), function () {
+                $(&#039;#search-input&#039;).val(&#039;&#039;);
+            });
+            return false;
+        });
+
+        handleSavePreferences();
+
+        enableAutoComplete();
+
+        fillOutForm();
+    };
+
+    function getSearchDataFromDOM() {
+        const form = $(&#039;#advanced-search&#039;);
+        const searchData = {
+            in: $(&#039;#search-in&#039;).val(),
+        };
+        searchData.term = $(&#039;#search-input&#039;).val();
+        if (searchData.in === &#039;posts&#039; || searchData.in === &#039;titlesposts&#039; || searchData.in === &#039;titles&#039;) {
+            searchData.matchWords = form.find(&#039;#match-words-filter&#039;).val();
+            searchData.by = form.find(&#039;#posted-by-user&#039;).tagsinput(&#039;items&#039;);
+            searchData.categories = form.find(&#039;#posted-in-categories&#039;).val();
+            searchData.searchChildren = form.find(&#039;#search-children&#039;).is(&#039;:checked&#039;);
+            searchData.hasTags = form.find(&#039;#has-tags&#039;).tagsinput(&#039;items&#039;);
+            searchData.replies = form.find(&#039;#reply-count&#039;).val();
+            searchData.repliesFilter = form.find(&#039;#reply-count-filter&#039;).val();
+            searchData.timeFilter = form.find(&#039;#post-time-filter&#039;).val();
+            searchData.timeRange = form.find(&#039;#post-time-range&#039;).val();
+            searchData.sortBy = form.find(&#039;#post-sort-by&#039;).val();
+            searchData.sortDirection = form.find(&#039;#post-sort-direction&#039;).val();
+            searchData.showAs = form.find(&#039;#show-as-topics&#039;).is(&#039;:checked&#039;) ? &#039;topics&#039; : &#039;posts&#039;;
+        }
+
+        hooks.fire(&#039;action:search.getSearchDataFromDOM&#039;, {
+            form: form,
+            data: searchData,
+        });
+
+        return searchData;
+    }
+
+    function updateFormItemVisiblity(searchIn) {
+        const hide = searchIn.indexOf(&#039;posts&#039;) === -1 &amp;&amp; searchIn.indexOf(&#039;titles&#039;) === -1;
+        $(&#039;.post-search-item&#039;).toggleClass(&#039;hide&#039;, hide);
+    }
+
+    function fillOutForm() {
+        const params = utils.params({
+            disableToType: true,
+        });
+
+        const searchData = searchModule.getSearchPreferences();
+        const formData = utils.merge(searchData, params);
+
+        if (formData) {
+            if (ajaxify.data.term) {
+                $(&#039;#search-input&#039;).val(ajaxify.data.term);
+            }
+            formData.in = formData.in || ajaxify.data.searchDefaultIn;
+            $(&#039;#search-in&#039;).val(formData.in);
+            updateFormItemVisiblity(formData.in);
+
+            if (formData.matchWords) {
+                $(&#039;#match-words-filter&#039;).val(formData.matchWords);
+            }
+
+            if (formData.by) {
+                formData.by = Array.isArray(formData.by) ? formData.by : [formData.by];
+                formData.by.forEach(function (by) {
+                    $(&#039;#posted-by-user&#039;).tagsinput(&#039;add&#039;, by);
+                });
+            }
+
+            if (formData.categories) {
+                $(&#039;#posted-in-categories&#039;).val(formData.categories);
+            }
+
+            if (formData.searchChildren) {
+                $(&#039;#search-children&#039;).prop(&#039;checked&#039;, true);
+            }
+
+            if (formData.hasTags) {
+                formData.hasTags = Array.isArray(formData.hasTags) ? formData.hasTags : [formData.hasTags];
+                formData.hasTags.forEach(function (tag) {
+                    $(&#039;#has-tags&#039;).tagsinput(&#039;add&#039;, tag);
+                });
+            }
+
+            if (formData.replies) {
+                $(&#039;#reply-count&#039;).val(formData.replies);
+                $(&#039;#reply-count-filter&#039;).val(formData.repliesFilter);
+            }
+
+            if (formData.timeRange) {
+                $(&#039;#post-time-range&#039;).val(formData.timeRange);
+                $(&#039;#post-time-filter&#039;).val(formData.timeFilter);
+            }
+
+            if (formData.sortBy || ajaxify.data.searchDefaultSortBy) {
+                $(&#039;#post-sort-by&#039;).val(formData.sortBy || ajaxify.data.searchDefaultSortBy);
+            }
+            $(&#039;#post-sort-direction&#039;).val(formData.sortDirection || &#039;desc&#039;);
+
+            if (formData.showAs) {
+                const isTopic = formData.showAs === &#039;topics&#039;;
+                const isPost = formData.showAs === &#039;posts&#039;;
+                $(&#039;#show-as-topics&#039;).prop(&#039;checked&#039;, isTopic).parent().toggleClass(&#039;active&#039;, isTopic);
+                $(&#039;#show-as-posts&#039;).prop(&#039;checked&#039;, isPost).parent().toggleClass(&#039;active&#039;, isPost);
+            }
+
+            hooks.fire(&#039;action:search.fillOutForm&#039;, {
+                form: formData,
+            });
+        }
+    }
+
+    function handleSavePreferences() {
+        $(&#039;#save-preferences&#039;).on(&#039;click&#039;, function () {
+            storage.setItem(&#039;search-preferences&#039;, JSON.stringify(getSearchDataFromDOM()));
+            alerts.success(&#039;[[search:search-preferences-saved]]&#039;);
+            return false;
+        });
+
+        $(&#039;#clear-preferences&#039;).on(&#039;click&#039;, function () {
+            storage.removeItem(&#039;search-preferences&#039;);
+            const query = $(&#039;#search-input&#039;).val();
+            $(&#039;#advanced-search&#039;)[0].reset();
+            $(&#039;#search-input&#039;).val(query);
+            alerts.success(&#039;[[search:search-preferences-cleared]]&#039;);
+            return false;
+        });
+    }
+
+    function enableAutoComplete() {
+        const userEl = $(&#039;#posted-by-user&#039;);
+        userEl.tagsinput({
+            confirmKeys: [13, 44],
+            trimValue: true,
+        });
+        if (app.user.privileges[&#039;search:users&#039;]) {
+            autocomplete.user(userEl.siblings(&#039;.bootstrap-tagsinput&#039;).find(&#039;input&#039;));
+        }
+
+        const tagEl = $(&#039;#has-tags&#039;);
+        tagEl.tagsinput({
+            confirmKeys: [13, 44],
+            trimValue: true,
+        });
+        if (app.user.privileges[&#039;search:tags&#039;]) {
+            autocomplete.tag(tagEl.siblings(&#039;.bootstrap-tagsinput&#039;).find(&#039;input&#039;));
+        }
+    }
+
+    return Search;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

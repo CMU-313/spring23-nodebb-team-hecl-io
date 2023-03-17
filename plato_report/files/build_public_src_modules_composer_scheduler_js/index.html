@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/composer/scheduler.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/composer/scheduler.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">169</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">31.37</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.67</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;composer/scheduler&#039;, [&#039;benchpress&#039;, &#039;bootbox&#039;, &#039;alerts&#039;], function (Benchpress, bootbox, alerts) {
+	const scheduler = {};
+	const state = {
+		timestamp: 0,
+		open: false,
+		edit: false,
+		posts: {},
+	};
+	let displayBtnCons = [];
+	let displayBtns;
+	const submitBtn = {
+		el: null,
+		icon: null,
+		defaultText: &#039;&#039;,
+		activeText: &#039;&#039;,
+	};
+	let dateInput;
+	let timeInput;
+
+	$(window).on(&#039;action:composer.activate&#039;, handleOnActivate);
+
+	scheduler.init = function ($postContainer, posts) {
+		state.timestamp = 0;
+		state.posts = posts;
+
+		displayBtnCons = $postContainer[0].querySelectorAll(&#039;.display-scheduler&#039;);
+		displayBtns = $postContainer[0].querySelectorAll(&#039;.display-scheduler i&#039;);
+
+		submitBtn.el = $postContainer[0].querySelector(&#039;.composer-submit:not(.btn-sm)&#039;);
+		submitBtn.icon = submitBtn.el.querySelector(&#039;i&#039;);
+		submitBtn.defaultText = submitBtn.el.lastChild.textContent;
+		submitBtn.activeText = submitBtn.el.getAttribute(&#039;data-text-variant&#039;);
+
+		displayBtns.forEach(el =&gt; el.addEventListener(&#039;click&#039;, openModal));
+	};
+
+	scheduler.getTimestamp = function () {
+		if (!scheduler.isActive() || isNaN(state.timestamp)) {
+			return 0;
+		}
+		return state.timestamp;
+	};
+
+	scheduler.isActive = function () {
+		return state.timestamp &gt; 0;
+	};
+
+	scheduler.isOpen = function () {
+		return state.open;
+	};
+
+	scheduler.reset = function () {
+		state.timestamp = 0;
+	};
+
+	scheduler.onChangeCategory = function (categoryData) {
+		toggleDisplayButtons(categoryData.privileges[&#039;topics:schedule&#039;]);
+		toggleItems(false);
+		scheduler.reset();
+	};
+
+	async function openModal() {
+		const html = await Benchpress.render(&#039;modals/topic-scheduler&#039;);
+		bootbox.dialog({
+			message: html,
+			title: &#039;[[modules:composer.schedule-for]]&#039;,
+			className: &#039;topic-scheduler&#039;,
+			onShown: initModal,
+			onHidden: handleOnHidden,
+			onEscape: true,
+			buttons: {
+				cancel: {
+					label: state.timestamp ? &#039;[[modules:composer.cancel-scheduling]]&#039; : &#039;[[modules:bootbox.cancel]]&#039;,
+					className: (state.timestamp ? &#039;btn-warning&#039; : &#039;btn-default&#039;) + (state.edit ? &#039; hidden&#039; : &#039;&#039;),
+					callback: cancelScheduling,
+				},
+				set: {
+					label: &#039;[[modules:composer.set-schedule-date]]&#039;,
+					className: &#039;btn-primary&#039;,
+					callback: setTimestamp,
+				},
+			},
+		});
+	}
+
+	function initModal(ev) {
+		state.open = true;
+		const schedulerContainer = ev.target.querySelector(&#039;.datetime-picker&#039;);
+		dateInput = schedulerContainer.querySelector(&#039;input[type=&quot;date&quot;]&#039;);
+		timeInput = schedulerContainer.querySelector(&#039;input[type=&quot;time&quot;]&#039;);
+		initDateTimeInputs();
+	}
+
+	function handleOnHidden() {
+		state.open = false;
+	}
+
+	function handleOnActivate(ev, { post_uuid }) {
+		state.edit = false;
+
+		const postData = state.posts[post_uuid];
+		if (postData &amp;&amp; postData.isMain &amp;&amp; postData.timestamp &gt; Date.now()) {
+			state.timestamp = postData.timestamp;
+			state.edit = true;
+			toggleItems();
+		}
+	}
+
+	function initDateTimeInputs() {
+		const d = new Date();
+		// Update min. selectable date and time
+		const nowLocalISO = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toJSON();
+		dateInput.setAttribute(&#039;min&#039;, nowLocalISO.slice(0, 10));
+		timeInput.setAttribute(&#039;min&#039;, nowLocalISO.slice(11, -8));
+
+		if (scheduler.isActive()) {
+			const scheduleDate = new Date(state.timestamp - (d.getTimezoneOffset() * 60000)).toJSON();
+			dateInput.value = scheduleDate.slice(0, 10);
+			timeInput.value = scheduleDate.slice(11, -8);
+		}
+	}
+
+	function setTimestamp() {
+		const bothFilled = dateInput.value &amp;&amp; timeInput.value;
+		const timestamp = new Date(`${dateInput.value} ${timeInput.value}`).getTime();
+		if (!bothFilled || isNaN(timestamp) || timestamp &lt; Date.now()) {
+			state.timestamp = 0;
+			const message = timestamp &lt; Date.now() ? &#039;[[error:scheduling-to-past]]&#039; : &#039;[[error:invalid-schedule-date]]&#039;;
+			alerts.alert({
+				type: &#039;danger&#039;,
+				timeout: 3000,
+				title: &#039;&#039;,
+				alert_id: &#039;post_error&#039;,
+				message,
+			});
+			return false;
+		}
+		if (!state.timestamp) {
+			toggleItems(true);
+		}
+		state.timestamp = timestamp;
+	}
+
+	function cancelScheduling() {
+		if (!state.timestamp) {
+			return;
+		}
+		toggleItems(false);
+		state.timestamp = 0;
+	}
+
+	function toggleItems(active = true) {
+		displayBtns.forEach(btn =&gt; btn.classList.toggle(&#039;active&#039;, active));
+		if (submitBtn.icon) {
+			submitBtn.icon.classList.toggle(&#039;fa-check&#039;, !active);
+			submitBtn.icon.classList.toggle(&#039;fa-clock-o&#039;, active);
+		}
+		// Toggle submit button text
+		submitBtn.el.lastChild.textContent = active ? submitBtn.activeText : submitBtn.defaultText;
+	}
+
+	function toggleDisplayButtons(show) {
+		displayBtnCons.forEach(btn =&gt; btn.classList.toggle(&#039;hidden&#039;, !show));
+	}
+
+	return scheduler;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/api/posts.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/api/posts.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">343</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">45.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.69</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const utils = require(&#039;../utils&#039;);
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const topics = require(&#039;../topics&#039;);
+const groups = require(&#039;../groups&#039;);
+const meta = require(&#039;../meta&#039;);
+const events = require(&#039;../events&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const apiHelpers = require(&#039;./helpers&#039;);
+const websockets = require(&#039;../socket.io&#039;);
+const socketHelpers = require(&#039;../socket.io/helpers&#039;);
+
+const postsAPI = module.exports;
+
+postsAPI.get = async function (caller, data) {
+    const [userPrivileges, post, voted] = await Promise.all([
+        privileges.posts.get([data.pid], caller.uid),
+        posts.getPostData(data.pid),
+        posts.hasVoted(data.pid, caller.uid),
+    ]);
+    if (!post) {
+        return null;
+    }
+    Object.assign(post, voted);
+
+    const userPrivilege = userPrivileges[0];
+    if (!userPrivilege.read || !userPrivilege[&#039;topics:read&#039;]) {
+        return null;
+    }
+
+    post.ip = userPrivilege.isAdminOrMod ? post.ip : undefined;
+    const selfPost = caller.uid &amp;&amp; caller.uid === parseInt(post.uid, 10);
+    if (post.deleted &amp;&amp; !(userPrivilege.isAdminOrMod || selfPost)) {
+        post.content = &#039;[[topic:post_is_deleted]]&#039;;
+    }
+
+    return post;
+};
+
+postsAPI.edit = async function (caller, data) {
+    if (!data || !data.pid || (meta.config.minimumPostLength !== 0 &amp;&amp; !data.content)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    if (!caller.uid) {
+        throw new Error(&#039;[[error:not-logged-in]]&#039;);
+    }
+    // Trim and remove HTML (latter for composers that send in HTML, like redactor)
+    const contentLen = utils.stripHTMLTags(data.content).trim().length;
+
+    if (data.title &amp;&amp; data.title.length &lt; meta.config.minimumTitleLength) {
+        throw new Error(`[[error:title-too-short, ${meta.config.minimumTitleLength}]]`);
+    } else if (data.title &amp;&amp; data.title.length &gt; meta.config.maximumTitleLength) {
+        throw new Error(`[[error:title-too-long, ${meta.config.maximumTitleLength}]]`);
+    } else if (meta.config.minimumPostLength !== 0 &amp;&amp; contentLen &lt; meta.config.minimumPostLength) {
+        throw new Error(`[[error:content-too-short, ${meta.config.minimumPostLength}]]`);
+    } else if (contentLen &gt; meta.config.maximumPostLength) {
+        throw new Error(`[[error:content-too-long, ${meta.config.maximumPostLength}]]`);
+    }
+
+    data.uid = caller.uid;
+    data.req = apiHelpers.buildReqObject(caller);
+    data.timestamp = parseInt(data.timestamp, 10) || Date.now();
+
+    const editResult = await posts.edit(data);
+    if (editResult.topic.isMainPost) {
+        await topics.thumbs.migrate(data.uuid, editResult.topic.tid);
+    }
+    const selfPost = parseInt(caller.uid, 10) === parseInt(editResult.post.uid, 10);
+    if (!selfPost &amp;&amp; editResult.post.changed) {
+        await events.log({
+            type: `post-edit`,
+            uid: caller.uid,
+            ip: caller.ip,
+            pid: editResult.post.pid,
+            oldContent: editResult.post.oldContent,
+            newContent: editResult.post.newContent,
+        });
+    }
+
+    if (editResult.topic.renamed) {
+        await events.log({
+            type: &#039;topic-rename&#039;,
+            uid: caller.uid,
+            ip: caller.ip,
+            tid: editResult.topic.tid,
+            oldTitle: validator.escape(String(editResult.topic.oldTitle)),
+            newTitle: validator.escape(String(editResult.topic.title)),
+        });
+    }
+    const postObj = await posts.getPostSummaryByPids([editResult.post.pid], caller.uid, {});
+    const returnData = { ...postObj[0], ...editResult.post };
+    returnData.topic = { ...postObj[0].topic, ...editResult.post.topic };
+
+    if (!editResult.post.deleted) {
+        websockets.in(`topic_${editResult.topic.tid}`).emit(&#039;event:post_edited&#039;, editResult);
+        return returnData;
+    }
+
+    const memberData = await groups.getMembersOfGroups([
+        &#039;administrators&#039;,
+        &#039;Global Moderators&#039;,
+        `cid:${editResult.topic.cid}:privileges:moderate`,
+        `cid:${editResult.topic.cid}:privileges:groups:moderate`,
+    ]);
+
+    const uids = _.uniq(_.flatten(memberData).concat(String(caller.uid)));
+    uids.forEach(uid =&gt; websockets.in(`uid_${uid}`).emit(&#039;event:post_edited&#039;, editResult));
+    return returnData;
+};
+
+postsAPI.delete = async function (caller, data) {
+    await deleteOrRestore(caller, data, {
+        command: &#039;delete&#039;,
+        event: &#039;event:post_deleted&#039;,
+        type: &#039;post-delete&#039;,
+    });
+};
+
+postsAPI.restore = async function (caller, data) {
+    await deleteOrRestore(caller, data, {
+        command: &#039;restore&#039;,
+        event: &#039;event:post_restored&#039;,
+        type: &#039;post-restore&#039;,
+    });
+};
+
+async function deleteOrRestore(caller, data, params) {
+    if (!data || !data.pid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const postData = await posts.tools[params.command](caller.uid, data.pid);
+    const results = await isMainAndLastPost(data.pid);
+    if (results.isMain &amp;&amp; results.isLast) {
+        await deleteOrRestoreTopicOf(params.command, data.pid, caller);
+    }
+
+    websockets.in(`topic_${postData.tid}`).emit(params.event, postData);
+
+    await events.log({
+        type: params.type,
+        uid: caller.uid,
+        pid: data.pid,
+        tid: postData.tid,
+        ip: caller.ip,
+    });
+}
+
+async function deleteOrRestoreTopicOf(command, pid, caller) {
+    const topic = await posts.getTopicFields(pid, [&#039;tid&#039;, &#039;cid&#039;, &#039;deleted&#039;, &#039;scheduled&#039;]);
+    // exempt scheduled topics from being deleted/restored
+    if (topic.scheduled) {
+        return;
+    }
+    // command: delete/restore
+    await apiHelpers.doTopicAction(
+        command,
+        topic.deleted ? &#039;event:topic_restored&#039; : &#039;event:topic_deleted&#039;,
+        caller,
+        { tids: [topic.tid], cid: topic.cid }
+    );
+}
+
+postsAPI.purge = async function (caller, data) {
+    if (!data || !parseInt(data.pid, 10)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const results = await isMainAndLastPost(data.pid);
+    if (results.isMain &amp;&amp; !results.isLast) {
+        throw new Error(&#039;[[error:cant-purge-main-post]]&#039;);
+    }
+
+    const isMainAndLast = results.isMain &amp;&amp; results.isLast;
+    const postData = await posts.getPostFields(data.pid, [&#039;toPid&#039;, &#039;tid&#039;]);
+    postData.pid = data.pid;
+
+    const canPurge = await privileges.posts.canPurge(data.pid, caller.uid);
+    if (!canPurge) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    require(&#039;../posts/cache&#039;).del(data.pid);
+    await posts.purge(data.pid, caller.uid);
+
+    websockets.in(`topic_${postData.tid}`).emit(&#039;event:post_purged&#039;, postData);
+    const topicData = await topics.getTopicFields(postData.tid, [&#039;title&#039;, &#039;cid&#039;]);
+
+    await events.log({
+        type: &#039;post-purge&#039;,
+        pid: data.pid,
+        uid: caller.uid,
+        ip: caller.ip,
+        tid: postData.tid,
+        title: String(topicData.title),
+    });
+
+    if (isMainAndLast) {
+        await apiHelpers.doTopicAction(
+            &#039;purge&#039;,
+            &#039;event:topic_purged&#039;,
+            caller,
+            { tids: [postData.tid], cid: topicData.cid }
+        );
+    }
+};
+
+async function isMainAndLastPost(pid) {
+    const [isMain, topicData] = await Promise.all([
+        posts.isMain(pid),
+        posts.getTopicFields(pid, [&#039;postcount&#039;]),
+    ]);
+    return {
+        isMain: isMain,
+        isLast: topicData &amp;&amp; topicData.postcount === 1,
+    };
+}
+
+postsAPI.move = async function (caller, data) {
+    if (!caller.uid) {
+        throw new Error(&#039;[[error:not-logged-in]]&#039;);
+    }
+    if (!data || !data.pid || !data.tid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const canMove = await Promise.all([
+        privileges.topics.isAdminOrMod(data.tid, caller.uid),
+        privileges.posts.canMove(data.pid, caller.uid),
+    ]);
+    if (!canMove.every(Boolean)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    await topics.movePostToTopic(caller.uid, data.pid, data.tid);
+
+    const [postDeleted, topicDeleted] = await Promise.all([
+        posts.getPostField(data.pid, &#039;deleted&#039;),
+        topics.getTopicField(data.tid, &#039;deleted&#039;),
+        await events.log({
+            type: `post-move`,
+            uid: caller.uid,
+            ip: caller.ip,
+            pid: data.pid,
+            toTid: data.tid,
+        }),
+    ]);
+
+    if (!postDeleted &amp;&amp; !topicDeleted) {
+        socketHelpers.sendNotificationToPostOwner(data.pid, caller.uid, &#039;move&#039;, &#039;notifications:moved_your_post&#039;);
+    }
+};
+
+postsAPI.upvote = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;upvote&#039;, &#039;voted&#039;, &#039;notifications:upvoted_your_post_in&#039;, data);
+};
+
+postsAPI.downvote = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;downvote&#039;, &#039;voted&#039;, &#039;&#039;, data);
+};
+
+postsAPI.unvote = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;unvote&#039;, &#039;voted&#039;, &#039;&#039;, data);
+};
+
+postsAPI.bookmark = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;bookmark&#039;, &#039;bookmarked&#039;, &#039;&#039;, data);
+};
+
+postsAPI.unbookmark = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;unbookmark&#039;, &#039;bookmarked&#039;, &#039;&#039;, data);
+};
+
+postsAPI.endorse = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;endorse&#039;, &#039;endorsed&#039;, &#039;&#039;, data);
+};
+
+postsAPI.unendorse = async function (caller, data) {
+    return await apiHelpers.postCommand(caller, &#039;unendorse&#039;, &#039;endorsed&#039;, &#039;&#039;, data);
+};
+
+async function diffsPrivilegeCheck(pid, uid) {
+    const [deleted, privilegesData] = await Promise.all([
+        posts.getPostField(pid, &#039;deleted&#039;),
+        privileges.posts.get([pid], uid),
+    ]);
+
+    const allowed = privilegesData[0][&#039;posts:history&#039;] &amp;&amp; (deleted ? privilegesData[0][&#039;posts:view_deleted&#039;] : true);
+    if (!allowed) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+}
+
+postsAPI.getDiffs = async (caller, data) =&gt; {
+    await diffsPrivilegeCheck(data.pid, caller.uid);
+    const timestamps = await posts.diffs.list(data.pid);
+    const post = await posts.getPostFields(data.pid, [&#039;timestamp&#039;, &#039;uid&#039;]);
+
+    const diffs = await posts.diffs.get(data.pid);
+    const uids = diffs.map(diff =&gt; diff.uid || null);
+    uids.push(post.uid);
+    let usernames = await user.getUsersFields(uids, [&#039;username&#039;]);
+    usernames = usernames.map(userObj =&gt; (userObj.uid ? userObj.username : null));
+
+    const cid = await posts.getCidByPid(data.pid);
+    const [isAdmin, isModerator] = await Promise.all([
+        user.isAdministrator(caller.uid),
+        privileges.users.isModerator(caller.uid, cid),
+    ]);
+
+    // timestamps returned by posts.diffs.list are strings
+    timestamps.push(String(post.timestamp));
+
+    return {
+        timestamps: timestamps,
+        revisions: timestamps.map((timestamp, idx) =&gt; ({
+            timestamp: timestamp,
+            username: usernames[idx],
+        })),
+        // Only admins, global mods and moderator of that cid can delete a diff
+        deletable: isAdmin || isModerator,
+        // These and post owners can restore to a different post version
+        editable: isAdmin || isModerator || parseInt(caller.uid, 10) === parseInt(post.uid, 10),
+    };
+};
+
+postsAPI.loadDiff = async (caller, data) =&gt; {
+    await diffsPrivilegeCheck(data.pid, caller.uid);
+    return await posts.diffs.load(data.pid, data.since, caller.uid);
+};
+
+postsAPI.restoreDiff = async (caller, data) =&gt; {
+    const cid = await posts.getCidByPid(data.pid);
+    const canEdit = await privileges.categories.can(&#039;posts:edit&#039;, cid, caller.uid);
+    if (!canEdit) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    const edit = await posts.diffs.restore(data.pid, data.since, caller.uid, apiHelpers.buildReqObject(caller));
+    websockets.in(`topic_${edit.topic.tid}`).emit(&#039;event:post_edited&#039;, edit);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

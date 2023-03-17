@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/tags.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/tags.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">527</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">95.56</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">7.54</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const user = require(&#039;../user&#039;);
+const categories = require(&#039;../categories&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const batch = require(&#039;../batch&#039;);
+const cache = require(&#039;../cache&#039;);
+
+module.exports = function (Topics) {
+    Topics.createTags = async function (tags, tid, timestamp) {
+        if (!Array.isArray(tags) || !tags.length) {
+            return;
+        }
+
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+        const topicSets = tags.map(tag =&gt; `tag:${tag}:topics`).concat(
+            tags.map(tag =&gt; `cid:${cid}:tag:${tag}:topics`)
+        );
+        await db.sortedSetsAdd(topicSets, timestamp, tid);
+        await Topics.updateCategoryTagsCount([cid], tags);
+        await Promise.all(tags.map(updateTagCount));
+    };
+
+    Topics.filterTags = async function (tags, cid) {
+        const result = await plugins.hooks.fire(&#039;filter:tags.filter&#039;, { tags: tags, cid: cid });
+        tags = _.uniq(result.tags)
+            .map(tag =&gt; utils.cleanUpTag(tag, meta.config.maximumTagLength))
+            .filter(tag =&gt; tag &amp;&amp; tag.length &gt;= (meta.config.minimumTagLength || 3));
+
+        return await filterCategoryTags(tags, cid);
+    };
+
+    Topics.updateCategoryTagsCount = async function (cids, tags) {
+        await Promise.all(cids.map(async (cid) =&gt; {
+            const counts = await db.sortedSetsCard(
+                tags.map(tag =&gt; `cid:${cid}:tag:${tag}:topics`)
+            );
+            const tagToCount = _.zipObject(tags, counts);
+            const set = `cid:${cid}:tags`;
+
+            const bulkAdd = tags.filter(tag =&gt; tagToCount[tag] &gt; 0)
+                .map(tag =&gt; [set, tagToCount[tag], tag]);
+
+            const bulkRemove = tags.filter(tag =&gt; tagToCount[tag] &lt;= 0)
+                .map(tag =&gt; [set, tag]);
+
+            await Promise.all([
+                db.sortedSetAddBulk(bulkAdd),
+                db.sortedSetRemoveBulk(bulkRemove),
+            ]);
+        }));
+
+        await db.sortedSetsRemoveRangeByScore(
+            cids.map(cid =&gt; `cid:${cid}:tags`), &#039;-inf&#039;, 0
+        );
+    };
+
+    Topics.validateTags = async function (tags, cid, uid, tid = null) {
+        if (!Array.isArray(tags)) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        tags = _.uniq(tags);
+        const [categoryData, isPrivileged, currentTags] = await Promise.all([
+            categories.getCategoryFields(cid, [&#039;minTags&#039;, &#039;maxTags&#039;]),
+            user.isPrivileged(uid),
+            tid ? Topics.getTopicTags(tid) : [],
+        ]);
+        if (tags.length &lt; parseInt(categoryData.minTags, 10)) {
+            throw new Error(`[[error:not-enough-tags, ${categoryData.minTags}]]`);
+        } else if (tags.length &gt; parseInt(categoryData.maxTags, 10)) {
+            throw new Error(`[[error:too-many-tags, ${categoryData.maxTags}]]`);
+        }
+
+        const addedTags = tags.filter(tag =&gt; !currentTags.includes(tag));
+        const removedTags = currentTags.filter(tag =&gt; !tags.includes(tag));
+        const systemTags = (meta.config.systemTags || &#039;&#039;).split(&#039;,&#039;);
+
+        if (!isPrivileged &amp;&amp; systemTags.length &amp;&amp;
+            addedTags.length &amp;&amp; addedTags.some(tag =&gt; systemTags.includes(tag))) {
+            throw new Error(&#039;[[error:cant-use-system-tag]]&#039;);
+        }
+
+        if (!isPrivileged &amp;&amp; systemTags.length &amp;&amp;
+            removedTags.length &amp;&amp; removedTags.some(tag =&gt; systemTags.includes(tag))) {
+            throw new Error(&#039;[[error:cant-remove-system-tag]]&#039;);
+        }
+    };
+
+    async function filterCategoryTags(tags, cid) {
+        const tagWhitelist = await categories.getTagWhitelist([cid]);
+        if (!Array.isArray(tagWhitelist[0]) || !tagWhitelist[0].length) {
+            return tags;
+        }
+        const whitelistSet = new Set(tagWhitelist[0]);
+        return tags.filter(tag =&gt; whitelistSet.has(tag));
+    }
+
+    Topics.createEmptyTag = async function (tag) {
+        if (!tag) {
+            throw new Error(&#039;[[error:invalid-tag]]&#039;);
+        }
+        if (tag.length &lt; (meta.config.minimumTagLength || 3)) {
+            throw new Error(&#039;[[error:tag-too-short]]&#039;);
+        }
+        const isMember = await db.isSortedSetMember(&#039;tags:topic:count&#039;, tag);
+        if (!isMember) {
+            await db.sortedSetAdd(&#039;tags:topic:count&#039;, 0, tag);
+            cache.del(&#039;tags:topic:count&#039;);
+        }
+        const allCids = await categories.getAllCidsFromSet(&#039;categories:cid&#039;);
+        const isMembers = await db.isMemberOfSortedSets(
+            allCids.map(cid =&gt; `cid:${cid}:tags`), tag
+        );
+        const bulkAdd = allCids.filter((cid, index) =&gt; !isMembers[index])
+            .map(cid =&gt; ([`cid:${cid}:tags`, 0, tag]));
+        await db.sortedSetAddBulk(bulkAdd);
+    };
+
+    Topics.renameTags = async function (data) {
+        for (const tagData of data) {
+            // eslint-disable-next-line no-await-in-loop
+            await renameTag(tagData.value, tagData.newName);
+        }
+    };
+
+    async function renameTag(tag, newTagName) {
+        if (!newTagName || tag === newTagName) {
+            return;
+        }
+        newTagName = utils.cleanUpTag(newTagName, meta.config.maximumTagLength);
+
+        await Topics.createEmptyTag(newTagName);
+        const allCids = {};
+
+        await batch.processSortedSet(`tag:${tag}:topics`, async (tids) =&gt; {
+            const topicData = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;cid&#039;, &#039;tags&#039;]);
+            const cids = topicData.map(t =&gt; t.cid);
+            topicData.forEach((t) =&gt; { allCids[t.cid] = true; });
+            const scores = await db.sortedSetScores(`tag:${tag}:topics`, tids);
+            // update tag:&lt;tag&gt;:topics
+            await db.sortedSetAdd(`tag:${newTagName}:topics`, scores, tids);
+            await db.sortedSetRemove(`tag:${tag}:topics`, tids);
+
+            // update cid:&lt;cid&gt;:tag:&lt;tag&gt;:topics
+            await db.sortedSetAddBulk(topicData.map(
+                (t, index) =&gt; [`cid:${t.cid}:tag:${newTagName}:topics`, scores[index], t.tid]
+            ));
+            await db.sortedSetRemove(cids.map(cid =&gt; `cid:${cid}:tag:${tag}:topics`), tids);
+
+            // update &#039;tags&#039; field in topic hash
+            topicData.forEach((topic) =&gt; {
+                topic.tags = topic.tags.map(tagItem =&gt; tagItem.value);
+                const index = topic.tags.indexOf(tag);
+                if (index !== -1) {
+                    topic.tags.splice(index, 1, newTagName);
+                }
+            });
+            await db.setObjectBulk(
+                topicData.map(t =&gt; [`topic:${t.tid}`, { tags: t.tags.join(&#039;,&#039;) }]),
+            );
+        }, {});
+        await Topics.deleteTag(tag);
+        await updateTagCount(newTagName);
+        await Topics.updateCategoryTagsCount(Object.keys(allCids), [newTagName]);
+    }
+
+    async function updateTagCount(tag) {
+        const count = await Topics.getTagTopicCount(tag);
+        await db.sortedSetAdd(&#039;tags:topic:count&#039;, count || 0, tag);
+        cache.del(&#039;tags:topic:count&#039;);
+    }
+
+    Topics.getTagTids = async function (tag, start, stop) {
+        const tids = await db.getSortedSetRevRange(`tag:${tag}:topics`, start, stop);
+        const payload = await plugins.hooks.fire(&#039;filter:topics.getTagTids&#039;, { tag, start, stop, tids });
+        return payload.tids;
+    };
+
+    Topics.getTagTidsByCids = async function (tag, cids, start, stop) {
+        const keys = cids.map(cid =&gt; `cid:${cid}:tag:${tag}:topics`);
+        const tids = await db.getSortedSetRevRange(keys, start, stop);
+        const payload = await plugins.hooks.fire(&#039;filter:topics.getTagTidsByCids&#039;, { tag, cids, start, stop, tids });
+        return payload.tids;
+    };
+
+    Topics.getTagTopicCount = async function (tag, cids = []) {
+        let count = 0;
+        if (cids.length) {
+            count = await db.sortedSetsCardSum(
+                cids.map(cid =&gt; `cid:${cid}:tag:${tag}:topics`)
+            );
+        } else {
+            count = await db.sortedSetCard(`tag:${tag}:topics`);
+        }
+
+        const payload = await plugins.hooks.fire(&#039;filter:topics.getTagTopicCount&#039;, { tag, count, cids });
+        return payload.count;
+    };
+
+    Topics.deleteTags = async function (tags) {
+        if (!Array.isArray(tags) || !tags.length) {
+            return;
+        }
+        await removeTagsFromTopics(tags);
+        const keys = tags.map(tag =&gt; `tag:${tag}:topics`);
+        await db.deleteAll(keys);
+        await db.sortedSetRemove(&#039;tags:topic:count&#039;, tags);
+        cache.del(&#039;tags:topic:count&#039;);
+        const cids = await categories.getAllCidsFromSet(&#039;categories:cid&#039;);
+
+        await db.sortedSetRemove(cids.map(cid =&gt; `cid:${cid}:tags`), tags);
+
+        const deleteKeys = [];
+        tags.forEach((tag) =&gt; {
+            deleteKeys.push(`tag:${tag}`);
+            cids.forEach((cid) =&gt; {
+                deleteKeys.push(`cid:${cid}:tag:${tag}:topics`);
+            });
+        });
+        await db.deleteAll(deleteKeys);
+    };
+
+    async function removeTagsFromTopics(tags) {
+        await async.eachLimit(tags, 50, async (tag) =&gt; {
+            const tids = await db.getSortedSetRange(`tag:${tag}:topics`, 0, -1);
+            if (!tids.length) {
+                return;
+            }
+
+            await db.deleteObjectFields(
+                tids.map(tid =&gt; `topic:${tid}`),
+                [&#039;tags&#039;],
+            );
+        });
+    }
+
+    Topics.deleteTag = async function (tag) {
+        await Topics.deleteTags([tag]);
+    };
+
+    Topics.getTags = async function (start, stop) {
+        return await getFromSet(&#039;tags:topic:count&#039;, start, stop);
+    };
+
+    Topics.getCategoryTags = async function (cids, start, stop) {
+        if (Array.isArray(cids)) {
+            return await db.getSortedSetRevUnion({
+                sets: cids.map(cid =&gt; `cid:${cid}:tags`),
+                start,
+                stop,
+            });
+        }
+        return await db.getSortedSetRevRange(`cid:${cids}:tags`, start, stop);
+    };
+
+    Topics.getCategoryTagsData = async function (cids, start, stop) {
+        return await getFromSet(
+            Array.isArray(cids) ? cids.map(cid =&gt; `cid:${cid}:tags`) : `cid:${cids}:tags`,
+            start,
+            stop
+        );
+    };
+
+    async function getFromSet(set, start, stop) {
+        let tags;
+        if (Array.isArray(set)) {
+            tags = await db.getSortedSetRevUnion({
+                sets: set,
+                start,
+                stop,
+                withScores: true,
+            });
+        } else {
+            tags = await db.getSortedSetRevRangeWithScores(set, start, stop);
+        }
+
+        const payload = await plugins.hooks.fire(&#039;filter:tags.getAll&#039;, {
+            tags: tags,
+        });
+        return await Topics.getTagData(payload.tags);
+    }
+
+    Topics.getTagData = async function (tags) {
+        if (!tags.length) {
+            return [];
+        }
+        tags.forEach((tag) =&gt; {
+            tag.valueEscaped = validator.escape(String(tag.value));
+            tag.valueEncoded = encodeURIComponent(tag.valueEscaped);
+            tag.class = tag.valueEscaped.replace(/\s/g, &#039;-&#039;);
+        });
+        return tags;
+    };
+
+    Topics.getTopicTags = async function (tid) {
+        const data = await Topics.getTopicsTags([tid]);
+        return data &amp;&amp; data[0];
+    };
+
+    Topics.getTopicsTags = async function (tids) {
+        const topicTagData = await Topics.getTopicsFields(tids, [&#039;tags&#039;]);
+        return tids.map((tid, i) =&gt; topicTagData[i].tags.map(tagData =&gt; tagData.value));
+    };
+
+    Topics.getTopicTagsObjects = async function (tid) {
+        const data = await Topics.getTopicsTagsObjects([tid]);
+        return Array.isArray(data) &amp;&amp; data.length ? data[0] : [];
+    };
+
+    Topics.getTopicsTagsObjects = async function (tids) {
+        const topicTags = await Topics.getTopicsTags(tids);
+        const uniqueTopicTags = _.uniq(_.flatten(topicTags));
+
+        const tags = uniqueTopicTags.map(tag =&gt; ({ value: tag }));
+        const tagData = await Topics.getTagData(tags);
+        const tagDataMap = _.zipObject(uniqueTopicTags, tagData);
+
+        topicTags.forEach((tags, index) =&gt; {
+            if (Array.isArray(tags)) {
+                topicTags[index] = tags.map(tag =&gt; tagDataMap[tag]);
+            }
+        });
+
+        return topicTags;
+    };
+
+    Topics.addTags = async function (tags, tids) {
+        const topicData = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;cid&#039;, &#039;timestamp&#039;, &#039;tags&#039;]);
+        const bulkAdd = [];
+        const bulkSet = [];
+        topicData.forEach((t) =&gt; {
+            const topicTags = t.tags.map(tagItem =&gt; tagItem.value);
+            tags.forEach((tag) =&gt; {
+                bulkAdd.push([`tag:${tag}:topics`, t.timestamp, t.tid]);
+                bulkAdd.push([`cid:${t.cid}:tag:${tag}:topics`, t.timestamp, t.tid]);
+                if (!topicTags.includes(tag)) {
+                    topicTags.push(tag);
+                }
+            });
+            bulkSet.push([`topic:${t.tid}`, { tags: topicTags.join(&#039;,&#039;) }]);
+        });
+        await Promise.all([
+            db.sortedSetAddBulk(bulkAdd),
+            db.setObjectBulk(bulkSet),
+        ]);
+
+        await Promise.all(tags.map(updateTagCount));
+        await Topics.updateCategoryTagsCount(_.uniq(topicData.map(t =&gt; t.cid)), tags);
+    };
+
+    Topics.removeTags = async function (tags, tids) {
+        const topicData = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;cid&#039;, &#039;tags&#039;]);
+        const bulkRemove = [];
+        const bulkSet = [];
+
+        topicData.forEach((t) =&gt; {
+            const topicTags = t.tags.map(tagItem =&gt; tagItem.value);
+            tags.forEach((tag) =&gt; {
+                bulkRemove.push([`tag:${tag}:topics`, t.tid]);
+                bulkRemove.push([`cid:${t.cid}:tag:${tag}:topics`, t.tid]);
+                if (topicTags.includes(tag)) {
+                    topicTags.splice(topicTags.indexOf(tag), 1);
+                }
+            });
+            bulkSet.push([`topic:${t.tid}`, { tags: topicTags.join(&#039;,&#039;) }]);
+        });
+        await Promise.all([
+            db.sortedSetRemoveBulk(bulkRemove),
+            db.setObjectBulk(bulkSet),
+        ]);
+
+        await Promise.all(tags.map(updateTagCount));
+        await Topics.updateCategoryTagsCount(_.uniq(topicData.map(t =&gt; t.cid)), tags);
+    };
+
+    Topics.updateTopicTags = async function (tid, tags) {
+        await Topics.deleteTopicTags(tid);
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+
+        tags = await Topics.filterTags(tags, cid);
+        await Topics.addTags(tags, [tid]);
+    };
+
+    Topics.deleteTopicTags = async function (tid) {
+        const topicData = await Topics.getTopicFields(tid, [&#039;cid&#039;, &#039;tags&#039;]);
+        const { cid } = topicData;
+        const tags = topicData.tags.map(tagItem =&gt; tagItem.value);
+        await db.deleteObjectField(`topic:${tid}`, &#039;tags&#039;);
+
+        const sets = tags.map(tag =&gt; `tag:${tag}:topics`)
+            .concat(tags.map(tag =&gt; `cid:${cid}:tag:${tag}:topics`));
+        await db.sortedSetsRemove(sets, tid);
+
+        await Topics.updateCategoryTagsCount([cid], tags);
+        await Promise.all(tags.map(updateTagCount));
+    };
+
+    Topics.searchTags = async function (data) {
+        if (!data || !data.query) {
+            return [];
+        }
+        let result;
+        if (plugins.hooks.hasListeners(&#039;filter:topics.searchTags&#039;)) {
+            result = await plugins.hooks.fire(&#039;filter:topics.searchTags&#039;, { data: data });
+        } else {
+            result = await findMatches(data);
+        }
+        result = await plugins.hooks.fire(&#039;filter:tags.search&#039;, { data: data, matches: result.matches });
+        return result.matches;
+    };
+
+    Topics.autocompleteTags = async function (data) {
+        if (!data || !data.query) {
+            return [];
+        }
+        let result;
+        if (plugins.hooks.hasListeners(&#039;filter:topics.autocompleteTags&#039;)) {
+            result = await plugins.hooks.fire(&#039;filter:topics.autocompleteTags&#039;, { data: data });
+        } else {
+            result = await findMatches(data);
+        }
+        return result.matches;
+    };
+
+    async function getAllTags() {
+        const cached = cache.get(&#039;tags:topic:count&#039;);
+        if (cached !== undefined) {
+            return cached;
+        }
+        const tags = await db.getSortedSetRevRangeWithScores(&#039;tags:topic:count&#039;, 0, -1);
+        cache.set(&#039;tags:topic:count&#039;, tags);
+        return tags;
+    }
+
+    async function findMatches(data) {
+        let { query } = data;
+        let tagWhitelist = [];
+        if (parseInt(data.cid, 10)) {
+            tagWhitelist = await categories.getTagWhitelist([data.cid]);
+        }
+        let tags = [];
+        if (Array.isArray(tagWhitelist[0]) &amp;&amp; tagWhitelist[0].length) {
+            const scores = await db.sortedSetScores(`cid:${data.cid}:tags`, tagWhitelist[0]);
+            tags = tagWhitelist[0].map((tag, index) =&gt; ({ value: tag, score: scores[index] }));
+        } else if (data.cids) {
+            tags = await db.getSortedSetRevUnion({
+                sets: data.cids.map(cid =&gt; `cid:${cid}:tags`),
+                start: 0,
+                stop: -1,
+                withScores: true,
+            });
+        } else {
+            tags = await getAllTags();
+        }
+
+        query = query.toLowerCase();
+
+        const matches = [];
+        for (let i = 0; i &lt; tags.length; i += 1) {
+            if (tags[i].value &amp;&amp; tags[i].value.toLowerCase().startsWith(query)) {
+                matches.push(tags[i]);
+                if (matches.length &gt; 39) {
+                    break;
+                }
+            }
+        }
+
+        matches.sort((a, b) =&gt; {
+            if (a.value &lt; b.value) {
+                return -1;
+            } else if (a.value &gt; b.value) {
+                return 1;
+            }
+            return 0;
+        });
+        return { matches: matches };
+    }
+
+    Topics.searchAndLoadTags = async function (data) {
+        const searchResult = {
+            tags: [],
+            matchCount: 0,
+            pageCount: 1,
+        };
+
+        if (!data || !data.query || !data.query.length) {
+            return searchResult;
+        }
+        const tags = await Topics.searchTags(data);
+
+        const tagData = await Topics.getTagData(tags.map(tag =&gt; ({ value: tag.value })));
+
+        tagData.forEach((tag, index) =&gt; {
+            tag.score = tags[index].score;
+        });
+        tagData.sort((a, b) =&gt; b.score - a.score);
+        searchResult.tags = tagData;
+        searchResult.matchCount = tagData.length;
+        searchResult.pageCount = 1;
+        return searchResult;
+    };
+
+    Topics.getRelatedTopics = async function (topicData, uid) {
+        if (plugins.hooks.hasListeners(&#039;filter:topic.getRelatedTopics&#039;)) {
+            const result = await plugins.hooks.fire(&#039;filter:topic.getRelatedTopics&#039;, { topic: topicData, uid: uid, topics: [] });
+            return result.topics;
+        }
+
+        let maximumTopics = meta.config.maximumRelatedTopics;
+        if (maximumTopics === 0 || !topicData.tags || !topicData.tags.length) {
+            return [];
+        }
+
+        maximumTopics = maximumTopics || 5;
+        let tids = await Promise.all(topicData.tags.map(tag =&gt; Topics.getTagTids(tag.value, 0, 5)));
+        tids = _.shuffle(_.uniq(_.flatten(tids))).slice(0, maximumTopics);
+        const topics = await Topics.getTopics(tids, uid);
+        return topics.filter(t =&gt; t &amp;&amp; !t.deleted &amp;&amp; parseInt(t.uid, 10) !== parseInt(uid, 10));
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

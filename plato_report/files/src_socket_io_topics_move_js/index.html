@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/topics/move.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/topics/move.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">73</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">20.87</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.75</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const user = require(&#039;../../user&#039;);
+const topics = require(&#039;../../topics&#039;);
+const categories = require(&#039;../../categories&#039;);
+const privileges = require(&#039;../../privileges&#039;);
+const socketHelpers = require(&#039;../helpers&#039;);
+const events = require(&#039;../../events&#039;);
+
+module.exports = function (SocketTopics) {
+    SocketTopics.move = async function (socket, data) {
+        if (!data || !Array.isArray(data.tids) || !data.cid) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+
+        const canMove = await privileges.categories.isAdminOrMod(data.cid, socket.uid);
+        if (!canMove) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+
+        const uids = await user.getUidsFromSet(&#039;users:online&#039;, 0, -1);
+
+        await async.eachLimit(data.tids, 10, async (tid) =&gt; {
+            const canMove = await privileges.topics.isAdminOrMod(tid, socket.uid);
+            if (!canMove) {
+                throw new Error(&#039;[[error:no-privileges]]&#039;);
+            }
+            const topicData = await topics.getTopicFields(tid, [&#039;tid&#039;, &#039;cid&#039;, &#039;slug&#039;, &#039;deleted&#039;]);
+            data.uid = socket.uid;
+            await topics.tools.move(tid, data);
+
+            const notifyUids = await privileges.categories.filterUids(&#039;topics:read&#039;, topicData.cid, uids);
+            socketHelpers.emitToUids(&#039;event:topic_moved&#039;, topicData, notifyUids);
+            if (!topicData.deleted) {
+                socketHelpers.sendNotificationToTopicOwner(tid, socket.uid, &#039;move&#039;, &#039;notifications:moved_your_topic&#039;);
+            }
+
+            await events.log({
+                type: `topic-move`,
+                uid: socket.uid,
+                ip: socket.ip,
+                tid: tid,
+                fromCid: topicData.cid,
+                toCid: data.cid,
+            });
+        });
+    };
+
+
+    SocketTopics.moveAll = async function (socket, data) {
+        if (!data || !data.cid || !data.currentCid) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        const canMove = await privileges.categories.canMoveAllTopics(data.currentCid, data.cid, socket.uid);
+        if (!canMove) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+
+        const tids = await categories.getAllTopicIds(data.currentCid, 0, -1);
+        data.uid = socket.uid;
+        await async.eachLimit(tids, 50, async (tid) =&gt; {
+            await topics.tools.move(tid, data);
+        });
+        await events.log({
+            type: `topic-move-all`,
+            uid: socket.uid,
+            ip: socket.ip,
+            fromCid: data.currentCid,
+            toCid: data.cid,
+        });
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

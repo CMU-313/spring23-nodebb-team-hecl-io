@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/manage/categories.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/manage/categories.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.84</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">207</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">75.32</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.49</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null) ? context[&#039;breadcrumbs&#039;][&#039;length&#039;] : null) ?
+        &quot;\n&lt;ol class=\&quot;breadcrumb\&quot; itemscope=\&quot;itemscope\&quot; itemprop=\&quot;breadcrumb\&quot; itemtype=\&quot;http://schema.org/BreadcrumbList\&quot;&gt;\n    &quot; + 
+          compiled.blocks[&#039;breadcrumbs&#039;](helpers, context, guard, iter, helper) + 
+          &quot;\n&lt;/ol&gt;\n&quot; :
+        &quot;&quot;) + 
+      &quot;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-lg-12\&quot;&gt;\n        &lt;div class=\&quot;category btn-group\&quot;&gt;\n            &lt;div component=\&quot;category-selector\&quot; class=\&quot;btn-group bottom-sheet\&quot;&gt;\n&lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot;&gt;\n    &lt;span component=\&quot;category-selector-selected\&quot;&gt;&quot; + 
+      ((guard((context != null) ? context[&#039;selectedCategory&#039;] : null) &amp;&amp; !guard((context != null) ? context[&#039;showCategorySelectLabel&#039;] : null)) ?
+        &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+          __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard((context != null) ? context[&#039;selectedCategory&#039;] : null)])) + 
+          &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-stack-1x &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;icon&#039;] : null)) + 
+          &quot;\&quot; style=\&quot;color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;color&#039;] : null)) + 
+          &quot;;\&quot;&gt;&lt;/i&gt;&lt;/span&gt; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;selectedCategory&#039;] != null) ? context[&#039;selectedCategory&#039;][&#039;name&#039;] : null)) :
+        &quot;\n    &lt;span class=\&quot;visible-sm-inline visible-md-inline visible-lg-inline\&quot;&gt;&quot; + 
+          (guard((context != null) ? context[&#039;selectCategoryLabel&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;selectCategoryLabel&#039;] : null)) :
+            &quot;[[topic:thread_tools.select_category]]&quot;) + 
+          &quot;&lt;/span&gt;&lt;span class=\&quot;visible-xs-inline\&quot;&gt;&lt;i class=\&quot;fa fa-fw &quot; + 
+          (guard((context != null) ? context[&#039;selectCategoryIcon&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;selectCategoryIcon&#039;] : null)) :
+            &quot;fa-list&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n    &quot;) + 
+      &quot;&lt;/span&gt; &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n&lt;/button&gt;\n&lt;div component=\&quot;category-selector-search\&quot; class=\&quot;hidden\&quot;&gt;\n    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; autocomplete=\&quot;off\&quot;&gt;\n&lt;/div&gt;\n&lt;ul component=\&quot;category/list\&quot; class=\&quot;dropdown-menu category-dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n    &lt;li component=\&quot;category/no-matches\&quot; role=\&quot;presentation\&quot; class=\&quot;category hidden\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot;&gt;[[search:no-matches]]&lt;/a&gt;\n    &lt;/li&gt;\n    &quot; + 
+      compiled.blocks[&#039;categoryItems&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n&lt;/ul&gt;\n&lt;/div&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;btn-group\&quot;&gt;\n            &lt;button id=\&quot;collapse-all\&quot; class=\&quot;btn btn-default\&quot;&gt;[[admin/manage/categories:collapse-all]]&lt;/button&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;btn-group\&quot;&gt;\n            &lt;button id=\&quot;expand-all\&quot; class=\&quot;btn btn-default\&quot;&gt;[[admin/manage/categories:expand-all]]&lt;/button&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n\n&lt;hr/&gt;\n&lt;div component=\&quot;category/no-matches\&quot; class=\&quot;hidden\&quot;&gt;[[admin/manage/categories:no-matches]]&lt;/div&gt;\n&lt;div class=\&quot;categories\&quot;&gt;&lt;/div&gt;\n&lt;div&gt;\n    &lt;div component=\&quot;pagination\&quot; class=\&quot;text-center pagination-container&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot; hidden&quot;) + 
+      &quot;\&quot;&gt;\n    &lt;ul class=\&quot;pagination hidden-xs\&quot;&gt;\n        &lt;li class=\&quot;previous pull-left&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &quot; + 
+      compiled.blocks[&#039;pagination.pages&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\n        &lt;li class=\&quot;next pull-right&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n\n    &lt;ul class=\&quot;pagination hidden-sm hidden-md hidden-lg\&quot;&gt;\n        &lt;li class=\&quot;first&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;first&#039;] != null) ? context[&#039;pagination&#039;][&#039;first&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;1\&quot;&gt;&lt;i class=\&quot;fa fa-fast-backward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;previous&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n            &lt;a href=\&quot;#\&quot;&gt;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;currentPage&#039;] : null)) + 
+      &quot; / &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;next&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;last&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;last&#039;] != null) ? context[&#039;pagination&#039;][&#039;last&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fast-forward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n&lt;/div&gt;\n&lt;/div&gt;\n&lt;button data-action=\&quot;create\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;add&lt;/i&gt;\n&lt;/button&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;breadcrumbs&#039;: function breadcrumbs(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;breadcrumbs&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li&quot; + 
+          (index === length - 1 ?
+            &quot; component=\&quot;breadcrumb/current\&quot;&quot; :
+            &quot;&quot;) + 
+          &quot; itemscope=\&quot;itemscope\&quot; itemprop=\&quot;itemListElement\&quot; itemtype=\&quot;http://schema.org/ListItem\&quot; &quot; + 
+          (index === length - 1 ?
+            &quot;class=\&quot;active\&quot;&quot; :
+            &quot;&quot;) + 
+          &quot;&gt;\n        &lt;meta itemprop=\&quot;position\&quot; content=\&quot;&quot; + 
+          __escape(index) + 
+          &quot;\&quot; /&gt;\n        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null) ?
+            &quot;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null)) + 
+              &quot;\&quot; itemprop=\&quot;item\&quot;&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &lt;span itemprop=\&quot;name\&quot;&gt;\n                &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;\n                &quot; + 
+          (index === length - 1 ?
+            &quot;\n                &quot; + 
+              (guard((context != null) ? context[&#039;feeds:disableRSS&#039;] : null) ?
+                &quot;&quot; :
+                &quot;\n                &quot; + 
+                  (guard((context != null) ? context[&#039;rssFeedUrl&#039;] : null) ?
+                    &quot;&lt;a target=\&quot;_blank\&quot; href=\&quot;&quot; + 
+                      __escape(guard((context != null) ? context[&#039;rssFeedUrl&#039;] : null)) + 
+                      &quot;\&quot; itemprop=\&quot;item\&quot;&gt;&lt;i class=\&quot;fa fa-rss-square\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&quot; :
+                    &quot;&quot;)) + 
+              &quot;\n                &quot; :
+            &quot;&quot;) + 
+          &quot;\n            &lt;/span&gt;\n        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;breadcrumbs&#039;] != null &amp;&amp; context[&#039;breadcrumbs&#039;][key0] != null) ? context[&#039;breadcrumbs&#039;][key0][&#039;url&#039;] : null) ?
+            &quot;&lt;/a&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;categoryItems&#039;: function categoryItems(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;categoryItems&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li role=\&quot;presentation\&quot; class=\&quot;category &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;disabledClass&#039;] : null) ?
+            &quot;disabled &quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; data-name=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;\&quot; data-parent-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;parentCid&#039;] : null)) + 
+          &quot;\&quot;&gt;\n        &lt;a role=\&quot;menu-item\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;level&#039;] : null)) + 
+          &quot;&lt;span component=\&quot;category-markup\&quot; style=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;match&#039;] : null) ?
+            &quot;font-weight: bold;&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null) ?
+            &quot;&lt;span class=\&quot;fa-stack\&quot; style=\&quot;&quot; + 
+              __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard(value)])) + 
+              &quot;\&quot;&gt;&lt;i style=\&quot;color: &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;color&#039;] : null)) + 
+              &quot;;\&quot; class=\&quot;fa fa-stack-1x fa-fw &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;icon&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;/i&gt;&lt;/span&gt;&quot; :
+            &quot;&quot;) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;categoryItems&#039;] != null &amp;&amp; context[&#039;categoryItems&#039;][key0] != null) ? context[&#039;categoryItems&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;/a&gt;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;pagination.pages&#039;: function paginationpages(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;separator&#039;] : null) ?
+            &quot;\n            &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n                &lt;a href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-ellipsis-h\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot; :
+            &quot;\n            &lt;li class=\&quot;page&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;active&#039;] : null) ?
+                &quot; active&quot; :
+                &quot;&quot;) + 
+              &quot;\&quot; &gt;\n                &lt;a href=\&quot;?&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;qs&#039;] : null)) + 
+              &quot;\&quot; data-page=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot;) + 
+          &quot;\n        &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

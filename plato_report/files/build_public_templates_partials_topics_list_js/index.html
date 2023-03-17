@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/partials/topics_list.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/partials/topics_list.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.37</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">246</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">100.34</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">8.17</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;ul component=\&quot;category\&quot; class=\&quot;topic-list\&quot; itemscope itemtype=\&quot;http://www.schema.org/ItemList\&quot; data-nextstart=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;nextStart&#039;] : null)) + 
+      &quot;\&quot; data-set=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;set&#039;] : null)) + 
+      &quot;\&quot;&gt;\n    &quot; + 
+      compiled.blocks[&#039;topics&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n&lt;/ul&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;topics&#039;: function topics(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;topics&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n    &lt;li component=\&quot;category/topic\&quot; class=\&quot;row clearfix category-item &quot; + 
+          __escape(helper(context, helpers, &#039;generateTopicClass&#039;, [guard(value)])) + 
+          &quot;\&quot; data-tid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;tid&#039;] : null)) + 
+          &quot;\&quot; data-index=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; data-cid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;cid&#039;] : null)) + 
+          &quot;\&quot; itemprop=\&quot;itemListElement\&quot; itemscope itemtype=\&quot;https://schema.org/ListItem\&quot;&gt;\n        &lt;link itemprop=\&quot;url\&quot; content=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/topic/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;slug&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n        &lt;meta itemprop=\&quot;name\&quot; content=\&quot;&quot; + 
+          __escape(helper(context, helpers, &#039;stripTags&#039;, [guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;title&#039;] : null)])) + 
+          &quot;\&quot; /&gt;\n        &lt;meta itemprop=\&quot;itemListOrder\&quot; content=\&quot;descending\&quot; /&gt;\n        &lt;meta itemprop=\&quot;position\&quot; content=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n        &lt;a id=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; data-index=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;index&#039;] : null)) + 
+          &quot;\&quot; component=\&quot;topic/anchor\&quot;&gt;&lt;/a&gt;\n\n        &lt;div class=\&quot;col-md-6 col-sm-9 col-xs-10 content\&quot;&gt;\n            &lt;div class=\&quot;avatar pull-left\&quot;&gt;\n                &quot; + 
+          (guard((context != null) ? context[&#039;showSelect&#039;] : null) ?
+            &quot;\n                &lt;div class=\&quot;select\&quot; component=\&quot;topic/select\&quot;&gt;\n                    &quot; + 
+              (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;length&#039;] : null) ?
+                &quot;\n                    &lt;img src=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;0&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;0&#039;][&#039;url&#039;] : null)) + 
+                  &quot;\&quot; class=\&quot;user-img not-responsive\&quot; /&gt;\n                    &quot; :
+                &quot;\n                    &quot; + 
+                  __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;] : null), &quot;46&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;not-responsive&quot;])) + 
+                  &quot;\n                    &quot;) + 
+              &quot;\n                    &lt;i class=\&quot;fa fa-check\&quot;&gt;&lt;/i&gt;\n                &lt;/div&gt;\n                &quot; :
+            &quot;&quot;) + 
+          &quot;\n\n                &quot; + 
+          (guard((context != null) ? context[&#039;showSelect&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n                &lt;a href=\&quot;&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;][&#039;userslug&#039;] : null) ?
+                __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+                  &quot;/user/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;][&#039;userslug&#039;] : null)) :
+                &quot;#&quot;) + 
+              &quot;\&quot; class=\&quot;pull-left\&quot;&gt;\n                    &quot; + 
+              (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;length&#039;] : null) ?
+                &quot;\n                    &lt;img src=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;0&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;thumbs&#039;][&#039;0&#039;][&#039;url&#039;] : null)) + 
+                  &quot;\&quot; class=\&quot;user-img not-responsive\&quot; /&gt;\n                    &quot; :
+                &quot;\n                    &quot; + 
+                  __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;] : null), &quot;46&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;not-responsive&quot;])) + 
+                  &quot;\n                    &quot;) + 
+              &quot;\n                &lt;/a&gt;\n                &quot;) + 
+          &quot;\n            &lt;/div&gt;\n\n            &lt;h2 component=\&quot;topic/header\&quot; class=\&quot;title\&quot;&gt;\n                &lt;i component=\&quot;topic/scheduled\&quot; class=\&quot;fa fa-clock-o &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;scheduled&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hide&quot;) + 
+          &quot;\&quot; title=\&quot;[[topic:scheduled]]\&quot;&gt;&lt;/i&gt;\n                &lt;i component=\&quot;topic/pinned\&quot; class=\&quot;fa fa-thumb-tack &quot; + 
+          ((guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;scheduled&#039;] : null) || !guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;pinned&#039;] : null)) ?
+            &quot;hide&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; title=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;pinExpiry&#039;] : null) ?
+            &quot;[[topic:pinned-with-expiry, &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;pinExpiryISO&#039;] : null)) + 
+              &quot;]]&quot; :
+            &quot;[[topic:pinned]]&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                &lt;i component=\&quot;topic/resolved\&quot; class=\&quot;fa fa-check &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;resolved&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hide&quot;) + 
+          &quot;\&quot; style=\&quot;color:green;\&quot; title=\&quot;Resolved\&quot;&gt; (Resolved) &lt;/i&gt;\n                &lt;i component=\&quot;topic/unresolved\&quot; class=\&quot;fa fa-times &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;resolved&#039;] : null) ?
+            &quot;hide&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot; style=\&quot;color:red;\&quot; title=\&quot;Unresolved\&quot;&gt; (Unresolved) &lt;/i&gt;\n                &lt;i component=\&quot;topic/locked\&quot; class=\&quot;fa fa-lock &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;locked&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hide&quot;) + 
+          &quot;\&quot; title=\&quot;[[topic:locked]]\&quot;&gt;&lt;/i&gt;\n                &lt;i component=\&quot;topic/moved\&quot; class=\&quot;fa fa-arrow-circle-right &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;oldCid&#039;] : null) ?
+            &quot;&quot; :
+            &quot;hide&quot;) + 
+          &quot;\&quot; title=\&quot;[[topic:moved]]\&quot;&gt;&lt;/i&gt;\n                &quot; + 
+          iter(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;icons&#039;] : null), function each(key1, index, length, value) {
+            var key = key1;
+            return __escape(guard(value));
+          }, function alt() {
+            return &quot;&quot;;
+          }) + 
+          &quot;\n\n\n                &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;noAnchor&#039;] : null) ?
+            &quot;\n                &lt;span&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;title&#039;] : null)) + 
+              &quot;&lt;/span&gt;&lt;br /&gt;\n                &quot; :
+            &quot;\n                &lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/topic/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;slug&#039;] : null)) + 
+              (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;bookmark&#039;] : null) ?
+                &quot;/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;bookmark&#039;] : null)) :
+                &quot;&quot;) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;title&#039;] : null)) + 
+              &quot;&lt;/a&gt;&lt;br /&gt;\n                &quot;) + 
+          &quot;\n\n                &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;template&#039;] != null) ? context[&#039;template&#039;][&#039;category&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n                &lt;small&gt;\n                    &lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/category/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;category&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;][&#039;slug&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;span class=\&quot;fa-stack fa-lg\&quot; style=\&quot;&quot; + 
+              __escape(helper(context, helpers, &#039;generateCategoryBackground&#039;, [guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;] : null)])) + 
+              &quot;\&quot;&gt;&lt;i style=\&quot;color:&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;category&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;][&#039;color&#039;] : null)) + 
+              &quot;;\&quot; class=\&quot;fa &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;category&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;][&#039;icon&#039;] : null)) + 
+              &quot; fa-stack-1x\&quot;&gt;&lt;/i&gt;&lt;/span&gt; &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;category&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;][&#039;name&#039;] : null)) + 
+              &quot;&lt;/a&gt; &amp;bull;\n                &lt;/small&gt;\n                &quot;) + 
+          &quot;\n\n                &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;tags&#039;][&#039;length&#039;] : null) ?
+            &quot;\n                &lt;span class=\&quot;tag-list hidden-xs\&quot;&gt;\n                    &quot; + 
+              iter(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;tags&#039;] : null), function each(key1, index, length, value) {
+                var key = key1;
+                return &quot;\n                    &lt;a href=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+                  &quot;/tags/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;][key1] != null) ? context[&#039;topics&#039;][key0][&#039;tags&#039;][key1][&#039;valueEncoded&#039;] : null)) + 
+                  &quot;\&quot;&gt;&lt;span class=\&quot;tag tag-item tag-class-&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;][key1] != null) ? context[&#039;topics&#039;][key0][&#039;tags&#039;][key1][&#039;class&#039;] : null)) + 
+                  &quot;\&quot;&gt;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;tags&#039;][key1] != null) ? context[&#039;topics&#039;][key0][&#039;tags&#039;][key1][&#039;valueEscaped&#039;] : null)) + 
+                  &quot;&lt;/span&gt;&lt;/a&gt;\n                    &quot;;
+              }, function alt() {
+                return &quot;&quot;;
+              }) + 
+              &quot;\n                    &lt;small&gt;&amp;bull;&lt;/small&gt;\n                &lt;/span&gt;\n                &quot; :
+            &quot;&quot;) + 
+          &quot;\n\n                &lt;small class=\&quot;hidden-xs\&quot;&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;timestampISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt; &amp;bull; &lt;a href=\&quot;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;][&#039;userslug&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+              &quot;/user/&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;][&#039;userslug&#039;] : null)) :
+            &quot;#&quot;) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;user&#039;][&#039;displayname&#039;] : null)) + 
+          &quot;&lt;/a&gt;&lt;/small&gt;\n                &lt;small class=\&quot;visible-xs-inline\&quot;&gt;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;timestamp&#039;] : null) ?
+            &quot;\n                    &lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;timestampISO&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;/span&gt;\n                    &quot; :
+            &quot;\n                    &lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;timestampISO&#039;] : null)) + 
+              &quot;\&quot;&gt;&lt;/span&gt;\n                    &quot;) + 
+          &quot;\n                &lt;/small&gt;\n            &lt;/h2&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;mobile-stat col-xs-2 visible-xs text-right\&quot;&gt;\n            &lt;span class=\&quot;human-readable-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;postcount&#039;] : null)) + 
+          &quot;&lt;/span&gt; &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/topic/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;slug&#039;] : null)) + 
+          &quot;/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;index&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-arrow-circle-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;col-md-1 hidden-sm hidden-xs stats stats-votes\&quot;&gt;\n            &quot; + 
+          (guard((context != null) ? context[&#039;reputation:disabled&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n            &lt;span class=\&quot;human-readable-number\&quot; title=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;votes&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;votes&#039;] : null)) + 
+              &quot;&lt;/span&gt;&lt;br /&gt;\n            &lt;small&gt;[[global:votes]]&lt;/small&gt;\n            &quot;) + 
+          &quot;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;col-md-1 hidden-sm hidden-xs stats stats-postcount\&quot;&gt;\n            &lt;span class=\&quot;human-readable-number\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;postcount&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;postcount&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br /&gt;\n            &lt;small&gt;[[global:posts]]&lt;/small&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;col-md-1 hidden-sm hidden-xs stats stats-viewcount\&quot;&gt;\n            &lt;span class=\&quot;human-readable-number\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;viewcount&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;viewcount&#039;] : null)) + 
+          &quot;&lt;/span&gt;&lt;br /&gt;\n            &lt;small&gt;[[global:views]]&lt;/small&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;col-md-3 col-sm-3 teaser hidden-xs\&quot; component=\&quot;topic/teaser\&quot;&gt;\n            &lt;div class=\&quot;card background-link-container\&quot; style=\&quot;border-color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;category&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;category&#039;][&#039;bgColor&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                &lt;a class=\&quot;background-link\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/topic/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;slug&#039;] : null)) + 
+          &quot;/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;index&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/a&gt;\n                &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;unreplied&#039;] : null) ?
+            &quot;\n                &lt;p&gt;\n                    [[category:no_replies]]\n                &lt;/p&gt;\n                &quot; :
+            &quot;\n                &quot; + 
+              (guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;pid&#039;] : null) ?
+                &quot;\n                &lt;p&gt;\n                    &lt;a href=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+                  &quot;/user/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;user&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;user&#039;][&#039;userslug&#039;] : null)) + 
+                  &quot;\&quot;&gt;&quot; + 
+                  __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;user&#039;] : null), &quot;24&quot;, guard((context != null) ? context[&#039;true&#039;] : null), &quot;not-responsive&quot;])) + 
+                  &quot;&lt;/a&gt;\n                    &lt;a class=\&quot;permalink\&quot; href=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+                  &quot;/topic/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null) ? context[&#039;topics&#039;][key0][&#039;slug&#039;] : null)) + 
+                  &quot;/&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;index&#039;] : null)) + 
+                  &quot;\&quot;&gt;\n                        &lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;timestampISO&#039;] : null)) + 
+                  &quot;\&quot;&gt;&lt;/span&gt;\n                    &lt;/a&gt;\n                &lt;/p&gt;\n                &lt;div class=\&quot;post-content\&quot;&gt;\n                    &quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;topics&#039;] != null &amp;&amp; context[&#039;topics&#039;][key0] != null &amp;&amp; context[&#039;topics&#039;][key0][&#039;teaser&#039;] != null) ? context[&#039;topics&#039;][key0][&#039;teaser&#039;][&#039;content&#039;] : null)) + 
+                  &quot;\n                &lt;/div&gt;\n                &quot; :
+                &quot;&quot;) + 
+              &quot;\n                &quot;) + 
+          &quot;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/li&gt;\n    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

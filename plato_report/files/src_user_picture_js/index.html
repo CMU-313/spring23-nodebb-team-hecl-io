@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/picture.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/picture.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.21</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">233</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">42.32</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.24</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const mime = require(&#039;mime&#039;);
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../database&#039;);
+const file = require(&#039;../file&#039;);
+const image = require(&#039;../image&#039;);
+const meta = require(&#039;../meta&#039;);
+
+module.exports = function (User) {
+    User.getAllowedProfileImageExtensions = function () {
+        const exts = User.getAllowedImageTypes().map(type =&gt; mime.getExtension(type));
+        if (exts.includes(&#039;jpeg&#039;)) {
+            exts.push(&#039;jpg&#039;);
+        }
+        return exts;
+    };
+
+    User.getAllowedImageTypes = function () {
+        return [&#039;image/png&#039;, &#039;image/jpeg&#039;, &#039;image/bmp&#039;, &#039;image/gif&#039;];
+    };
+
+    User.updateCoverPosition = async function (uid, position) {
+        // Reject anything that isn&#039;t two percentages
+        if (!/^[\d.]+%\s[\d.]+%$/.test(position)) {
+            winston.warn(`[user/updateCoverPosition] Invalid position received: ${position}`);
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+
+        await User.setUserField(uid, &#039;cover:position&#039;, position);
+    };
+
+    User.updateCoverPicture = async function (data) {
+        const picture = {
+            name: &#039;profileCover&#039;,
+            uid: data.uid,
+        };
+
+        try {
+            if (!data.imageData &amp;&amp; data.position) {
+                return await User.updateCoverPosition(data.uid, data.position);
+            }
+
+            validateUpload(data, meta.config.maximumCoverImageSize, [&#039;image/png&#039;, &#039;image/jpeg&#039;, &#039;image/bmp&#039;]);
+
+            picture.path = await image.writeImageDataToTempFile(data.imageData);
+
+            const extension = file.typeToExtension(image.mimeFromBase64(data.imageData));
+            const filename = `${data.uid}-profilecover-${Date.now()}${extension}`;
+            const uploadData = await image.uploadImage(filename, &#039;profile&#039;, picture);
+
+            await deleteCurrentPicture(data.uid, &#039;cover:url&#039;);
+            await User.setUserField(data.uid, &#039;cover:url&#039;, uploadData.url);
+
+            if (data.position) {
+                await User.updateCoverPosition(data.uid, data.position);
+            }
+
+            return {
+                url: uploadData.url,
+            };
+        } finally {
+            await file.delete(picture.path);
+        }
+    };
+
+    // uploads a image file as profile picture
+    User.uploadCroppedPictureFile = async function (data) {
+        const userPhoto = data.file;
+        if (!meta.config.allowProfileImageUploads) {
+            throw new Error(&#039;[[error:profile-image-uploads-disabled]]&#039;);
+        }
+
+        if (userPhoto.size &gt; meta.config.maximumProfileImageSize * 1024) {
+            throw new Error(`[[error:file-too-big, ${meta.config.maximumProfileImageSize}]]`);
+        }
+
+        if (!userPhoto.type || !User.getAllowedImageTypes().includes(userPhoto.type)) {
+            throw new Error(&#039;[[error:invalid-image]]&#039;);
+        }
+
+        const extension = file.typeToExtension(userPhoto.type);
+        if (!extension) {
+            throw new Error(&#039;[[error:invalid-image-extension]]&#039;);
+        }
+
+        const newPath = await convertToPNG(userPhoto.path);
+
+        await image.resizeImage({
+            path: newPath,
+            width: meta.config.profileImageDimension,
+            height: meta.config.profileImageDimension,
+        });
+
+        const filename = generateProfileImageFilename(data.uid, extension);
+        const uploadedImage = await image.uploadImage(filename, &#039;profile&#039;, {
+            uid: data.uid,
+            path: newPath,
+            name: &#039;profileAvatar&#039;,
+        });
+
+        await deleteCurrentPicture(data.uid, &#039;uploadedpicture&#039;);
+        await User.updateProfile(data.callerUid, {
+            uid: data.uid,
+            uploadedpicture: uploadedImage.url,
+            picture: uploadedImage.url,
+        }, [&#039;uploadedpicture&#039;, &#039;picture&#039;]);
+        return uploadedImage;
+    };
+
+    // uploads image data in base64 as profile picture
+    User.uploadCroppedPicture = async function (data) {
+        const picture = {
+            name: &#039;profileAvatar&#039;,
+            uid: data.uid,
+        };
+
+        try {
+            if (!meta.config.allowProfileImageUploads) {
+                throw new Error(&#039;[[error:profile-image-uploads-disabled]]&#039;);
+            }
+
+            validateUpload(data, meta.config.maximumProfileImageSize, User.getAllowedImageTypes());
+
+            const extension = file.typeToExtension(image.mimeFromBase64(data.imageData));
+            if (!extension) {
+                throw new Error(&#039;[[error:invalid-image-extension]]&#039;);
+            }
+
+            picture.path = await image.writeImageDataToTempFile(data.imageData);
+            picture.path = await convertToPNG(picture.path);
+
+            await image.resizeImage({
+                path: picture.path,
+                width: meta.config.profileImageDimension,
+                height: meta.config.profileImageDimension,
+            });
+
+            const filename = generateProfileImageFilename(data.uid, extension);
+            const uploadedImage = await image.uploadImage(filename, &#039;profile&#039;, picture);
+
+            await deleteCurrentPicture(data.uid, &#039;uploadedpicture&#039;);
+            await User.updateProfile(data.callerUid, {
+                uid: data.uid,
+                uploadedpicture: uploadedImage.url,
+                picture: uploadedImage.url,
+            }, [&#039;uploadedpicture&#039;, &#039;picture&#039;]);
+            return uploadedImage;
+        } finally {
+            await file.delete(picture.path);
+        }
+    };
+
+    async function deleteCurrentPicture(uid, field) {
+        if (meta.config[&#039;profile:keepAllUserImages&#039;]) {
+            return;
+        }
+        await deletePicture(uid, field);
+    }
+
+    async function deletePicture(uid, field) {
+        const uploadPath = await getPicturePath(uid, field);
+        if (uploadPath) {
+            await file.delete(uploadPath);
+        }
+    }
+
+    function validateUpload(data, maxSize, allowedTypes) {
+        if (!data.imageData) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        const size = image.sizeFromBase64(data.imageData);
+        if (size &gt; maxSize * 1024) {
+            throw new Error(`[[error:file-too-big, ${maxSize}]]`);
+        }
+
+        const type = image.mimeFromBase64(data.imageData);
+        if (!type || !allowedTypes.includes(type)) {
+            throw new Error(&#039;[[error:invalid-image]]&#039;);
+        }
+    }
+
+    async function convertToPNG(path) {
+        const convertToPNG = meta.config[&#039;profile:convertProfileImageToPNG&#039;] === 1;
+        if (!convertToPNG) {
+            return path;
+        }
+        const newPath = await image.normalise(path);
+        await file.delete(path);
+        return newPath;
+    }
+
+    function generateProfileImageFilename(uid, extension) {
+        const convertToPNG = meta.config[&#039;profile:convertProfileImageToPNG&#039;] === 1;
+        return `${uid}-profileavatar-${Date.now()}${convertToPNG ? &#039;.png&#039; : extension}`;
+    }
+
+    User.removeCoverPicture = async function (data) {
+        await deletePicture(data.uid, &#039;cover:url&#039;);
+        await db.deleteObjectFields(`user:${data.uid}`, [&#039;cover:url&#039;, &#039;cover:position&#039;]);
+    };
+
+    User.removeProfileImage = async function (uid) {
+        const userData = await User.getUserFields(uid, [&#039;uploadedpicture&#039;, &#039;picture&#039;]);
+        await deletePicture(uid, &#039;uploadedpicture&#039;);
+        await User.setUserFields(uid, {
+            uploadedpicture: &#039;&#039;,
+            // if current picture is uploaded picture, reset to user icon
+            picture: userData.uploadedpicture === userData.picture ? &#039;&#039; : userData.picture,
+        });
+        return userData;
+    };
+
+    User.getLocalCoverPath = async function (uid) {
+        return getPicturePath(uid, &#039;cover:url&#039;);
+    };
+
+    User.getLocalAvatarPath = async function (uid) {
+        return getPicturePath(uid, &#039;uploadedpicture&#039;);
+    };
+
+    async function getPicturePath(uid, field) {
+        const value = await User.getUserField(uid, field);
+        if (!value || !value.startsWith(`${nconf.get(&#039;relative_path&#039;)}/assets/uploads/profile/`)) {
+            return false;
+        }
+        const filename = value.split(&#039;/&#039;).pop();
+        return path.join(nconf.get(&#039;upload_path&#039;), &#039;profile&#039;, filename);
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

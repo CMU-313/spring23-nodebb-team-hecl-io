@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres/sets.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres/sets.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.74</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">261</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">31.59</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.46</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+
+    module.setAdd = async function (key, value) {
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+        if (!value.length) {
+            return;
+        }
+        await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectType(client, key, &#039;set&#039;);
+            await client.query({
+                name: &#039;setAdd&#039;,
+                text: `
+INSERT INTO &quot;legacy_set&quot; (&quot;_key&quot;, &quot;member&quot;)
+SELECT $1::TEXT, m
+FROM UNNEST($2::TEXT[]) m
+ON CONFLICT (&quot;_key&quot;, &quot;member&quot;)
+DO NOTHING`,
+                values: [key, value],
+            });
+        });
+    };
+
+    module.setsAdd = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return;
+        }
+
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
+        keys = _.uniq(keys);
+
+        await module.transaction(async (client) =&gt; {
+            await helpers.ensureLegacyObjectsType(client, keys, &#039;set&#039;);
+            await client.query({
+                name: &#039;setsAdd&#039;,
+                text: `
+INSERT INTO &quot;legacy_set&quot; (&quot;_key&quot;, &quot;member&quot;)
+SELECT k, m
+FROM UNNEST($1::TEXT[]) k
+CROSS JOIN UNNEST($2::TEXT[]) m
+ON CONFLICT (&quot;_key&quot;, &quot;member&quot;)
+DO NOTHING`,
+                values: [keys, value],
+            });
+        });
+    };
+
+    module.setRemove = async function (key, value) {
+        if (!Array.isArray(key)) {
+            key = [key];
+        }
+
+        if (!Array.isArray(value)) {
+            value = [value];
+        }
+
+        await module.pool.query({
+            name: &#039;setRemove&#039;,
+            text: `
+DELETE FROM &quot;legacy_set&quot;
+ WHERE &quot;_key&quot; = ANY($1::TEXT[])
+   AND &quot;member&quot; = ANY($2::TEXT[])`,
+            values: [key, value],
+        });
+    };
+
+    module.setsRemove = async function (keys, value) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return;
+        }
+
+        await module.pool.query({
+            name: &#039;setsRemove&#039;,
+            text: `
+DELETE FROM &quot;legacy_set&quot;
+ WHERE &quot;_key&quot; = ANY($1::TEXT[])
+   AND &quot;member&quot; = $2::TEXT`,
+            values: [keys, value],
+        });
+    };
+
+    module.isSetMember = async function (key, value) {
+        if (!key) {
+            return false;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;isSetMember&#039;,
+            text: `
+SELECT 1
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+    ON o.&quot;_key&quot; = s.&quot;_key&quot;
+   AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND s.&quot;member&quot; = $2::TEXT`,
+            values: [key, value],
+        });
+
+        return !!res.rows.length;
+    };
+
+    module.isSetMembers = async function (key, values) {
+        if (!key || !Array.isArray(values) || !values.length) {
+            return [];
+        }
+
+        values = values.map(helpers.valueToString);
+
+        const res = await module.pool.query({
+            name: &#039;isSetMembers&#039;,
+            text: `
+SELECT s.&quot;member&quot; m
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+   AND s.&quot;member&quot; = ANY($2::TEXT[])`,
+            values: [key, values],
+        });
+
+        return values.map(v =&gt; res.rows.some(r =&gt; r.m === v));
+    };
+
+    module.isMemberOfSets = async function (sets, value) {
+        if (!Array.isArray(sets) || !sets.length) {
+            return [];
+        }
+
+        value = helpers.valueToString(value);
+
+        const res = await module.pool.query({
+            name: &#039;isMemberOfSets&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+   AND s.&quot;member&quot; = $2::TEXT`,
+            values: [sets, value],
+        });
+
+        return sets.map(s =&gt; res.rows.some(r =&gt; r.k === s));
+    };
+
+    module.getSetMembers = async function (key) {
+        if (!key) {
+            return [];
+        }
+
+        const res = await module.pool.query({
+            name: &#039;getSetMembers&#039;,
+            text: `
+SELECT s.&quot;member&quot; m
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        });
+
+        return res.rows.map(r =&gt; r.m);
+    };
+
+    module.getSetsMembers = async function (keys) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        const res = await module.pool.query({
+            name: &#039;getSetsMembers&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k,
+       array_agg(s.&quot;member&quot;) m
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+ GROUP BY o.&quot;_key&quot;`,
+            values: [keys],
+        });
+
+        return keys.map(k =&gt; (res.rows.find(r =&gt; r.k === k) || { m: [] }).m);
+    };
+
+    module.setCount = async function (key) {
+        if (!key) {
+            return 0;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;setCount&#039;,
+            text: `
+SELECT COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key],
+        });
+
+        return parseInt(res.rows[0].c, 10);
+    };
+
+    module.setsCount = async function (keys) {
+        const res = await module.pool.query({
+            name: &#039;setsCount&#039;,
+            text: `
+SELECT o.&quot;_key&quot; k,
+       COUNT(*) c
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_set&quot; s
+         ON o.&quot;_key&quot; = s.&quot;_key&quot;
+        AND o.&quot;type&quot; = s.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = ANY($1::TEXT[])
+ GROUP BY o.&quot;_key&quot;`,
+            values: [keys],
+        });
+
+        return keys.map(k =&gt; (res.rows.find(r =&gt; r.k === k) || { c: 0 }).c);
+    };
+
+    module.setRemoveRandom = async function (key) {
+        const res = await module.pool.query({
+            name: &#039;setRemoveRandom&#039;,
+            text: `
+WITH A AS (
+    SELECT s.&quot;member&quot;
+      FROM &quot;legacy_object_live&quot; o
+     INNER JOIN &quot;legacy_set&quot; s
+             ON o.&quot;_key&quot; = s.&quot;_key&quot;
+            AND o.&quot;type&quot; = s.&quot;type&quot;
+     WHERE o.&quot;_key&quot; = $1::TEXT
+     ORDER BY RANDOM()
+     LIMIT 1
+       FOR UPDATE)
+DELETE FROM &quot;legacy_set&quot; s
+ USING A
+ WHERE s.&quot;_key&quot; = $1::TEXT
+   AND s.&quot;member&quot; = A.&quot;member&quot;
+RETURNING A.&quot;member&quot; m`,
+            values: [key],
+        });
+        return res.rows.length ? res.rows[0].m : null;
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

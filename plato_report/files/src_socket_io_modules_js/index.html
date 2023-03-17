@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/modules.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/modules.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.87</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">254</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">45.63</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.83</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const db = require(&#039;../database&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const Messaging = require(&#039;../messaging&#039;);
+const utils = require(&#039;../utils&#039;);
+const server = require(&#039;./index&#039;);
+const user = require(&#039;../user&#039;);
+const privileges = require(&#039;../privileges&#039;);
+
+const sockets = require(&#039;.&#039;);
+const api = require(&#039;../api&#039;);
+
+const SocketModules = module.exports;
+
+SocketModules.chats = {};
+SocketModules.settings = {};
+
+/* Chat */
+
+SocketModules.chats.getRaw = async function (socket, data) {
+    if (!data || !data.hasOwnProperty(&#039;mid&#039;)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const roomId = await Messaging.getMessageField(data.mid, &#039;roomId&#039;);
+    const [isAdmin, hasMessage, inRoom] = await Promise.all([
+        user.isAdministrator(socket.uid),
+        db.isSortedSetMember(`uid:${socket.uid}:chat:room:${roomId}:mids`, data.mid),
+        Messaging.isUserInRoom(socket.uid, roomId),
+    ]);
+
+    if (!isAdmin &amp;&amp; (!inRoom || !hasMessage)) {
+        throw new Error(&#039;[[error:not-allowed]]&#039;);
+    }
+
+    return await Messaging.getMessageField(data.mid, &#039;content&#039;);
+};
+
+SocketModules.chats.isDnD = async function (socket, uid) {
+    const status = await db.getObjectField(`user:${uid}`, &#039;status&#039;);
+    return status === &#039;dnd&#039;;
+};
+
+SocketModules.chats.newRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;POST /api/v3/chats&#039;);
+
+    if (!data) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const roomObj = await api.chats.create(socket, {
+        uids: [data.touid],
+    });
+    return roomObj.roomId;
+};
+
+SocketModules.chats.send = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;POST /api/v3/chats/:roomId&#039;);
+
+    if (!data || !data.roomId || !socket.uid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const canChat = await privileges.global.can(&#039;chat&#039;, socket.uid);
+    if (!canChat) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    return api.chats.post(socket, data);
+};
+
+SocketModules.chats.loadRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;GET /api/v3/chats/:roomId&#039;);
+
+    if (!data || !data.roomId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    return await Messaging.loadRoom(socket.uid, data);
+};
+
+SocketModules.chats.getUsersInRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;GET /api/v3/chats/:roomId/users&#039;);
+
+    if (!data || !data.roomId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const isUserInRoom = await Messaging.isUserInRoom(socket.uid, data.roomId);
+    if (!isUserInRoom) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    return api.chats.users(socket, data);
+};
+
+SocketModules.chats.addUserToRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;POST /api/v3/chats/:roomId/users&#039;);
+
+    if (!data || !data.roomId || !data.username) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const canChat = await privileges.global.can(&#039;chat&#039;, socket.uid);
+    if (!canChat) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    // Revised API now takes uids, not usernames
+    data.uids = [await user.getUidByUsername(data.username)];
+    delete data.username;
+
+    await api.chats.invite(socket, data);
+};
+
+SocketModules.chats.removeUserFromRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;DELETE /api/v3/chats/:roomId/users OR DELETE /api/v3/chats/:roomId/users/:uid&#039;);
+
+    if (!data || !data.roomId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    // Revised API can accept multiple uids now
+    data.uids = [data.uid];
+    delete data.uid;
+
+    await api.chats.kick(socket, data);
+};
+
+SocketModules.chats.leave = async function (socket, roomid) {
+    sockets.warnDeprecated(socket, &#039;DELETE /api/v3/chats/:roomId/users OR DELETE /api/v3/chats/:roomId/users/:uid&#039;);
+
+    if (!socket.uid || !roomid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    await Messaging.leaveRoom([socket.uid], roomid);
+};
+
+SocketModules.chats.edit = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;PUT /api/v3/chats/:roomId/:mid&#039;);
+
+    if (!data || !data.roomId || !data.message) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await Messaging.canEdit(data.mid, socket.uid);
+    await Messaging.editMessage(socket.uid, data.mid, data.roomId, data.message);
+};
+
+SocketModules.chats.delete = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;DELETE /api/v3/chats/:roomId/:mid&#039;);
+
+    if (!data || !data.roomId || !data.messageId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await Messaging.canDelete(data.messageId, socket.uid);
+    await Messaging.deleteMessage(data.messageId, socket.uid);
+};
+
+SocketModules.chats.restore = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;POST /api/v3/chats/:roomId/:mid&#039;);
+
+    if (!data || !data.roomId || !data.messageId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await Messaging.canDelete(data.messageId, socket.uid);
+    await Messaging.restoreMessage(data.messageId, socket.uid);
+};
+
+SocketModules.chats.canMessage = async function (socket, roomId) {
+    await Messaging.canMessageRoom(socket.uid, roomId);
+};
+
+SocketModules.chats.markRead = async function (socket, roomId) {
+    if (!socket.uid || !roomId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const [uidsInRoom] = await Promise.all([
+        Messaging.getUidsInRoom(roomId, 0, -1),
+        Messaging.markRead(socket.uid, roomId),
+    ]);
+
+    Messaging.pushUnreadCount(socket.uid);
+    server.in(`uid_${socket.uid}`).emit(&#039;event:chats.markedAsRead&#039;, { roomId: roomId });
+
+    if (!uidsInRoom.includes(String(socket.uid))) {
+        return;
+    }
+
+    // Mark notification read
+    const nids = uidsInRoom.filter(uid =&gt; parseInt(uid, 10) !== socket.uid)
+        .map(uid =&gt; `chat_${uid}_${roomId}`);
+
+    await notifications.markReadMultiple(nids, socket.uid);
+    await user.notifications.pushCount(socket.uid);
+};
+
+SocketModules.chats.markAllRead = async function (socket) {
+    await Messaging.markAllRead(socket.uid);
+    Messaging.pushUnreadCount(socket.uid);
+};
+
+SocketModules.chats.renameRoom = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;PUT /api/v3/chats/:roomId&#039;);
+
+    if (!data || !data.roomId || !data.newName) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    data.name = data.newName;
+    delete data.newName;
+    await api.chats.rename(socket, data);
+};
+
+SocketModules.chats.getRecentChats = async function (socket, data) {
+    if (!data || !utils.isNumber(data.after) || !utils.isNumber(data.uid)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    const start = parseInt(data.after, 10);
+    const stop = start + 9;
+    return await Messaging.getRecentChats(socket.uid, data.uid, start, stop);
+};
+
+SocketModules.chats.hasPrivateChat = async function (socket, uid) {
+    if (socket.uid &lt;= 0 || uid &lt;= 0) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    return await Messaging.hasPrivateChat(socket.uid, uid);
+};
+
+SocketModules.chats.getMessages = async function (socket, data) {
+    sockets.warnDeprecated(socket, &#039;GET /api/v3/chats/:roomId/messages&#039;);
+
+    if (!socket.uid || !data || !data.uid || !data.roomId) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    return await Messaging.getMessages({
+        callerUid: socket.uid,
+        uid: data.uid,
+        roomId: data.roomId,
+        start: parseInt(data.start, 10) || 0,
+        count: 50,
+    });
+};
+
+SocketModules.chats.getIP = async function (socket, mid) {
+    const allowed = await privileges.global.can(&#039;view:users:info&#039;, socket.uid);
+    if (!allowed) {
+        throw new Error(&#039;[[error:no-privilege]]&#039;);
+    }
+    return await Messaging.getMessageField(mid, &#039;ip&#039;);
+};
+
+require(&#039;../promisify&#039;)(SocketModules);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

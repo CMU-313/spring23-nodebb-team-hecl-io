@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/groups/update.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/groups/update.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">291</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.19</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.42</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+
+const categories = require(&#039;../categories&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const slugify = require(&#039;../slugify&#039;);
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const batch = require(&#039;../batch&#039;);
+const meta = require(&#039;../meta&#039;);
+const cache = require(&#039;../cache&#039;);
+
+
+module.exports = function (Groups) {
+    Groups.update = async function (groupName, values) {
+        const exists = await db.exists(`group:${groupName}`);
+        if (!exists) {
+            throw new Error(&#039;[[error:no-group]]&#039;);
+        }
+
+        ({ values } = await plugins.hooks.fire(&#039;filter:group.update&#039;, {
+            groupName: groupName,
+            values: values,
+        }));
+
+        // Cast some values as bool (if not boolean already)
+        // &#039;true&#039; and &#039;1&#039; = true, everything else false
+        [&#039;userTitleEnabled&#039;, &#039;private&#039;, &#039;hidden&#039;, &#039;disableJoinRequests&#039;, &#039;disableLeave&#039;].forEach((prop) =&gt; {
+            if (values.hasOwnProperty(prop) &amp;&amp; typeof values[prop] !== &#039;boolean&#039;) {
+                values[prop] = values[prop] === &#039;true&#039; || parseInt(values[prop], 10) === 1;
+            }
+        });
+
+        const payload = {
+            description: values.description || &#039;&#039;,
+            icon: values.icon || &#039;&#039;,
+            labelColor: values.labelColor || &#039;#000000&#039;,
+            textColor: values.textColor || &#039;#ffffff&#039;,
+        };
+
+        if (values.hasOwnProperty(&#039;userTitle&#039;)) {
+            payload.userTitle = values.userTitle || &#039;&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;userTitleEnabled&#039;)) {
+            payload.userTitleEnabled = values.userTitleEnabled ? &#039;1&#039; : &#039;0&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;hidden&#039;)) {
+            payload.hidden = values.hidden ? &#039;1&#039; : &#039;0&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;private&#039;)) {
+            payload.private = values.private ? &#039;1&#039; : &#039;0&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;disableJoinRequests&#039;)) {
+            payload.disableJoinRequests = values.disableJoinRequests ? &#039;1&#039; : &#039;0&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;disableLeave&#039;)) {
+            payload.disableLeave = values.disableLeave ? &#039;1&#039; : &#039;0&#039;;
+        }
+
+        if (values.hasOwnProperty(&#039;name&#039;)) {
+            await checkNameChange(groupName, values.name);
+        }
+
+        if (values.hasOwnProperty(&#039;private&#039;)) {
+            await updatePrivacy(groupName, values.private);
+        }
+
+        if (values.hasOwnProperty(&#039;hidden&#039;)) {
+            await updateVisibility(groupName, values.hidden);
+        }
+
+        if (values.hasOwnProperty(&#039;memberPostCids&#039;)) {
+            const validCids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, groupName, &#039;topics:read&#039;);
+            const cidsArray = values.memberPostCids.split(&#039;,&#039;).map(cid =&gt; parseInt(cid.trim(), 10)).filter(Boolean);
+            payload.memberPostCids = cidsArray.filter(cid =&gt; validCids.includes(cid)).join(&#039;,&#039;) || &#039;&#039;;
+        }
+
+        await db.setObject(`group:${groupName}`, payload);
+        await Groups.renameGroup(groupName, values.name);
+
+        plugins.hooks.fire(&#039;action:group.update&#039;, {
+            name: groupName,
+            values: values,
+        });
+    };
+
+    async function updateVisibility(groupName, hidden) {
+        if (hidden) {
+            await db.sortedSetRemoveBulk([
+                [&#039;groups:visible:createtime&#039;, groupName],
+                [&#039;groups:visible:memberCount&#039;, groupName],
+                [&#039;groups:visible:name&#039;, `${groupName.toLowerCase()}:${groupName}`],
+            ]);
+            return;
+        }
+        const groupData = await db.getObjectFields(`group:${groupName}`, [&#039;createtime&#039;, &#039;memberCount&#039;]);
+        await db.sortedSetAddBulk([
+            [&#039;groups:visible:createtime&#039;, groupData.createtime, groupName],
+            [&#039;groups:visible:memberCount&#039;, groupData.memberCount, groupName],
+            [&#039;groups:visible:name&#039;, 0, `${groupName.toLowerCase()}:${groupName}`],
+        ]);
+    }
+
+    Groups.hide = async function (groupName) {
+        await showHide(groupName, &#039;hidden&#039;);
+    };
+
+    Groups.show = async function (groupName) {
+        await showHide(groupName, &#039;show&#039;);
+    };
+
+    async function showHide(groupName, hidden) {
+        hidden = hidden === &#039;hidden&#039;;
+        await Promise.all([
+            db.setObjectField(`group:${groupName}`, &#039;hidden&#039;, hidden ? 1 : 0),
+            updateVisibility(groupName, hidden),
+        ]);
+    }
+
+    async function updatePrivacy(groupName, isPrivate) {
+        const groupData = await Groups.getGroupFields(groupName, [&#039;private&#039;]);
+        const currentlyPrivate = groupData.private === 1;
+        if (!currentlyPrivate || currentlyPrivate === isPrivate) {
+            return;
+        }
+        const pendingUids = await db.getSetMembers(`group:${groupName}:pending`);
+        if (!pendingUids.length) {
+            return;
+        }
+
+        winston.verbose(`[groups.update] Group is now public, automatically adding ${pendingUids.length} new members, who were pending prior.`);
+
+        for (const uid of pendingUids) {
+            /* eslint-disable no-await-in-loop */
+            await Groups.join(groupName, uid);
+        }
+        await db.delete(`group:${groupName}:pending`);
+    }
+
+    async function checkNameChange(currentName, newName) {
+        if (Groups.isPrivilegeGroup(newName)) {
+            throw new Error(&#039;[[error:invalid-group-name]]&#039;);
+        }
+        const currentSlug = slugify(currentName);
+        const newSlug = slugify(newName);
+        if (currentName === newName || currentSlug === newSlug) {
+            return;
+        }
+        Groups.validateGroupName(newName);
+        const [group, exists] = await Promise.all([
+            Groups.getGroupData(currentName),
+            Groups.existsBySlug(newSlug),
+        ]);
+
+        if (exists) {
+            throw new Error(&#039;[[error:group-already-exists]]&#039;);
+        }
+
+        if (!group) {
+            throw new Error(&#039;[[error:no-group]]&#039;);
+        }
+
+        if (group.system) {
+            throw new Error(&#039;[[error:not-allowed-to-rename-system-group]]&#039;);
+        }
+    }
+
+    Groups.renameGroup = async function (oldName, newName) {
+        if (oldName === newName || !newName || String(newName).length === 0) {
+            return;
+        }
+        const group = await db.getObject(`group:${oldName}`);
+        if (!group) {
+            return;
+        }
+
+        const exists = await Groups.exists(newName);
+        if (exists) {
+            throw new Error(&#039;[[error:group-already-exists]]&#039;);
+        }
+
+        await updateMemberGroupTitles(oldName, newName);
+        await updateNavigationItems(oldName, newName);
+        await updateWidgets(oldName, newName);
+        await updateConfig(oldName, newName);
+        await db.setObject(`group:${oldName}`, { name: newName, slug: slugify(newName) });
+        await db.deleteObjectField(&#039;groupslug:groupname&#039;, group.slug);
+        await db.setObjectField(&#039;groupslug:groupname&#039;, slugify(newName), newName);
+
+        const allGroups = await db.getSortedSetRange(&#039;groups:createtime&#039;, 0, -1);
+        const keys = allGroups.map(group =&gt; `group:${group}:members`);
+        await renameGroupsMember(keys, oldName, newName);
+        cache.del(keys);
+
+        await db.rename(`group:${oldName}`, `group:${newName}`);
+        await db.rename(`group:${oldName}:members`, `group:${newName}:members`);
+        await db.rename(`group:${oldName}:owners`, `group:${newName}:owners`);
+        await db.rename(`group:${oldName}:pending`, `group:${newName}:pending`);
+        await db.rename(`group:${oldName}:invited`, `group:${newName}:invited`);
+        await db.rename(`group:${oldName}:member:pids`, `group:${newName}:member:pids`);
+
+        await renameGroupsMember([&#039;groups:createtime&#039;, &#039;groups:visible:createtime&#039;, &#039;groups:visible:memberCount&#039;], oldName, newName);
+        await renameGroupsMember([&#039;groups:visible:name&#039;], `${oldName.toLowerCase()}:${oldName}`, `${newName.toLowerCase()}:${newName}`);
+
+        plugins.hooks.fire(&#039;action:group.rename&#039;, {
+            old: oldName,
+            new: newName,
+        });
+        Groups.cache.reset();
+    };
+
+    async function updateMemberGroupTitles(oldName, newName) {
+        await batch.processSortedSet(`group:${oldName}:members`, async (uids) =&gt; {
+            let usersData = await user.getUsersData(uids);
+            usersData = usersData.filter(userData =&gt; userData &amp;&amp; userData.groupTitleArray.includes(oldName));
+
+            usersData.forEach((userData) =&gt; {
+                userData.newTitleArray = userData.groupTitleArray
+                    .map(oldTitle =&gt; (oldTitle === oldName ? newName : oldTitle));
+            });
+
+            await Promise.all(usersData.map(u =&gt; user.setUserField(u.uid, &#039;groupTitle&#039;, JSON.stringify(u.newTitleArray))));
+        }, {});
+    }
+
+    async function renameGroupsMember(keys, oldName, newName) {
+        const isMembers = await db.isMemberOfSortedSets(keys, oldName);
+        keys = keys.filter((key, index) =&gt; isMembers[index]);
+        if (!keys.length) {
+            return;
+        }
+        const scores = await db.sortedSetsScore(keys, oldName);
+        await db.sortedSetsRemove(keys, oldName);
+        await db.sortedSetsAdd(keys, scores, newName);
+    }
+
+    async function updateNavigationItems(oldName, newName) {
+        const navigation = require(&#039;../navigation/admin&#039;);
+        const navItems = await navigation.get();
+        navItems.forEach((navItem) =&gt; {
+            if (navItem &amp;&amp; Array.isArray(navItem.groups) &amp;&amp; navItem.groups.includes(oldName)) {
+                navItem.groups.splice(navItem.groups.indexOf(oldName), 1, newName);
+            }
+        });
+        navigation.unescapeFields(navItems);
+        await navigation.save(navItems);
+    }
+
+    async function updateWidgets(oldName, newName) {
+        const admin = require(&#039;../widgets/admin&#039;);
+        const widgets = require(&#039;../widgets&#039;);
+
+        const data = await admin.get();
+
+        data.areas.forEach((area) =&gt; {
+            area.widgets = area.data;
+            area.widgets.forEach((widget) =&gt; {
+                if (widget &amp;&amp; widget.data &amp;&amp; Array.isArray(widget.data.groups) &amp;&amp;
+                    widget.data.groups.includes(oldName)) {
+                    widget.data.groups.splice(widget.data.groups.indexOf(oldName), 1, newName);
+                }
+            });
+        });
+        for (const area of data.areas) {
+            if (area.data.length) {
+                await widgets.setArea(area);
+            }
+        }
+    }
+
+    async function updateConfig(oldName, newName) {
+        if (meta.config.groupsExemptFromPostQueue.includes(oldName)) {
+            meta.config.groupsExemptFromPostQueue.splice(
+                meta.config.groupsExemptFromPostQueue.indexOf(oldName), 1, newName
+            );
+            await meta.configs.set(&#039;groupsExemptFromPostQueue&#039;, meta.config.groupsExemptFromPostQueue);
+        }
+        if (meta.config.groupsExemptFromMaintenanceMode.includes(oldName)) {
+            meta.config.groupsExemptFromMaintenanceMode.splice(
+                meta.config.groupsExemptFromMaintenanceMode.indexOf(oldName), 1, newName
+            );
+            await meta.configs.set(&#039;groupsExemptFromMaintenanceMode&#039;, meta.config.groupsExemptFromMaintenanceMode);
+        }
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/build.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/build.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.29</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">264</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.23</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.85</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const os = require(&#039;os&#039;);
+const winston = require(&#039;winston&#039;);
+const nconf = require(&#039;nconf&#039;);
+const _ = require(&#039;lodash&#039;);
+const path = require(&#039;path&#039;);
+const mkdirp = require(&#039;mkdirp&#039;);
+const chalk = require(&#039;chalk&#039;);
+const { exec } = require(&#039;child_process&#039;);
+const util = require(&#039;util&#039;);
+
+const cacheBuster = require(&#039;./cacheBuster&#039;);
+const { aliases } = require(&#039;./aliases&#039;);
+
+let meta;
+
+const targetHandlers = {
+    &#039;plugin static dirs&#039;: async function () {
+        await meta.js.linkStatics();
+    },
+    &#039;requirejs modules&#039;: async function (parallel) {
+        await meta.js.buildModules(parallel);
+    },
+    &#039;client js bundle&#039;: async function (parallel) {
+        await meta.js.buildBundle(&#039;client&#039;, parallel);
+    },
+    &#039;admin js bundle&#039;: async function (parallel) {
+        await meta.js.buildBundle(&#039;admin&#039;, parallel);
+    },
+    javascript: [
+        &#039;plugin static dirs&#039;,
+        &#039;requirejs modules&#039;,
+        &#039;client js bundle&#039;,
+        &#039;admin js bundle&#039;,
+    ],
+    &#039;client side styles&#039;: async function (parallel) {
+        await meta.css.buildBundle(&#039;client&#039;, parallel);
+    },
+    &#039;admin control panel styles&#039;: async function (parallel) {
+        await meta.css.buildBundle(&#039;admin&#039;, parallel);
+    },
+    styles: [
+        &#039;client side styles&#039;,
+        &#039;admin control panel styles&#039;,
+    ],
+    templates: async function () {
+        await meta.templates.compile();
+    },
+    languages: async function () {
+        await meta.languages.build();
+    },
+};
+
+const aliasMap = Object.keys(aliases).reduce((prev, key) =&gt; {
+    const arr = aliases[key];
+    arr.forEach((alias) =&gt; {
+        prev[alias] = key;
+    });
+    prev[key] = key;
+    return prev;
+}, {});
+
+async function beforeBuild(targets) {
+    const db = require(&#039;../database&#039;);
+    process.stdout.write(`${chalk.green(&#039;  started&#039;)}\n`);
+    try {
+        await db.init();
+        meta = require(&#039;./index&#039;);
+        await meta.themes.setupPaths();
+        const plugins = require(&#039;../plugins&#039;);
+        await plugins.prepareForBuild(targets);
+        await mkdirp(path.join(__dirname, &#039;../../build/public&#039;));
+    } catch (err) {
+        winston.error(`[build] Encountered error preparing for build\n${err.stack}`);
+        throw err;
+    }
+}
+
+const allTargets = Object.keys(targetHandlers).filter(name =&gt; typeof targetHandlers[name] === &#039;function&#039;);
+
+async function buildTargets(targets, parallel, options) {
+    const length = Math.max(...targets.map(name =&gt; name.length));
+    const jsTargets = targets.filter(target =&gt; targetHandlers.javascript.includes(target));
+    const otherTargets = targets.filter(target =&gt; !targetHandlers.javascript.includes(target));
+
+    // Compile TypeScript into JavaScript
+    winston.info(`[build] Building TypeScript files`);
+    const execAsync = util.promisify(exec);
+    await execAsync(&#039;npx tsc&#039;);
+    winston.info(`[build] TypeScript building complete`);
+
+    async function buildJSTargets() {
+        await Promise.all(
+            jsTargets.map(
+                target =&gt; step(target, parallel, `${_.padStart(target, length)} `)
+            )
+        );
+        // run webpack after jstargets are done, no need to wait for css/templates etc.
+        if (options.webpack || options.watch) {
+            await exports.webpack(options);
+        }
+    }
+    if (parallel) {
+        await Promise.all([
+            buildJSTargets(),
+            ...otherTargets.map(
+                target =&gt; step(target, parallel, `${_.padStart(target, length)} `)
+            ),
+        ]);
+    } else {
+        for (const target of targets) {
+            // eslint-disable-next-line no-await-in-loop
+            await step(target, parallel, `${_.padStart(target, length)} `);
+        }
+        if (options.webpack || options.watch) {
+            await exports.webpack(options);
+        }
+    }
+}
+
+async function step(target, parallel, targetStr) {
+    const startTime = Date.now();
+    winston.info(`[build] ${targetStr} build started`);
+    try {
+        await targetHandlers[target](parallel);
+        const time = (Date.now() - startTime) / 1000;
+
+        winston.info(`[build] ${targetStr} build completed in ${time}sec`);
+    } catch (err) {
+        winston.error(`[build] ${targetStr} build failed`);
+        throw err;
+    }
+}
+
+exports.build = async function (targets, options) {
+    if (!options) {
+        options = {};
+    }
+
+    if (targets === true) {
+        targets = allTargets;
+    } else if (!Array.isArray(targets)) {
+        targets = targets.split(&#039;,&#039;);
+    }
+
+    let series = nconf.get(&#039;series&#039;) || options.series;
+    if (series === undefined) {
+        // Detect # of CPUs and select strategy as appropriate
+        winston.verbose(&#039;[build] Querying CPU core count for build strategy&#039;);
+        const cpus = os.cpus();
+        series = cpus.length &lt; 4;
+        winston.verbose(`[build] System returned ${cpus.length} cores, opting for ${series ? &#039;series&#039; : &#039;parallel&#039;} build strategy`);
+    }
+
+    targets = targets
+    // get full target name
+        .map((target) =&gt; {
+            target = target.toLowerCase().replace(/-/g, &#039;&#039;);
+            if (!aliasMap[target]) {
+                winston.warn(`[build] Unknown target: ${target}`);
+                if (target.includes(&#039;,&#039;)) {
+                    winston.warn(&#039;[build] Are you specifying multiple targets? Separate them with spaces:&#039;);
+                    winston.warn(&#039;[build]   e.g. `./nodebb build adminjs tpl`&#039;);
+                }
+
+                return false;
+            }
+
+            return aliasMap[target];
+        })
+    // filter nonexistent targets
+        .filter(Boolean);
+
+    // map multitargets to their sets
+    targets = _.uniq(_.flatMap(targets, target =&gt; (
+        Array.isArray(targetHandlers[target]) ?
+            targetHandlers[target] :
+            target
+    )));
+
+    winston.verbose(`[build] building the following targets: ${targets.join(&#039;, &#039;)}`);
+
+    if (!targets) {
+        winston.info(&#039;[build] No valid targets supplied. Aborting.&#039;);
+        return;
+    }
+
+    try {
+        await beforeBuild(targets);
+        const threads = parseInt(nconf.get(&#039;threads&#039;), 10);
+        if (threads) {
+            require(&#039;./minifier&#039;).maxThreads = threads - 1;
+        }
+
+        if (!series) {
+            winston.info(&#039;[build] Building in parallel mode&#039;);
+        } else {
+            winston.info(&#039;[build] Building in series mode&#039;);
+        }
+
+        const startTime = Date.now();
+        await buildTargets(targets, !series, options);
+
+        const totalTime = (Date.now() - startTime) / 1000;
+        await cacheBuster.write();
+        winston.info(`[build] Asset compilation successful. Completed in ${totalTime}sec.`);
+    } catch (err) {
+        winston.error(`[build] Encountered error during build step\n${err.stack ? err.stack : err}`);
+        throw err;
+    }
+};
+
+function getWebpackConfig() {
+    return require(process.env.NODE_ENV !== &#039;development&#039; ? &#039;../../webpack.prod&#039; : &#039;../../webpack.dev&#039;);
+}
+
+exports.webpack = async function (options) {
+    winston.info(`[build] ${(options.watch ? &#039;Watching&#039; : &#039;Bundling&#039;)} with Webpack.`);
+    const webpack = require(&#039;webpack&#039;);
+    const fs = require(&#039;fs&#039;);
+    const util = require(&#039;util&#039;);
+    const plugins = require(&#039;../plugins/data&#039;);
+
+    const activePlugins = (await plugins.getActive()).map(p =&gt; p.id);
+    if (!activePlugins.includes(&#039;nodebb-plugin-composer-default&#039;)) {
+        activePlugins.push(&#039;nodebb-plugin-composer-default&#039;);
+    }
+    await fs.promises.writeFile(path.resolve(__dirname, &#039;../../build/active_plugins.json&#039;), JSON.stringify(activePlugins));
+
+    const webpackCfg = getWebpackConfig();
+    const compiler = webpack(webpackCfg);
+    const webpackRun = util.promisify(compiler.run).bind(compiler);
+    const webpackWatch = util.promisify(compiler.watch).bind(compiler);
+    try {
+        let stats;
+        if (options.watch) {
+            stats = await webpackWatch(webpackCfg.watchOptions);
+            compiler.hooks.assetEmitted.tap(&#039;nbbWatchPlugin&#039;, (file) =&gt; {
+                console.log(`webpack:assetEmitted &gt; ${webpackCfg.output.publicPath}${file}`);
+            });
+        } else {
+            stats = await webpackRun();
+        }
+
+        if (stats.hasErrors() || stats.hasWarnings()) {
+            console.log(stats.toString(&#039;minimal&#039;));
+        } else {
+            const statsJson = stats.toJson();
+            winston.info(`[build] ${(options.watch ? &#039;Watching&#039; : &#039;Bundling&#039;)} took ${statsJson.time} ms`);
+        }
+    } catch (err) {
+        console.error(err.stack || err);
+        if (err.details) {
+            console.error(err.details);
+        }
+    }
+};
+
+exports.buildAll = async function () {
+    await exports.build(allTargets, { webpack: true });
+};
+
+require(&#039;../promisify&#039;)(exports);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

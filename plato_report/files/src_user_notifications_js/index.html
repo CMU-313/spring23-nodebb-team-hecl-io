@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/notifications.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/notifications.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.80</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">232</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.56</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.69</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const UserNotifications = module.exports;
+
+UserNotifications.get = async function (uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return { read: [], unread: [] };
+    }
+
+    let unread = await getNotificationsFromSet(`uid:${uid}:notifications:unread`, uid, 0, 49);
+    unread = unread.filter(Boolean);
+    let read = [];
+    if (unread.length &lt; 50) {
+        read = await getNotificationsFromSet(`uid:${uid}:notifications:read`, uid, 0, 49 - unread.length);
+    }
+
+    return await plugins.hooks.fire(&#039;filter:user.notifications.get&#039;, {
+        uid,
+        read: read.filter(Boolean),
+        unread: unread,
+    });
+};
+
+async function filterNotifications(nids, filter) {
+    if (!filter) {
+        return nids;
+    }
+    const keys = nids.map(nid =&gt; `notifications:${nid}`);
+    const notifications = await db.getObjectsFields(keys, [&#039;nid&#039;, &#039;type&#039;]);
+    return notifications.filter(n =&gt; n &amp;&amp; n.nid &amp;&amp; n.type === filter).map(n =&gt; n.nid);
+}
+
+UserNotifications.getAll = async function (uid, filter) {
+    let nids = await db.getSortedSetRevRange([
+        `uid:${uid}:notifications:unread`,
+        `uid:${uid}:notifications:read`,
+    ], 0, -1);
+    nids = _.uniq(nids);
+    const exists = await db.isSortedSetMembers(&#039;notifications&#039;, nids);
+    const deleteNids = [];
+
+    nids = nids.filter((nid, index) =&gt; {
+        if (!nid || !exists[index]) {
+            deleteNids.push(nid);
+        }
+        return nid &amp;&amp; exists[index];
+    });
+
+    await deleteUserNids(deleteNids, uid);
+    return await filterNotifications(nids, filter);
+};
+
+async function deleteUserNids(nids, uid) {
+    await db.sortedSetRemove([
+        `uid:${uid}:notifications:read`,
+        `uid:${uid}:notifications:unread`,
+    ], nids);
+}
+
+async function getNotificationsFromSet(set, uid, start, stop) {
+    const nids = await db.getSortedSetRevRange(set, start, stop);
+    return await UserNotifications.getNotifications(nids, uid);
+}
+
+UserNotifications.getNotifications = async function (nids, uid) {
+    if (!Array.isArray(nids) || !nids.length) {
+        return [];
+    }
+
+    const [notifObjs, hasRead] = await Promise.all([
+        notifications.getMultiple(nids),
+        db.isSortedSetMembers(`uid:${uid}:notifications:read`, nids),
+    ]);
+
+    const deletedNids = [];
+    let notificationData = notifObjs.filter((notification, index) =&gt; {
+        if (!notification || !notification.nid) {
+            deletedNids.push(nids[index]);
+        }
+        if (notification) {
+            notification.read = hasRead[index];
+            notification.readClass = !notification.read ? &#039;unread&#039; : &#039;&#039;;
+        }
+
+        return notification;
+    });
+
+    await deleteUserNids(deletedNids, uid);
+    notificationData = await notifications.merge(notificationData);
+    const result = await plugins.hooks.fire(&#039;filter:user.notifications.getNotifications&#039;, {
+        uid: uid,
+        notifications: notificationData,
+    });
+    return result &amp;&amp; result.notifications;
+};
+
+UserNotifications.getUnreadInterval = async function (uid, interval) {
+    const dayInMs = 1000 * 60 * 60 * 24;
+    const times = {
+        day: dayInMs,
+        week: 7 * dayInMs,
+        month: 30 * dayInMs,
+    };
+    if (!times[interval]) {
+        return [];
+    }
+    const min = Date.now() - times[interval];
+    const nids = await db.getSortedSetRevRangeByScore(`uid:${uid}:notifications:unread`, 0, 20, &#039;+inf&#039;, min);
+    return await UserNotifications.getNotifications(nids, uid);
+};
+
+UserNotifications.getDailyUnread = async function (uid) {
+    return await UserNotifications.getUnreadInterval(uid, &#039;day&#039;);
+};
+
+UserNotifications.getUnreadCount = async function (uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return 0;
+    }
+    let nids = await db.getSortedSetRevRange(`uid:${uid}:notifications:unread`, 0, 99);
+    nids = await notifications.filterExists(nids);
+    const keys = nids.map(nid =&gt; `notifications:${nid}`);
+    const notifData = await db.getObjectsFields(keys, [&#039;mergeId&#039;]);
+    const mergeIds = notifData.map(n =&gt; n.mergeId);
+
+    // Collapse any notifications with identical mergeIds
+    let count = mergeIds.reduce((count, mergeId, idx, arr) =&gt; {
+        // A missing (null) mergeId means that notification is counted separately.
+        if (mergeId === null || idx === arr.indexOf(mergeId)) {
+            count += 1;
+        }
+
+        return count;
+    }, 0);
+
+    ({ count } = await plugins.hooks.fire(&#039;filter:user.notifications.getCount&#039;, { uid, count }));
+    return count;
+};
+
+UserNotifications.getUnreadByField = async function (uid, field, values) {
+    const nids = await db.getSortedSetRevRange(`uid:${uid}:notifications:unread`, 0, 99);
+    if (!nids.length) {
+        return [];
+    }
+    const keys = nids.map(nid =&gt; `notifications:${nid}`);
+    const notifData = await db.getObjectsFields(keys, [&#039;nid&#039;, field]);
+    const valuesSet = new Set(values.map(value =&gt; String(value)));
+    return notifData.filter(n =&gt; n &amp;&amp; n[field] &amp;&amp; valuesSet.has(String(n[field]))).map(n =&gt; n.nid);
+};
+
+UserNotifications.deleteAll = async function (uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return;
+    }
+    await db.deleteAll([
+        `uid:${uid}:notifications:unread`,
+        `uid:${uid}:notifications:read`,
+    ]);
+};
+
+UserNotifications.sendTopicNotificationToFollowers = async function (uid, topicData, postData) {
+    try {
+        let followers = await db.getSortedSetRange(`followers:${uid}`, 0, -1);
+        followers = await privileges.categories.filterUids(&#039;read&#039;, topicData.cid, followers);
+        if (!followers.length) {
+            return;
+        }
+        let { title } = topicData;
+        if (title) {
+            title = utils.decodeHTMLEntities(title);
+            title = title.replace(/,/g, &#039;\\,&#039;);
+        }
+
+        const notifObj = await notifications.create({
+            type: &#039;new-topic&#039;,
+            bodyShort: `[[notifications:user_posted_topic, ${postData.user.displayname}, ${title}]]`,
+            bodyLong: postData.content,
+            pid: postData.pid,
+            path: `/post/${postData.pid}`,
+            nid: `tid:${postData.tid}:uid:${uid}`,
+            tid: postData.tid,
+            from: uid,
+        });
+
+        await notifications.push(notifObj, followers);
+    } catch (err) {
+        winston.error(err.stack);
+    }
+};
+
+UserNotifications.sendWelcomeNotification = async function (uid) {
+    if (!meta.config.welcomeNotification) {
+        return;
+    }
+
+    const path = meta.config.welcomeLink ? meta.config.welcomeLink : &#039;#&#039;;
+    const notifObj = await notifications.create({
+        bodyShort: meta.config.welcomeNotification,
+        path: path,
+        nid: `welcome_${uid}`,
+        from: meta.config.welcomeUid ? meta.config.welcomeUid : null,
+    });
+
+    await notifications.push(notifObj, [uid]);
+};
+
+UserNotifications.sendNameChangeNotification = async function (uid, username) {
+    const notifObj = await notifications.create({
+        bodyShort: `[[user:username_taken_workaround, ${username}]]`,
+        image: &#039;brand:logo&#039;,
+        nid: `username_taken:${uid}`,
+        datetime: Date.now(),
+    });
+
+    await notifications.push(notifObj, uid);
+};
+
+UserNotifications.pushCount = async function (uid) {
+    const websockets = require(&#039;../socket.io&#039;);
+    const count = await UserNotifications.getUnreadCount(uid);
+    websockets.in(`uid_${uid}`).emit(&#039;event:notifications.updateCount&#039;, count);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

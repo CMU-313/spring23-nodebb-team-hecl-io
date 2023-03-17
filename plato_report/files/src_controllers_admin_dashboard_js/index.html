@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/admin/dashboard.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/admin/dashboard.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.54</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">344</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">51.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.63</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const semver = require(&#039;semver&#039;);
+const winston = require(&#039;winston&#039;);
+const _ = require(&#039;lodash&#039;);
+const validator = require(&#039;validator&#039;);
+
+const versions = require(&#039;../../admin/versions&#039;);
+const db = require(&#039;../../database&#039;);
+const meta = require(&#039;../../meta&#039;);
+const analytics = require(&#039;../../analytics&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const user = require(&#039;../../user&#039;);
+const topics = require(&#039;../../topics&#039;);
+const utils = require(&#039;../../utils&#039;);
+const emailer = require(&#039;../../emailer&#039;);
+
+const dashboardController = module.exports;
+
+dashboardController.get = async function (req, res) {
+    const [stats, notices, latestVersion, lastrestart, isAdmin, popularSearches] = await Promise.all([
+        getStats(),
+        getNotices(),
+        getLatestVersion(),
+        getLastRestart(),
+        user.isAdministrator(req.uid),
+        getPopularSearches(),
+    ]);
+    const version = nconf.get(&#039;version&#039;);
+
+    res.render(&#039;admin/dashboard&#039;, {
+        version: version,
+        lookupFailed: latestVersion === null,
+        latestVersion: latestVersion,
+        upgradeAvailable: latestVersion &amp;&amp; semver.gt(latestVersion, version),
+        currentPrerelease: versions.isPrerelease.test(version),
+        notices: notices,
+        stats: stats,
+        canRestart: !!process.send,
+        lastrestart: lastrestart,
+        showSystemControls: isAdmin,
+        popularSearches: popularSearches,
+    });
+};
+
+async function getNotices() {
+    const notices = [
+        {
+            done: !meta.reloadRequired,
+            doneText: &#039;[[admin/dashboard:restart-not-required]]&#039;,
+            notDoneText: &#039;[[admin/dashboard:restart-required]]&#039;,
+        },
+        {
+            done: plugins.hooks.hasListeners(&#039;filter:search.query&#039;),
+            doneText: &#039;[[admin/dashboard:search-plugin-installed]]&#039;,
+            notDoneText: &#039;[[admin/dashboard:search-plugin-not-installed]]&#039;,
+            tooltip: &#039;[[admin/dashboard:search-plugin-tooltip]]&#039;,
+            link: &#039;/admin/extend/plugins&#039;,
+        },
+    ];
+
+    if (emailer.fallbackNotFound) {
+        notices.push({
+            done: false,
+            notDoneText: &#039;[[admin/dashboard:fallback-emailer-not-found]]&#039;,
+        });
+    }
+
+    if (global.env !== &#039;production&#039;) {
+        notices.push({
+            done: false,
+            notDoneText: &#039;[[admin/dashboard:running-in-development]]&#039;,
+        });
+    }
+
+    return await plugins.hooks.fire(&#039;filter:admin.notices&#039;, notices);
+}
+
+async function getLatestVersion() {
+    try {
+        return await versions.getLatestVersion();
+    } catch (err) {
+        winston.error(`[acp] Failed to fetch latest version\n${err.stack}`);
+    }
+    return null;
+}
+
+dashboardController.getAnalytics = async (req, res, next) =&gt; {
+    // Basic validation
+    const validUnits = [&#039;days&#039;, &#039;hours&#039;];
+    const validSets = [&#039;uniquevisitors&#039;, &#039;pageviews&#039;, &#039;pageviews:registered&#039;, &#039;pageviews:bot&#039;, &#039;pageviews:guest&#039;];
+    const until = req.query.until ? new Date(parseInt(req.query.until, 10)) : Date.now();
+    const count = req.query.count || (req.query.units === &#039;hours&#039; ? 24 : 30);
+    if (isNaN(until) || !validUnits.includes(req.query.units)) {
+        return next(new Error(&#039;[[error:invalid-data]]&#039;));
+    }
+
+    // Filter out invalid sets, if no sets, assume all sets
+    let sets;
+    if (req.query.sets) {
+        sets = Array.isArray(req.query.sets) ? req.query.sets : [req.query.sets];
+        sets = sets.filter(set =&gt; validSets.includes(set));
+    } else {
+        sets = validSets;
+    }
+
+    const method = req.query.units === &#039;days&#039; ? analytics.getDailyStatsForSet : analytics.getHourlyStatsForSet;
+    let payload = await Promise.all(sets.map(set =&gt; method(`analytics:${set}`, until, count)));
+    payload = _.zipObject(sets, payload);
+
+    res.json({
+        query: {
+            set: req.query.set,
+            units: req.query.units,
+            until: until,
+            count: count,
+        },
+        result: payload,
+    });
+};
+
+async function getStats() {
+    const cache = require(&#039;../../cache&#039;);
+    const cachedStats = cache.get(&#039;admin:stats&#039;);
+    if (cachedStats !== undefined) {
+        return cachedStats;
+    }
+
+    let results = await Promise.all([
+        getStatsForSet(&#039;ip:recent&#039;, &#039;uniqueIPCount&#039;),
+        getStatsFromAnalytics(&#039;logins&#039;, &#039;loginCount&#039;),
+        getStatsForSet(&#039;users:joindate&#039;, &#039;userCount&#039;),
+        getStatsForSet(&#039;posts:pid&#039;, &#039;postCount&#039;),
+        getStatsForSet(&#039;topics:tid&#039;, &#039;topicCount&#039;),
+    ]);
+    results[0].name = &#039;[[admin/dashboard:unique-visitors]]&#039;;
+
+    results[1].name = &#039;[[admin/dashboard:logins]]&#039;;
+    results[1].href = `${nconf.get(&#039;relative_path&#039;)}/admin/dashboard/logins`;
+
+    results[2].name = &#039;[[admin/dashboard:new-users]]&#039;;
+    results[2].href = `${nconf.get(&#039;relative_path&#039;)}/admin/dashboard/users`;
+
+    results[3].name = &#039;[[admin/dashboard:posts]]&#039;;
+
+    results[4].name = &#039;[[admin/dashboard:topics]]&#039;;
+    results[4].href = `${nconf.get(&#039;relative_path&#039;)}/admin/dashboard/topics`;
+
+    ({ results } = await plugins.hooks.fire(&#039;filter:admin.getStats&#039;, {
+        results,
+        helpers: { getStatsForSet, getStatsFromAnalytics },
+    }));
+
+    cache.set(&#039;admin:stats&#039;, results, 600000);
+    return results;
+}
+
+async function getStatsForSet(set, field) {
+    const terms = {
+        day: 86400000,
+        week: 604800000,
+        month: 2592000000,
+    };
+
+    const now = Date.now();
+    const results = await utils.promiseParallel({
+        yesterday: db.sortedSetCount(set, now - (terms.day * 2), &#039;+inf&#039;),
+        today: db.sortedSetCount(set, now - terms.day, &#039;+inf&#039;),
+        lastweek: db.sortedSetCount(set, now - (terms.week * 2), &#039;+inf&#039;),
+        thisweek: db.sortedSetCount(set, now - terms.week, &#039;+inf&#039;),
+        lastmonth: db.sortedSetCount(set, now - (terms.month * 2), &#039;+inf&#039;),
+        thismonth: db.sortedSetCount(set, now - terms.month, &#039;+inf&#039;),
+        alltime: getGlobalField(field),
+    });
+
+    return calculateDeltas(results);
+}
+
+async function getStatsFromAnalytics(set, field) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const data = await analytics.getDailyStatsForSet(`analytics:${set}`, today, 60);
+    const sum = arr =&gt; arr.reduce((memo, cur) =&gt; memo + cur, 0);
+    const results = {
+        yesterday: sum(data.slice(-2)),
+        today: data.slice(-1)[0],
+        lastweek: sum(data.slice(-14)),
+        thisweek: sum(data.slice(-7)),
+        lastmonth: sum(data.slice(0)), // entire set
+        thismonth: sum(data.slice(-30)),
+        alltime: await getGlobalField(field),
+    };
+
+    return calculateDeltas(results);
+}
+
+function calculateDeltas(results) {
+    function textClass(num) {
+        if (num &gt; 0) {
+            return &#039;text-success&#039;;
+        } else if (num &lt; 0) {
+            return &#039;text-danger&#039;;
+        }
+        return &#039;text-warning&#039;;
+    }
+
+    function increasePercent(last, now) {
+        const percent = last ? (now - last) / last * 100 : 0;
+        return percent.toFixed(1);
+    }
+    results.yesterday -= results.today;
+    results.dayIncrease = increasePercent(results.yesterday, results.today);
+    results.dayTextClass = textClass(results.dayIncrease);
+
+    results.lastweek -= results.thisweek;
+    results.weekIncrease = increasePercent(results.lastweek, results.thisweek);
+    results.weekTextClass = textClass(results.weekIncrease);
+
+    results.lastmonth -= results.thismonth;
+    results.monthIncrease = increasePercent(results.lastmonth, results.thismonth);
+    results.monthTextClass = textClass(results.monthIncrease);
+
+    return results;
+}
+
+async function getGlobalField(field) {
+    const count = await db.getObjectField(&#039;global&#039;, field);
+    return parseInt(count, 10) || 0;
+}
+
+async function getLastRestart() {
+    const lastrestart = await db.getObject(&#039;lastrestart&#039;);
+    if (!lastrestart) {
+        return null;
+    }
+    const userData = await user.getUserData(lastrestart.uid);
+    lastrestart.user = userData;
+    lastrestart.timestampISO = utils.toISOString(lastrestart.timestamp);
+    return lastrestart;
+}
+
+async function getPopularSearches() {
+    const searches = await db.getSortedSetRevRangeWithScores(&#039;searches:all&#039;, 0, 9);
+    return searches.map(s =&gt; ({ value: validator.escape(String(s.value)), score: s.score }));
+}
+
+dashboardController.getLogins = async (req, res) =&gt; {
+    let stats = await getStats();
+    stats = stats.filter(stat =&gt; stat.name === &#039;[[admin/dashboard:logins]]&#039;).map(({ ...stat }) =&gt; {
+        delete stat.href;
+        return stat;
+    });
+    const summary = {
+        day: stats[0].today,
+        week: stats[0].thisweek,
+        month: stats[0].thismonth,
+    };
+
+    // List recent sessions
+    const start = Date.now() - (1000 * 60 * 60 * 24 * meta.config.loginDays);
+    const uids = await db.getSortedSetRangeByScore(&#039;users:online&#039;, 0, 500, start, Date.now());
+    const usersData = await user.getUsersData(uids);
+    let sessions = await Promise.all(uids.map(async (uid) =&gt; {
+        const sessions = await user.auth.getSessions(uid);
+        sessions.forEach((session) =&gt; {
+            session.user = usersData[uids.indexOf(uid)];
+        });
+
+        return sessions;
+    }));
+    sessions = _.flatten(sessions).sort((a, b) =&gt; b.datetime - a.datetime);
+
+    res.render(&#039;admin/dashboard/logins&#039;, {
+        set: &#039;logins&#039;,
+        query: req.query,
+        stats,
+        summary,
+        sessions,
+        loginDays: meta.config.loginDays,
+    });
+};
+
+dashboardController.getUsers = async (req, res) =&gt; {
+    let stats = await getStats();
+    stats = stats.filter(stat =&gt; stat.name === &#039;[[admin/dashboard:new-users]]&#039;).map(({ ...stat }) =&gt; {
+        delete stat.href;
+        return stat;
+    });
+    const summary = {
+        day: stats[0].today,
+        week: stats[0].thisweek,
+        month: stats[0].thismonth,
+    };
+
+    // List of users registered within time frame
+    const end = parseInt(req.query.until, 10) || Date.now();
+    const start = end - (1000 * 60 * 60 * (req.query.units === &#039;days&#039; ? 24 : 1) * (req.query.count || (req.query.units === &#039;days&#039; ? 30 : 24)));
+    const uids = await db.getSortedSetRangeByScore(&#039;users:joindate&#039;, 0, 500, start, end);
+    const users = await user.getUsersData(uids);
+
+    res.render(&#039;admin/dashboard/users&#039;, {
+        set: &#039;registrations&#039;,
+        query: req.query,
+        stats,
+        summary,
+        users,
+    });
+};
+
+dashboardController.getTopics = async (req, res) =&gt; {
+    let stats = await getStats();
+    stats = stats.filter(stat =&gt; stat.name === &#039;[[admin/dashboard:topics]]&#039;).map(({ ...stat }) =&gt; {
+        delete stat.href;
+        return stat;
+    });
+    const summary = {
+        day: stats[0].today,
+        week: stats[0].thisweek,
+        month: stats[0].thismonth,
+    };
+
+    // List of topics created within time frame
+    const end = parseInt(req.query.until, 10) || Date.now();
+    const start = end - (1000 * 60 * 60 * (req.query.units === &#039;days&#039; ? 24 : 1) * (req.query.count || (req.query.units === &#039;days&#039; ? 30 : 24)));
+    const tids = await db.getSortedSetRangeByScore(&#039;topics:tid&#039;, 0, 500, start, end);
+    const topicData = await topics.getTopicsByTids(tids);
+
+    res.render(&#039;admin/dashboard/topics&#039;, {
+        set: &#039;topics&#039;,
+        query: req.query,
+        stats,
+        summary,
+        topics: topicData,
+    });
+};
+
+dashboardController.getSearches = async (req, res) =&gt; {
+    const searches = await db.getSortedSetRevRangeWithScores(&#039;searches:all&#039;, 0, 99);
+    res.render(&#039;admin/dashboard/searches&#039;, {
+        searches: searches.map(s =&gt; ({ value: validator.escape(String(s.value)), score: s.score })),
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

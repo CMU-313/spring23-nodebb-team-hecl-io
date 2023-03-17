@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/dashboard.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/dashboard.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">59.54</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">605</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">56.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">7.68</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;admin/dashboard&#039;, [
+    &#039;Chart&#039;, &#039;translator&#039;, &#039;benchpress&#039;, &#039;bootbox&#039;, &#039;alerts&#039;,
+], function (Chart, translator, Benchpress, bootbox, alerts) {
+    const Admin = {};
+    const intervals = {
+        rooms: false,
+        graphs: false,
+    };
+    let isMobile = false;
+    const graphData = {
+        rooms: {},
+        traffic: {},
+    };
+    const currentGraph = {
+        units: &#039;hours&#039;,
+        until: undefined,
+    };
+
+    const DEFAULTS = {
+        roomInterval: 10000,
+        graphInterval: 15000,
+        realtimeInterval: 1500,
+    };
+
+    const usedTopicColors = [];
+
+    $(window).on(&#039;action:ajaxify.start&#039;, function () {
+        clearInterval(intervals.rooms);
+        clearInterval(intervals.graphs);
+
+        intervals.rooms = null;
+        intervals.graphs = null;
+        graphData.rooms = null;
+        graphData.traffic = null;
+        usedTopicColors.length = 0;
+    });
+
+    Admin.init = function () {
+        app.enterRoom(&#039;admin&#039;);
+
+        isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        $(&#039;[data-toggle=&quot;tooltip&quot;]&#039;).tooltip();
+
+        setupRealtimeButton();
+        setupGraphs(function () {
+            socket.emit(&#039;admin.rooms.getAll&#039;, Admin.updateRoomUsage);
+            initiateDashboard();
+        });
+        setupFullscreen();
+    };
+
+    Admin.updateRoomUsage = function (err, data) {
+        if (err) {
+            return alerts.error(err);
+        }
+
+        if (JSON.stringify(graphData.rooms) === JSON.stringify(data)) {
+            return;
+        }
+
+        graphData.rooms = data;
+
+        const html = &#039;&lt;div class=&quot;text-center pull-left&quot;&gt;&#039; +
+                        &#039;&lt;span class=&quot;formatted-number&quot;&gt;&#039; + data.onlineRegisteredCount + &#039;&lt;/span&gt;&#039; +
+                        &#039;&lt;div class=&quot;stat&quot;&gt;[[admin/dashboard:active-users.users]]&lt;/div&gt;&#039; +
+                    &#039;&lt;/div&gt;&#039; +
+                    &#039;&lt;div class=&quot;text-center pull-left&quot;&gt;&#039; +
+                        &#039;&lt;span class=&quot;formatted-number&quot;&gt;&#039; + data.onlineGuestCount + &#039;&lt;/span&gt;&#039; +
+                        &#039;&lt;div class=&quot;stat&quot;&gt;[[admin/dashboard:active-users.guests]]&lt;/div&gt;&#039; +
+                    &#039;&lt;/div&gt;&#039; +
+                    &#039;&lt;div class=&quot;text-center pull-left&quot;&gt;&#039; +
+                        &#039;&lt;span class=&quot;formatted-number&quot;&gt;&#039; + (data.onlineRegisteredCount + data.onlineGuestCount) + &#039;&lt;/span&gt;&#039; +
+                        &#039;&lt;div class=&quot;stat&quot;&gt;[[admin/dashboard:active-users.total]]&lt;/div&gt;&#039; +
+                    &#039;&lt;/div&gt;&#039; +
+                    &#039;&lt;div class=&quot;text-center pull-left&quot;&gt;&#039; +
+                        &#039;&lt;span class=&quot;formatted-number&quot;&gt;&#039; + data.socketCount + &#039;&lt;/span&gt;&#039; +
+                        &#039;&lt;div class=&quot;stat&quot;&gt;[[admin/dashboard:active-users.connections]]&lt;/div&gt;&#039; +
+                    &#039;&lt;/div&gt;&#039;;
+
+        updateRegisteredGraph(data.onlineRegisteredCount, data.onlineGuestCount);
+        updatePresenceGraph(data.users);
+        updateTopicsGraph(data.topTenTopics);
+
+        $(&#039;#active-users&#039;).translateHtml(html);
+    };
+
+    const graphs = {
+        traffic: null,
+        registered: null,
+        presence: null,
+        topics: null,
+    };
+
+    const topicColors = [&#039;#bf616a&#039;, &#039;#5B90BF&#039;, &#039;#d08770&#039;, &#039;#ebcb8b&#039;, &#039;#a3be8c&#039;, &#039;#96b5b4&#039;, &#039;#8fa1b3&#039;, &#039;#b48ead&#039;, &#039;#ab7967&#039;, &#039;#46BFBD&#039;];
+
+    /* eslint-disable */
+    // from chartjs.org
+    function lighten(col, amt) {
+        let usePound = false;
+
+        if (col[0] === &#039;#&#039;) {
+            col = col.slice(1);
+            usePound = true;
+        }
+
+        const num = parseInt(col, 16);
+
+        let r = (num &gt;&gt; 16) + amt;
+
+        if (r &gt; 255) r = 255;
+        else if (r &lt; 0) r = 0;
+
+        let b = ((num &gt;&gt; 8) &amp; 0x00FF) + amt;
+
+        if (b &gt; 255) b = 255;
+        else if (b &lt; 0) b = 0;
+
+        let g = (num &amp; 0x0000FF) + amt;
+
+        if (g &gt; 255) g = 255;
+        else if (g &lt; 0) g = 0;
+
+        return (usePound ? &#039;#&#039; : &#039;&#039;) + (g | (b &lt;&lt; 8) | (r &lt;&lt; 16)).toString(16);
+    }
+    /* eslint-enable */
+
+    function setupGraphs(callback) {
+        callback = callback || function () {};
+        const trafficCanvas = document.getElementById(&#039;analytics-traffic&#039;);
+        const registeredCanvas = document.getElementById(&#039;analytics-registered&#039;);
+        const presenceCanvas = document.getElementById(&#039;analytics-presence&#039;);
+        const topicsCanvas = document.getElementById(&#039;analytics-topics&#039;);
+        const trafficCtx = trafficCanvas.getContext(&#039;2d&#039;);
+        const registeredCtx = registeredCanvas.getContext(&#039;2d&#039;);
+        const presenceCtx = presenceCanvas.getContext(&#039;2d&#039;);
+        const topicsCtx = topicsCanvas.getContext(&#039;2d&#039;);
+        const trafficLabels = utils.getHoursArray();
+
+        if (isMobile) {
+            Chart.defaults.global.tooltips.enabled = false;
+        }
+
+        const t = translator.Translator.create();
+        Promise.all([
+            t.translateKey(&#039;admin/dashboard:graphs.page-views&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.page-views-registered&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.page-views-guest&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.page-views-bot&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.unique-visitors&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.registered-users&#039;, []),
+            t.translateKey(&#039;admin/dashboard:graphs.guest-users&#039;, []),
+            t.translateKey(&#039;admin/dashboard:on-categories&#039;, []),
+            t.translateKey(&#039;admin/dashboard:reading-posts&#039;, []),
+            t.translateKey(&#039;admin/dashboard:browsing-topics&#039;, []),
+            t.translateKey(&#039;admin/dashboard:recent&#039;, []),
+            t.translateKey(&#039;admin/dashboard:unread&#039;, []),
+        ]).then(function (translations) {
+            const data = {
+                labels: trafficLabels,
+                datasets: [
+                    {
+                        label: translations[0],
+                        backgroundColor: &#039;rgba(220,220,220,0.2)&#039;,
+                        borderColor: &#039;rgba(220,220,220,1)&#039;,
+                        pointBackgroundColor: &#039;rgba(220,220,220,1)&#039;,
+                        pointHoverBackgroundColor: &#039;#fff&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;rgba(220,220,220,1)&#039;,
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    },
+                    {
+                        label: translations[1],
+                        backgroundColor: &#039;#ab464233&#039;,
+                        borderColor: &#039;#ab4642&#039;,
+                        pointBackgroundColor: &#039;#ab4642&#039;,
+                        pointHoverBackgroundColor: &#039;#ab4642&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;#ab4642&#039;,
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    },
+                    {
+                        label: translations[2],
+                        backgroundColor: &#039;#ba8baf33&#039;,
+                        borderColor: &#039;#ba8baf&#039;,
+                        pointBackgroundColor: &#039;#ba8baf&#039;,
+                        pointHoverBackgroundColor: &#039;#ba8baf&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;#ba8baf&#039;,
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    },
+                    {
+                        label: translations[3],
+                        backgroundColor: &#039;#f7ca8833&#039;,
+                        borderColor: &#039;#f7ca88&#039;,
+                        pointBackgroundColor: &#039;#f7ca88&#039;,
+                        pointHoverBackgroundColor: &#039;#f7ca88&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;#f7ca88&#039;,
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    },
+                    {
+                        label: translations[4],
+                        backgroundColor: &#039;rgba(151,187,205,0.2)&#039;,
+                        borderColor: &#039;rgba(151,187,205,1)&#039;,
+                        pointBackgroundColor: &#039;rgba(151,187,205,1)&#039;,
+                        pointHoverBackgroundColor: &#039;rgba(151,187,205,1)&#039;,
+                        pointBorderColor: &#039;#fff&#039;,
+                        pointHoverBorderColor: &#039;rgba(151,187,205,1)&#039;,
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    },
+                ],
+            };
+
+            trafficCanvas.width = $(trafficCanvas).parent().width();
+
+            data.datasets[0].yAxisID = &#039;left-y-axis&#039;;
+            data.datasets[1].yAxisID = &#039;left-y-axis&#039;;
+            data.datasets[2].yAxisID = &#039;left-y-axis&#039;;
+            data.datasets[3].yAxisID = &#039;left-y-axis&#039;;
+            data.datasets[4].yAxisID = &#039;right-y-axis&#039;;
+
+            graphs.traffic = new Chart(trafficCtx, {
+                type: &#039;line&#039;,
+                data: data,
+                options: {
+                    responsive: true,
+                    legend: {
+                        display: true,
+                    },
+                    scales: {
+                        yAxes: [{
+                            id: &#039;left-y-axis&#039;,
+                            ticks: {
+                                beginAtZero: true,
+                                precision: 0,
+                            },
+                            type: &#039;linear&#039;,
+                            position: &#039;left&#039;,
+                            scaleLabel: {
+                                display: true,
+                                labelString: translations[0],
+                            },
+                        }, {
+                            id: &#039;right-y-axis&#039;,
+                            ticks: {
+                                beginAtZero: true,
+                                suggestedMax: 10,
+                                precision: 0,
+                            },
+                            type: &#039;linear&#039;,
+                            position: &#039;right&#039;,
+                            scaleLabel: {
+                                display: true,
+                                labelString: translations[4],
+                            },
+                        }],
+                    },
+                    tooltips: {
+                        mode: &#039;x&#039;,
+                    },
+                },
+            });
+
+            graphs.registered = new Chart(registeredCtx, {
+                type: &#039;doughnut&#039;,
+                data: {
+                    labels: translations.slice(5, 7),
+                    datasets: [{
+                        data: [1, 1],
+                        backgroundColor: [&#039;#F7464A&#039;, &#039;#46BFBD&#039;],
+                        hoverBackgroundColor: [&#039;#FF5A5E&#039;, &#039;#5AD3D1&#039;],
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    legend: {
+                        display: false,
+                    },
+                },
+            });
+
+            graphs.presence = new Chart(presenceCtx, {
+                type: &#039;doughnut&#039;,
+                data: {
+                    labels: translations.slice(7, 12),
+                    datasets: [{
+                        data: [1, 1, 1, 1, 1],
+                        backgroundColor: [&#039;#F7464A&#039;, &#039;#46BFBD&#039;, &#039;#FDB45C&#039;, &#039;#949FB1&#039;, &#039;#9FB194&#039;],
+                        hoverBackgroundColor: [&#039;#FF5A5E&#039;, &#039;#5AD3D1&#039;, &#039;#FFC870&#039;, &#039;#A8B3C5&#039;, &#039;#A8B3C5&#039;],
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    legend: {
+                        display: false,
+                    },
+                },
+            });
+
+            graphs.topics = new Chart(topicsCtx, {
+                type: &#039;doughnut&#039;,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [],
+                        hoverBackgroundColor: [],
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    legend: {
+                        display: false,
+                    },
+                },
+            });
+
+            updateTrafficGraph();
+
+            $(window).on(&#039;resize&#039;, adjustPieCharts);
+            adjustPieCharts();
+
+            $(&#039;[data-action=&quot;updateGraph&quot;]:not([data-units=&quot;custom&quot;])&#039;).on(&#039;click&#039;, function () {
+                let until = new Date();
+                const amount = $(this).attr(&#039;data-amount&#039;);
+                if ($(this).attr(&#039;data-units&#039;) === &#039;days&#039;) {
+                    until.setHours(0, 0, 0, 0);
+                }
+                until = until.getTime();
+                updateTrafficGraph($(this).attr(&#039;data-units&#039;), until, amount);
+
+                require([&#039;translator&#039;], function (translator) {
+                    translator.translate(&#039;[[admin/dashboard:page-views-custom]]&#039;, function (translated) {
+                        $(&#039;[data-action=&quot;updateGraph&quot;][data-units=&quot;custom&quot;]&#039;).text(translated);
+                    });
+                });
+            });
+
+            $(&#039;[data-action=&quot;updateGraph&quot;][data-units=&quot;custom&quot;]&#039;).on(&#039;click&#039;, function () {
+                const targetEl = $(this);
+
+                Benchpress.render(&#039;admin/partials/pageviews-range-select&#039;, {}).then(function (html) {
+                    const modal = bootbox.dialog({
+                        title: &#039;[[admin/dashboard:page-views-custom]]&#039;,
+                        message: html,
+                        buttons: {
+                            submit: {
+                                label: &#039;[[global:search]]&#039;,
+                                className: &#039;btn-primary&#039;,
+                                callback: submit,
+                            },
+                        },
+                    }).on(&#039;shown.bs.modal&#039;, function () {
+                        const date = new Date();
+                        const today = date.toISOString().slice(0, 10);
+                        date.setDate(date.getDate() - 1);
+                        const yesterday = date.toISOString().slice(0, 10);
+
+                        modal.find(&#039;#startRange&#039;).val(targetEl.attr(&#039;data-startRange&#039;) || yesterday);
+                        modal.find(&#039;#endRange&#039;).val(targetEl.attr(&#039;data-endRange&#039;) || today);
+                    });
+
+                    function submit() {
+                        // NEED TO ADD VALIDATION HERE FOR YYYY-MM-DD
+                        const formData = modal.find(&#039;form&#039;).serializeObject();
+                        const validRegexp = /\d{4}-\d{2}-\d{2}/;
+
+                        // Input validation
+                        if (!formData.startRange &amp;&amp; !formData.endRange) {
+                            // No range? Assume last 30 days
+                            updateTrafficGraph(&#039;days&#039;);
+                            return;
+                        } else if (!validRegexp.test(formData.startRange) || !validRegexp.test(formData.endRange)) {
+                            // Invalid Input
+                            modal.find(&#039;.alert-danger&#039;).removeClass(&#039;hidden&#039;);
+                            return false;
+                        }
+
+                        let until = new Date(formData.endRange);
+                        until.setDate(until.getDate() + 1);
+                        until = until.getTime();
+                        const amount = (until - new Date(formData.startRange).getTime()) / (1000 * 60 * 60 * 24);
+
+                        updateTrafficGraph(&#039;days&#039;, until, amount);
+
+                        // Update &quot;custom range&quot; label
+                        targetEl.attr(&#039;data-startRange&#039;, formData.startRange);
+                        targetEl.attr(&#039;data-endRange&#039;, formData.endRange);
+                        targetEl.html(formData.startRange + &#039; &amp;ndash; &#039; + formData.endRange);
+                    }
+                });
+            });
+
+            socket.emit(&#039;admin.rooms.getAll&#039;, Admin.updateRoomUsage);
+            initiateDashboard();
+            callback();
+        });
+    }
+
+    function adjustPieCharts() {
+        $(&#039;.pie-chart.legend-up&#039;).each(function () {
+            const $this = $(this);
+
+            if ($this.width() &lt; 320) {
+                $this.addClass(&#039;compact&#039;);
+            } else {
+                $this.removeClass(&#039;compact&#039;);
+            }
+        });
+    }
+
+    function updateTrafficGraph(units, until, amount) {
+        // until and amount are optional
+
+        if (!app.isFocused) {
+            return;
+        }
+
+        socket.emit(&#039;admin.analytics.get&#039;, {
+            graph: &#039;traffic&#039;,
+            units: units || &#039;hours&#039;,
+            until: until,
+            amount: amount,
+        }, function (err, data) {
+            if (err) {
+                return alerts.error(err);
+            }
+            if (JSON.stringify(graphData.traffic) === JSON.stringify(data)) {
+                return;
+            }
+
+            graphData.traffic = data;
+
+            if (units === &#039;days&#039;) {
+                graphs.traffic.data.xLabels = utils.getDaysArray(until, amount);
+            } else {
+                graphs.traffic.data.xLabels = utils.getHoursArray();
+
+                $(&#039;#pageViewsThirty&#039;).html(data.summary.thirty);
+                $(&#039;#pageViewsSeven&#039;).html(data.summary.seven);
+                $(&#039;#pageViewsPastDay&#039;).html(data.pastDay);
+                utils.addCommasToNumbers($(&#039;#pageViewsThirty&#039;));
+                utils.addCommasToNumbers($(&#039;#pageViewsSeven&#039;));
+                utils.addCommasToNumbers($(&#039;#pageViewsPastDay&#039;));
+            }
+
+            graphs.traffic.data.datasets[0].data = data.pageviews;
+            graphs.traffic.data.datasets[1].data = data.pageviewsRegistered;
+            graphs.traffic.data.datasets[2].data = data.pageviewsGuest;
+            graphs.traffic.data.datasets[3].data = data.pageviewsBot;
+            graphs.traffic.data.datasets[4].data = data.uniqueVisitors;
+            graphs.traffic.data.labels = graphs.traffic.data.xLabels;
+
+            graphs.traffic.update();
+            currentGraph.units = units;
+            currentGraph.until = until;
+            currentGraph.amount = amount;
+
+            // Update the View as JSON button url
+            const apiEl = $(&#039;#view-as-json&#039;);
+            const newHref = $.param({
+                units: units || &#039;hours&#039;,
+                until: until,
+                count: amount,
+            });
+            apiEl.attr(&#039;href&#039;, config.relative_path + &#039;/api/admin/analytics?&#039; + newHref);
+        });
+    }
+
+    function updateRegisteredGraph(registered, guest) {
+        $(&#039;#analytics-legend .registered&#039;).parent().find(&#039;.count&#039;).text(registered);
+        $(&#039;#analytics-legend .guest&#039;).parent().find(&#039;.count&#039;).text(guest);
+        graphs.registered.data.datasets[0].data[0] = registered;
+        graphs.registered.data.datasets[0].data[1] = guest;
+        graphs.registered.update();
+    }
+
+    function updatePresenceGraph(users) {
+        $(&#039;#analytics-presence-legend .on-categories&#039;).parent().find(&#039;.count&#039;).text(users.categories);
+        $(&#039;#analytics-presence-legend .reading-posts&#039;).parent().find(&#039;.count&#039;).text(users.topics);
+        $(&#039;#analytics-presence-legend .browsing-topics&#039;).parent().find(&#039;.count&#039;).text(users.category);
+        $(&#039;#analytics-presence-legend .recent&#039;).parent().find(&#039;.count&#039;).text(users.recent);
+        $(&#039;#analytics-presence-legend .unread&#039;).parent().find(&#039;.count&#039;).text(users.unread);
+        graphs.presence.data.datasets[0].data[0] = users.categories;
+        graphs.presence.data.datasets[0].data[1] = users.topics;
+        graphs.presence.data.datasets[0].data[2] = users.category;
+        graphs.presence.data.datasets[0].data[3] = users.recent;
+        graphs.presence.data.datasets[0].data[4] = users.unread;
+
+        graphs.presence.update();
+    }
+
+    function updateTopicsGraph(topics) {
+        if (!topics.length) {
+            translator.translate(&#039;[[admin/dashboard:no-users-browsing]]&#039;, function (translated) {
+                topics = [{
+                    title: translated,
+                    count: 1,
+                }];
+                updateTopicsGraph(topics);
+            });
+            return;
+        }
+
+        graphs.topics.data.labels = [];
+        graphs.topics.data.datasets[0].data = [];
+        graphs.topics.data.datasets[0].backgroundColor = [];
+        graphs.topics.data.datasets[0].hoverBackgroundColor = [];
+
+        topics.forEach(function (topic, i) {
+            graphs.topics.data.labels.push(topic.title);
+            graphs.topics.data.datasets[0].data.push(topic.count);
+            graphs.topics.data.datasets[0].backgroundColor.push(topicColors[i]);
+            graphs.topics.data.datasets[0].hoverBackgroundColor.push(lighten(topicColors[i], 10));
+        });
+
+        function buildTopicsLegend() {
+            let html = &#039;&#039;;
+            topics.forEach(function (t, i) {
+                const link = t.tid ? &#039;&lt;a title=&quot;&#039; + t.title + &#039;&quot;href=&quot;&#039; + config.relative_path + &#039;/topic/&#039; + t.tid + &#039;&quot; target=&quot;_blank&quot;&gt; &#039; + t.title + &#039;&lt;/a&gt;&#039; : t.title;
+                const label = t.count === &#039;0&#039; ? t.title : link;
+
+                html += &#039;&lt;li&gt;&#039; +
+                    &#039;&lt;div style=&quot;background-color: &#039; + topicColors[i] + &#039;;&quot;&gt;&lt;/div&gt;&#039; +
+                    &#039;&lt;span&gt; (&#039; + t.count + &#039;) &#039; + label + &#039;&lt;/span&gt;&#039; +
+                    &#039;&lt;/li&gt;&#039;;
+            });
+            $(&#039;#topics-legend&#039;).translateHtml(html);
+        }
+
+        buildTopicsLegend();
+        graphs.topics.update();
+    }
+
+    function setupRealtimeButton() {
+        $(&#039;#toggle-realtime .fa&#039;).on(&#039;click&#039;, function () {
+            const $this = $(this);
+            if ($this.hasClass(&#039;fa-toggle-on&#039;)) {
+                $this.removeClass(&#039;fa-toggle-on&#039;).addClass(&#039;fa-toggle-off&#039;);
+                $this.parent().find(&#039;strong&#039;).html(&#039;OFF&#039;);
+                initiateDashboard(false);
+            } else {
+                $this.removeClass(&#039;fa-toggle-off&#039;).addClass(&#039;fa-toggle-on&#039;);
+                $this.parent().find(&#039;strong&#039;).html(&#039;ON&#039;);
+                initiateDashboard(true);
+            }
+        });
+    }
+
+    function initiateDashboard(realtime) {
+        clearInterval(intervals.rooms);
+        clearInterval(intervals.graphs);
+
+        intervals.rooms = setInterval(function () {
+            if (app.isFocused &amp;&amp; socket.connected) {
+                socket.emit(&#039;admin.rooms.getAll&#039;, Admin.updateRoomUsage);
+            }
+        }, realtime ? DEFAULTS.realtimeInterval : DEFAULTS.roomInterval);
+
+        intervals.graphs = setInterval(function () {
+            updateTrafficGraph(currentGraph.units, currentGraph.until, currentGraph.amount);
+        }, realtime ? DEFAULTS.realtimeInterval : DEFAULTS.graphInterval);
+    }
+
+    function setupFullscreen() {
+        const container = document.getElementById(&#039;analytics-panel&#039;);
+        const $container = $(container);
+        const btn = $container.find(&#039;.fa-expand&#039;);
+        let fsMethod;
+        let exitMethod;
+
+        if (container.requestFullscreen) {
+            fsMethod = &#039;requestFullscreen&#039;;
+            exitMethod = &#039;exitFullscreen&#039;;
+        } else if (container.mozRequestFullScreen) {
+            fsMethod = &#039;mozRequestFullScreen&#039;;
+            exitMethod = &#039;mozCancelFullScreen&#039;;
+        } else if (container.webkitRequestFullscreen) {
+            fsMethod = &#039;webkitRequestFullscreen&#039;;
+            exitMethod = &#039;webkitCancelFullScreen&#039;;
+        } else if (container.msRequestFullscreen) {
+            fsMethod = &#039;msRequestFullscreen&#039;;
+            exitMethod = &#039;msCancelFullScreen&#039;;
+        }
+
+        if (fsMethod) {
+            btn.addClass(&#039;active&#039;);
+            btn.on(&#039;click&#039;, function () {
+                if ($container.hasClass(&#039;fullscreen&#039;)) {
+                    document[exitMethod]();
+                    $container.removeClass(&#039;fullscreen&#039;);
+                } else {
+                    container[fsMethod]();
+                    $container.addClass(&#039;fullscreen&#039;);
+                }
+            });
+        }
+    }
+
+    return Admin;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

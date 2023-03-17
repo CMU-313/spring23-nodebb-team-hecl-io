@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/messages.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/messages.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.54</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">131</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">22.24</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.35</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;messages&#039;, [&#039;bootbox&#039;, &#039;translator&#039;, &#039;storage&#039;, &#039;alerts&#039;, &#039;hooks&#039;], function (bootbox, translator, storage, alerts, hooks) {
+    const messages = {};
+
+    let showWelcomeMessage;
+    let registerMessage;
+
+    messages.show = function () {
+        hooks.one(&#039;action:ajaxify.end&#039;, () =&gt; {
+            showQueryStringMessages();
+            showCookieWarning();
+            messages.showEmailConfirmWarning();
+        });
+    };
+
+    messages.showEmailConfirmWarning = function (message) {
+        if (!config.emailPrompt || !app.user.uid || parseInt(storage.getItem(&#039;email-confirm-dismiss&#039;), 10) === 1) {
+            return;
+        }
+        const msg = {
+            alert_id: &#039;email_confirm&#039;,
+            type: &#039;warning&#039;,
+            timeout: 0,
+            closefn: () =&gt; {
+                storage.setItem(&#039;email-confirm-dismiss&#039;, 1);
+            },
+        };
+
+        if (!app.user.email) {
+            msg.message = &#039;[[error:no-email-to-confirm]]&#039;;
+            msg.clickfn = function () {
+                alerts.remove(&#039;email_confirm&#039;);
+                ajaxify.go(&#039;user/&#039; + app.user.userslug + &#039;/edit/email&#039;);
+            };
+            alerts.alert(msg);
+        } else if (!app.user[&#039;email:confirmed&#039;] &amp;&amp; !app.user.isEmailConfirmSent) {
+            msg.message = message || &#039;[[error:email-not-confirmed]]&#039;;
+            msg.clickfn = function () {
+                alerts.remove(&#039;email_confirm&#039;);
+                ajaxify.go(&#039;/me/edit/email&#039;);
+            };
+            alerts.alert(msg);
+        } else if (!app.user[&#039;email:confirmed&#039;] &amp;&amp; app.user.isEmailConfirmSent) {
+            msg.message = &#039;[[error:email-not-confirmed-email-sent]]&#039;;
+            alerts.alert(msg);
+        }
+    };
+
+    function showCookieWarning() {
+        if (!config.cookies.enabled || !navigator.cookieEnabled || app.inAdmin || storage.getItem(&#039;cookieconsent&#039;) === &#039;1&#039;) {
+            return;
+        }
+
+        config.cookies.message = translator.unescape(config.cookies.message);
+        config.cookies.dismiss = translator.unescape(config.cookies.dismiss);
+        config.cookies.link = translator.unescape(config.cookies.link);
+        config.cookies.link_url = translator.unescape(config.cookies.link_url);
+
+        app.parseAndTranslate(&#039;partials/cookie-consent&#039;, config.cookies, function (html) {
+            $(document.body).append(html);
+            $(document.body).addClass(&#039;cookie-consent-open&#039;);
+
+            const warningEl = $(&#039;.cookie-consent&#039;);
+            const dismissEl = warningEl.find(&#039;button&#039;);
+            dismissEl.on(&#039;click&#039;, function () {
+                // Save consent cookie and remove warning element
+                storage.setItem(&#039;cookieconsent&#039;, &#039;1&#039;);
+                warningEl.remove();
+                $(document.body).removeClass(&#039;cookie-consent-open&#039;);
+            });
+        });
+    }
+
+    function showQueryStringMessages() {
+        const params = utils.params({ full: true });
+        showWelcomeMessage = params.has(&#039;loggedin&#039;);
+        registerMessage = params.get(&#039;register&#039;);
+
+        if (showWelcomeMessage) {
+            alerts.alert({
+                type: &#039;success&#039;,
+                title: &#039;[[global:welcome_back]] &#039; + app.user.username + &#039;!&#039;,
+                message: &#039;[[global:you_have_successfully_logged_in]]&#039;,
+                timeout: 5000,
+            });
+
+            params.delete(&#039;loggedin&#039;);
+        }
+
+        if (registerMessage) {
+            bootbox.alert({
+                message: utils.escapeHTML(decodeURIComponent(registerMessage)),
+            });
+
+            params.delete(&#039;register&#039;);
+        }
+
+        if (params.has(&#039;lang&#039;) &amp;&amp; params.get(&#039;lang&#039;) === config.defaultLang) {
+            console.info(`The &quot;lang&quot; parameter was passed in to set the language to &quot;${params.get(&#039;lang&#039;)}&quot;, but that is already the forum default language.`);
+            params.delete(&#039;lang&#039;);
+        }
+
+        const qs = params.toString();
+        ajaxify.updateHistory(ajaxify.currentPage + (qs ? `?${qs}` : &#039;&#039;) + document.location.hash, true);
+    }
+
+    messages.showInvalidSession = function () {
+        bootbox.alert({
+            title: &#039;[[error:invalid-session]]&#039;,
+            message: &#039;[[error:invalid-session-text]]&#039;,
+            closeButton: false,
+            callback: function () {
+                window.location.reload();
+            },
+        });
+    };
+
+    messages.showSessionMismatch = function () {
+        bootbox.alert({
+            title: &#039;[[error:session-mismatch]]&#039;,
+            message: &#039;[[error:session-mismatch-text]]&#039;,
+            closeButton: false,
+            callback: function () {
+                window.location.reload();
+            },
+        });
+    };
+
+    return messages;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

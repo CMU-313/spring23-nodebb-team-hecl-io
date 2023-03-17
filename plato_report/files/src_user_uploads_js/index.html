@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/uploads.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/uploads.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">79.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">90</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">23.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.06</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+const crypto = require(&#039;crypto&#039;);
+
+const db = require(&#039;../database&#039;);
+const posts = require(&#039;../posts&#039;);
+const file = require(&#039;../file&#039;);
+const batch = require(&#039;../batch&#039;);
+
+const md5 = filename =&gt; crypto.createHash(&#039;md5&#039;).update(filename).digest(&#039;hex&#039;);
+const _getFullPath = relativePath =&gt; path.resolve(nconf.get(&#039;upload_path&#039;), relativePath);
+const _validatePath = async (relativePaths) =&gt; {
+    if (typeof relativePaths === &#039;string&#039;) {
+        relativePaths = [relativePaths];
+    } else if (!Array.isArray(relativePaths)) {
+        throw new Error(`[[error:wrong-parameter-type, relativePaths, ${typeof relativePaths}, array]]`);
+    }
+
+    const fullPaths = relativePaths.map(path =&gt; _getFullPath(path));
+    const exists = await Promise.all(fullPaths.map(async fullPath =&gt; file.exists(fullPath)));
+
+    if (!fullPaths.every(fullPath =&gt; fullPath.startsWith(nconf.get(&#039;upload_path&#039;))) || !exists.every(Boolean)) {
+        throw new Error(&#039;[[error:invalid-path]]&#039;);
+    }
+};
+
+module.exports = function (User) {
+    User.associateUpload = async (uid, relativePath) =&gt; {
+        await _validatePath(relativePath);
+        await Promise.all([
+            db.sortedSetAdd(`uid:${uid}:uploads`, Date.now(), relativePath),
+            db.setObjectField(`upload:${md5(relativePath)}`, &#039;uid&#039;, uid),
+        ]);
+    };
+
+    User.deleteUpload = async function (callerUid, uid, uploadNames) {
+        if (typeof uploadNames === &#039;string&#039;) {
+            uploadNames = [uploadNames];
+        } else if (!Array.isArray(uploadNames)) {
+            throw new Error(`[[error:wrong-parameter-type, uploadNames, ${typeof uploadNames}, array]]`);
+        }
+
+        await _validatePath(uploadNames);
+
+        const [isUsersUpload, isAdminOrGlobalMod] = await Promise.all([
+            db.isSortedSetMembers(`uid:${callerUid}:uploads`, uploadNames),
+            User.isAdminOrGlobalMod(callerUid),
+        ]);
+        if (!isAdminOrGlobalMod &amp;&amp; !isUsersUpload.every(Boolean)) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+
+        await batch.processArray(uploadNames, async (uploadNames) =&gt; {
+            const fullPaths = uploadNames.map(path =&gt; _getFullPath(path));
+
+            await Promise.all(fullPaths.map(async (fullPath, idx) =&gt; {
+                winston.verbose(`[user/deleteUpload] Deleting ${uploadNames[idx]}`);
+                await Promise.all([
+                    file.delete(fullPath),
+                    file.delete(file.appendToFileName(fullPath, &#039;-resized&#039;)),
+                ]);
+                await Promise.all([
+                    db.sortedSetRemove(`uid:${uid}:uploads`, uploadNames[idx]),
+                    db.delete(`upload:${md5(uploadNames[idx])}`),
+                ]);
+            }));
+
+            // Dissociate the upload from pids, if any
+            const pids = await db.getSortedSetsMembers(uploadNames.map(relativePath =&gt; `upload:${md5(relativePath)}:pids`));
+            await Promise.all(pids.map(async (pids, idx) =&gt; Promise.all(
+                pids.map(async pid =&gt; posts.uploads.dissociate(pid, uploadNames[idx]))
+            )));
+        }, { batch: 50 });
+    };
+
+    User.collateUploads = async function (uid, archive) {
+        await batch.processSortedSet(`uid:${uid}:uploads`, (files, next) =&gt; {
+            files.forEach((file) =&gt; {
+                archive.file(_getFullPath(file), {
+                    name: path.basename(file),
+                });
+            });
+
+            setImmediate(next);
+        }, { batch: 100 });
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>
