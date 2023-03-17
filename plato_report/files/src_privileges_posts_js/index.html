@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/privileges/posts.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/privileges/posts.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">233</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">58.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.50</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const meta = require(&#039;../meta&#039;);
+const posts = require(&#039;../posts&#039;);
+const topics = require(&#039;../topics&#039;);
+const user = require(&#039;../user&#039;);
+const helpers = require(&#039;./helpers&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const privsCategories = require(&#039;./categories&#039;);
+const privsTopics = require(&#039;./topics&#039;);
+
+const privsPosts = module.exports;
+
+privsPosts.get = async function (pids, uid) {
+    if (!Array.isArray(pids) || !pids.length) {
+        return [];
+    }
+    const cids = await posts.getCidsByPids(pids);
+    const uniqueCids = _.uniq(cids);
+
+    const results = await utils.promiseParallel({
+        isAdmin: user.isAdministrator(uid),
+        isModerator: user.isModerator(uid, uniqueCids),
+        isOwner: posts.isOwner(pids, uid),
+        &#039;topics:read&#039;: helpers.isAllowedTo(&#039;topics:read&#039;, uid, uniqueCids),
+        read: helpers.isAllowedTo(&#039;read&#039;, uid, uniqueCids),
+        &#039;posts:edit&#039;: helpers.isAllowedTo(&#039;posts:edit&#039;, uid, uniqueCids),
+        &#039;posts:history&#039;: helpers.isAllowedTo(&#039;posts:history&#039;, uid, uniqueCids),
+        &#039;posts:view_deleted&#039;: helpers.isAllowedTo(&#039;posts:view_deleted&#039;, uid, uniqueCids),
+    });
+
+    const isModerator = _.zipObject(uniqueCids, results.isModerator);
+    const privData = {};
+    privData[&#039;topics:read&#039;] = _.zipObject(uniqueCids, results[&#039;topics:read&#039;]);
+    privData.read = _.zipObject(uniqueCids, results.read);
+    privData[&#039;posts:edit&#039;] = _.zipObject(uniqueCids, results[&#039;posts:edit&#039;]);
+    privData[&#039;posts:history&#039;] = _.zipObject(uniqueCids, results[&#039;posts:history&#039;]);
+    privData[&#039;posts:view_deleted&#039;] = _.zipObject(uniqueCids, results[&#039;posts:view_deleted&#039;]);
+
+    const privileges = cids.map((cid, i) =&gt; {
+        const isAdminOrMod = results.isAdmin || isModerator[cid];
+        const editable = (privData[&#039;posts:edit&#039;][cid] &amp;&amp; (results.isOwner[i] || results.isModerator)) || results.isAdmin;
+        const viewDeletedPosts = results.isOwner[i] || privData[&#039;posts:view_deleted&#039;][cid] || results.isAdmin;
+        const viewHistory = results.isOwner[i] || privData[&#039;posts:history&#039;][cid] || results.isAdmin;
+
+        return {
+            editable: editable,
+            move: isAdminOrMod,
+            isAdminOrMod: isAdminOrMod,
+            &#039;topics:read&#039;: privData[&#039;topics:read&#039;][cid] || results.isAdmin,
+            read: privData.read[cid] || results.isAdmin,
+            &#039;posts:history&#039;: viewHistory,
+            &#039;posts:view_deleted&#039;: viewDeletedPosts,
+        };
+    });
+
+    return privileges;
+};
+
+privsPosts.can = async function (privilege, pid, uid) {
+    const cid = await posts.getCidByPid(pid);
+    return await privsCategories.can(privilege, cid, uid);
+};
+
+privsPosts.filter = async function (privilege, pids, uid) {
+    if (!Array.isArray(pids) || !pids.length) {
+        return [];
+    }
+
+    pids = _.uniq(pids);
+    const postData = await posts.getPostsFields(pids, [&#039;uid&#039;, &#039;tid&#039;, &#039;deleted&#039;]);
+    const tids = _.uniq(postData.map(post =&gt; post &amp;&amp; post.tid).filter(Boolean));
+    const topicData = await topics.getTopicsFields(tids, [&#039;deleted&#039;, &#039;scheduled&#039;, &#039;cid&#039;]);
+
+    const tidToTopic = _.zipObject(tids, topicData);
+
+    let cids = postData.map((post, index) =&gt; {
+        if (post) {
+            post.pid = pids[index];
+            post.topic = tidToTopic[post.tid];
+        }
+        return tidToTopic[post.tid] &amp;&amp; tidToTopic[post.tid].cid;
+    }).filter(cid =&gt; parseInt(cid, 10));
+
+    cids = _.uniq(cids);
+
+    const results = await privsCategories.getBase(privilege, cids, uid);
+    const allowedCids = cids.filter((cid, index) =&gt; !results.categories[index].disabled &amp;&amp;
+            (results.allowedTo[index] || results.isAdmin));
+
+    const cidsSet = new Set(allowedCids);
+    const canViewDeleted = _.zipObject(cids, results.view_deleted);
+    const canViewScheduled = _.zipObject(cids, results.view_scheduled);
+
+    pids = postData.filter(post =&gt; (
+        post.topic &amp;&amp;
+        cidsSet.has(post.topic.cid) &amp;&amp;
+        (privsTopics.canViewDeletedScheduled({
+            deleted: post.topic.deleted || post.deleted,
+            scheduled: post.topic.scheduled,
+        }, {}, canViewDeleted[post.topic.cid], canViewScheduled[post.topic.cid]) || results.isAdmin)
+    )).map(post =&gt; post.pid);
+
+    const data = await plugins.hooks.fire(&#039;filter:privileges.posts.filter&#039;, {
+        privilege: privilege,
+        uid: uid,
+        pids: pids,
+    });
+
+    return data ? data.pids : null;
+};
+
+privsPosts.canEdit = async function (pid, uid) {
+    const results = await utils.promiseParallel({
+        isAdmin: user.isAdministrator(uid),
+        isMod: posts.isModerator([pid], uid),
+        owner: posts.isOwner(pid, uid),
+        edit: privsPosts.can(&#039;posts:edit&#039;, pid, uid),
+        postData: posts.getPostFields(pid, [&#039;tid&#039;, &#039;timestamp&#039;, &#039;deleted&#039;, &#039;deleterUid&#039;]),
+        userData: user.getUserFields(uid, [&#039;reputation&#039;]),
+    });
+
+    results.isMod = results.isMod[0];
+    if (results.isAdmin) {
+        return { flag: true };
+    }
+
+    if (
+        !results.isMod &amp;&amp;
+        meta.config.postEditDuration &amp;&amp;
+        (Date.now() - results.postData.timestamp &gt; meta.config.postEditDuration * 1000)
+    ) {
+        return { flag: false, message: `[[error:post-edit-duration-expired, ${meta.config.postEditDuration}]]` };
+    }
+    if (
+        !results.isMod &amp;&amp;
+        meta.config.newbiePostEditDuration &gt; 0 &amp;&amp;
+        meta.config.newbiePostDelayThreshold &gt; results.userData.reputation &amp;&amp;
+        Date.now() - results.postData.timestamp &gt; meta.config.newbiePostEditDuration * 1000
+    ) {
+        return { flag: false, message: `[[error:post-edit-duration-expired, ${meta.config.newbiePostEditDuration}]]` };
+    }
+
+    const isLocked = await topics.isLocked(results.postData.tid);
+    if (!results.isMod &amp;&amp; isLocked) {
+        return { flag: false, message: &#039;[[error:topic-locked]]&#039; };
+    }
+
+    if (!results.isMod &amp;&amp; results.postData.deleted &amp;&amp; parseInt(uid, 10) !== parseInt(results.postData.deleterUid, 10)) {
+        return { flag: false, message: &#039;[[error:post-deleted]]&#039; };
+    }
+
+    results.pid = parseInt(pid, 10);
+    results.uid = uid;
+
+    const result = await plugins.hooks.fire(&#039;filter:privileges.posts.edit&#039;, results);
+    return { flag: result.edit &amp;&amp; (result.owner || result.isMod), message: &#039;[[error:no-privileges]]&#039; };
+};
+
+privsPosts.canDelete = async function (pid, uid) {
+    const postData = await posts.getPostFields(pid, [&#039;uid&#039;, &#039;tid&#039;, &#039;timestamp&#039;, &#039;deleterUid&#039;]);
+    const results = await utils.promiseParallel({
+        isAdmin: user.isAdministrator(uid),
+        isMod: posts.isModerator([pid], uid),
+        isLocked: topics.isLocked(postData.tid),
+        isOwner: posts.isOwner(pid, uid),
+        &#039;posts:delete&#039;: privsPosts.can(&#039;posts:delete&#039;, pid, uid),
+    });
+    results.isMod = results.isMod[0];
+    if (results.isAdmin) {
+        return { flag: true };
+    }
+
+    if (!results.isMod &amp;&amp; results.isLocked) {
+        return { flag: false, message: &#039;[[error:topic-locked]]&#039; };
+    }
+
+    const { postDeleteDuration } = meta.config;
+    if (!results.isMod &amp;&amp; postDeleteDuration &amp;&amp; (Date.now() - postData.timestamp &gt; postDeleteDuration * 1000)) {
+        return { flag: false, message: `[[error:post-delete-duration-expired, ${meta.config.postDeleteDuration}]]` };
+    }
+    const { deleterUid } = postData;
+    const flag = results[&#039;posts:delete&#039;] &amp;&amp; ((results.isOwner &amp;&amp; (deleterUid === 0 || deleterUid === postData.uid)) || results.isMod);
+    return { flag: flag, message: &#039;[[error:no-privileges]]&#039; };
+};
+
+privsPosts.canFlag = async function (pid, uid) {
+    const targetUid = await posts.getPostField(pid, &#039;uid&#039;);
+    const [userReputation, isAdminOrModerator, targetPrivileged, reporterPrivileged] = await Promise.all([
+        user.getUserField(uid, &#039;reputation&#039;),
+        isAdminOrMod(pid, uid),
+        user.isPrivileged(targetUid),
+        user.isPrivileged(uid),
+    ]);
+    const minimumReputation = meta.config[&#039;min:rep:flag&#039;];
+    let canFlag = isAdminOrModerator || (userReputation &gt;= minimumReputation);
+
+    if (targetPrivileged &amp;&amp; !reporterPrivileged) {
+        canFlag = false;
+    }
+
+    return { flag: canFlag };
+};
+
+privsPosts.canMove = async function (pid, uid) {
+    const isMain = await posts.isMain(pid);
+    if (isMain) {
+        throw new Error(&#039;[[error:cant-move-mainpost]]&#039;);
+    }
+    return await isAdminOrMod(pid, uid);
+};
+
+privsPosts.canPurge = async function (pid, uid) {
+    const cid = await posts.getCidByPid(pid);
+    const results = await utils.promiseParallel({
+        purge: privsCategories.isUserAllowedTo(&#039;purge&#039;, cid, uid),
+        owner: posts.isOwner(pid, uid),
+        isAdmin: user.isAdministrator(uid),
+        isModerator: user.isModerator(uid, cid),
+    });
+    return (results.purge &amp;&amp; (results.owner || results.isModerator)) || results.isAdmin;
+};
+
+async function isAdminOrMod(pid, uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return false;
+    }
+    const cid = await posts.getCidByPid(pid);
+    return await privsCategories.isAdminOrMod(cid, uid);
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

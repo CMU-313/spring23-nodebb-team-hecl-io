@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - Gruntfile.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>Gruntfile.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">206</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">21.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.68</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+nconf.argv().env({
+    separator: &#039;__&#039;,
+});
+const winston = require(&#039;winston&#039;);
+const { fork } = require(&#039;child_process&#039;);
+
+const { env } = process;
+let worker;
+
+env.NODE_ENV = env.NODE_ENV || &#039;development&#039;;
+
+const configFile = path.resolve(__dirname, nconf.any([&#039;config&#039;, &#039;CONFIG&#039;]) || &#039;config.json&#039;);
+const prestart = require(&#039;./src/prestart&#039;);
+
+prestart.loadConfig(configFile);
+
+const db = require(&#039;./src/database&#039;);
+const plugins = require(&#039;./src/plugins&#039;);
+
+module.exports = function (grunt) {
+    const args = [];
+
+    if (!grunt.option(&#039;verbose&#039;)) {
+        args.push(&#039;--log-level=info&#039;);
+        nconf.set(&#039;log-level&#039;, &#039;info&#039;);
+    }
+    prestart.setupWinston();
+
+    grunt.initConfig({
+        watch: {},
+    });
+
+    grunt.loadNpmTasks(&#039;grunt-contrib-watch&#039;);
+
+    grunt.registerTask(&#039;default&#039;, [&#039;watch&#039;]);
+
+    grunt.registerTask(&#039;init&#039;, async function () {
+        const done = this.async();
+        let pluginList = [];
+        if (!process.argv.includes(&#039;--core&#039;)) {
+            await db.init();
+            pluginList = await plugins.getActive();
+            if (!pluginList.includes(&#039;nodebb-plugin-composer-default&#039;)) {
+                pluginList.push(&#039;nodebb-plugin-composer-default&#039;);
+            }
+        }
+
+        const styleUpdated_Client = pluginList.map(p =&gt; `node_modules/${p}/*.less`)
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/*.css`))
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/+(public|static|less)/**/*.less`))
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/+(public|static)/**/*.css`));
+
+        const styleUpdated_Admin = pluginList.map(p =&gt; `node_modules/${p}/*.less`)
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/*.css`))
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/+(public|static|less)/**/*.less`))
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/+(public|static)/**/*.css`));
+
+        const clientUpdated = pluginList.map(p =&gt; `node_modules/${p}/+(public|static)/**/*.js`);
+        const serverUpdated = pluginList.map(p =&gt; `node_modules/${p}/*.js`)
+            .concat(pluginList.map(p =&gt; `node_modules/${p}/+(lib|src)/**/*.js`));
+
+        const templatesUpdated = pluginList.map(p =&gt; `node_modules/${p}/+(public|static|templates)/**/*.tpl`);
+        const langUpdated = pluginList.map(p =&gt; `node_modules/${p}/+(public|static|languages)/**/*.json`);
+
+        grunt.config([&#039;watch&#039;], {
+            styleUpdated_Client: {
+                files: [
+                    &#039;public/less/**/*.less&#039;,
+                    &#039;themes/**/*.less&#039;,
+                    ...styleUpdated_Client,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            styleUpdated_Admin: {
+                files: [
+                    &#039;public/less/**/*.less&#039;,
+                    &#039;themes/**/*.less&#039;,
+                    ...styleUpdated_Admin,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            clientUpdated: {
+                files: [
+                    &#039;public/src/**/*.js&#039;,
+                    &#039;public/vendor/**/*.js&#039;,
+                    ...clientUpdated,
+                    &#039;node_modules/benchpressjs/build/benchpress.js&#039;,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            serverUpdated: {
+                files: [
+                    &#039;app.js&#039;,
+                    &#039;install/*.js&#039;,
+                    &#039;src/**/*.js&#039;,
+                    &#039;public/src/modules/translator.common.js&#039;,
+                    &#039;public/src/modules/helpers.common.js&#039;,
+                    &#039;public/src/utils.common.js&#039;,
+                    serverUpdated,
+                    &#039;!src/upgrades/**&#039;,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            typescriptUpdated: {
+                files: [
+                    &#039;install/*.ts&#039;,
+                    &#039;src/**/*.ts&#039;,
+                    &#039;public/src/**/*.ts&#039;,
+                    &#039;public/vendor/**/*.ts&#039;,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            templatesUpdated: {
+                files: [
+                    &#039;src/views/**/*.tpl&#039;,
+                    &#039;themes/**/*.tpl&#039;,
+                    ...templatesUpdated,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+            langUpdated: {
+                files: [
+                    &#039;public/language/en-GB/*.json&#039;,
+                    &#039;public/language/en-GB/**/*.json&#039;,
+                    ...langUpdated,
+                ],
+                options: {
+                    interval: 1000,
+                },
+            },
+        });
+        const build = require(&#039;./src/meta/build&#039;);
+        if (!grunt.option(&#039;skip&#039;)) {
+            await build.build(true, { watch: true });
+        }
+        run();
+        done();
+    });
+
+    function run() {
+        if (worker) {
+            worker.kill();
+        }
+
+        const execArgv = [];
+        const inspect = process.argv.find(a =&gt; a.startsWith(&#039;--inspect&#039;));
+
+        if (inspect) {
+            execArgv.push(inspect);
+        }
+
+        worker = fork(&#039;app.js&#039;, args, {
+            env,
+            execArgv,
+        });
+    }
+
+    grunt.task.run(&#039;init&#039;);
+
+    grunt.event.removeAllListeners(&#039;watch&#039;);
+    grunt.event.on(&#039;watch&#039;, (action, filepath, target) =&gt; {
+        let compiling;
+        if (target === &#039;styleUpdated_Client&#039;) {
+            compiling = &#039;clientCSS&#039;;
+        } else if (target === &#039;styleUpdated_Admin&#039;) {
+            compiling = &#039;acpCSS&#039;;
+        } else if (target === &#039;clientUpdated&#039; || target === &#039;typescriptUpdated&#039;) {
+            compiling = &#039;js&#039;;
+        } else if (target === &#039;templatesUpdated&#039;) {
+            compiling = &#039;tpl&#039;;
+        } else if (target === &#039;langUpdated&#039;) {
+            compiling = &#039;lang&#039;;
+        } else if (target === &#039;serverUpdated&#039;) {
+            // empty require cache
+            const paths = [&#039;./src/meta/build.js&#039;, &#039;./src/meta/index.js&#039;];
+            paths.forEach(p =&gt; delete require.cache[require.resolve(p)]);
+            return run();
+        }
+
+        require(&#039;./src/meta/build&#039;).build([compiling], { webpack: false }, (err) =&gt; {
+            if (err) {
+                winston.error(err.stack);
+            }
+            if (worker) {
+                worker.send({ compiling: compiling });
+            }
+        });
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

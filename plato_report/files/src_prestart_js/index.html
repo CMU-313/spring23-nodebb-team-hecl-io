@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/prestart.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/prestart.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">55.82</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">125</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">24.26</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.70</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const url = require(&#039;url&#039;);
+const winston = require(&#039;winston&#039;);
+const path = require(&#039;path&#039;);
+const chalk = require(&#039;chalk&#039;);
+
+const pkg = require(&#039;../package.json&#039;);
+const { paths } = require(&#039;./constants&#039;);
+
+function setupWinston() {
+    if (!winston.format) {
+        return;
+    }
+
+    const formats = [];
+    if (nconf.get(&#039;log-colorize&#039;) !== &#039;false&#039;) {
+        formats.push(winston.format.colorize());
+    }
+
+    if (nconf.get(&#039;json-logging&#039;)) {
+        formats.push(winston.format.timestamp());
+        formats.push(winston.format.json());
+    } else {
+        const timestampFormat = winston.format((info) =&gt; {
+            const dateString = `${new Date().toISOString()} [${nconf.get(&#039;port&#039;)}/${global.process.pid}]`;
+            info.level = `${dateString} - ${info.level}`;
+            return info;
+        });
+        formats.push(timestampFormat());
+        formats.push(winston.format.splat());
+        formats.push(winston.format.simple());
+    }
+
+    winston.configure({
+        level: nconf.get(&#039;log-level&#039;) || (process.env.NODE_ENV === &#039;production&#039; ? &#039;info&#039; : &#039;verbose&#039;),
+        format: winston.format.combine.apply(null, formats),
+        transports: [
+            new winston.transports.Console({
+                handleExceptions: true,
+            }),
+        ],
+    });
+}
+
+function loadConfig(configFile) {
+    nconf.file({
+        file: configFile,
+    });
+
+    nconf.defaults({
+        base_dir: paths.baseDir,
+        themes_path: paths.themes,
+        upload_path: &#039;public/uploads&#039;,
+        views_dir: path.join(paths.baseDir, &#039;build/public/templates&#039;),
+        version: pkg.version,
+        isCluster: false,
+        isPrimary: true,
+        jobsDisabled: false,
+    });
+
+    // Explicitly cast as Bool, loader.js passes in isCluster as string &#039;true&#039;/&#039;false&#039;
+    const castAsBool = [&#039;isCluster&#039;, &#039;isPrimary&#039;, &#039;jobsDisabled&#039;];
+    nconf.stores.env.readOnly = false;
+    castAsBool.forEach((prop) =&gt; {
+        const value = nconf.get(prop);
+        if (value !== undefined) {
+            nconf.set(prop, [&#039;1&#039;, 1, &#039;true&#039;, true].includes(value));
+        }
+    });
+    nconf.stores.env.readOnly = true;
+    nconf.set(&#039;runJobs&#039;, nconf.get(&#039;isPrimary&#039;) &amp;&amp; !nconf.get(&#039;jobsDisabled&#039;));
+
+    // Ensure themes_path is a full filepath
+    nconf.set(&#039;themes_path&#039;, path.resolve(paths.baseDir, nconf.get(&#039;themes_path&#039;)));
+    nconf.set(&#039;core_templates_path&#039;, path.join(paths.baseDir, &#039;src/views&#039;));
+    nconf.set(&#039;base_templates_path&#039;, path.join(nconf.get(&#039;themes_path&#039;), &#039;nodebb-theme-persona/templates&#039;));
+
+    nconf.set(&#039;upload_path&#039;, path.resolve(nconf.get(&#039;base_dir&#039;), nconf.get(&#039;upload_path&#039;)));
+    nconf.set(&#039;upload_url&#039;, &#039;/assets/uploads&#039;);
+
+
+    // nconf defaults, if not set in config
+    if (!nconf.get(&#039;sessionKey&#039;)) {
+        nconf.set(&#039;sessionKey&#039;, &#039;express.sid&#039;);
+    }
+
+    if (nconf.get(&#039;url&#039;)) {
+        nconf.set(&#039;url&#039;, nconf.get(&#039;url&#039;).replace(/\/$/, &#039;&#039;));
+        nconf.set(&#039;url_parsed&#039;, url.parse(nconf.get(&#039;url&#039;)));
+        // Parse out the relative_url and other goodies from the configured URL
+        const urlObject = url.parse(nconf.get(&#039;url&#039;));
+        const relativePath = urlObject.pathname !== &#039;/&#039; ? urlObject.pathname.replace(/\/+$/, &#039;&#039;) : &#039;&#039;;
+        nconf.set(&#039;base_url&#039;, `${urlObject.protocol}//${urlObject.host}`);
+        nconf.set(&#039;secure&#039;, urlObject.protocol === &#039;https:&#039;);
+        nconf.set(&#039;use_port&#039;, !!urlObject.port);
+        nconf.set(&#039;relative_path&#039;, relativePath);
+        if (!nconf.get(&#039;asset_base_url&#039;)) {
+            nconf.set(&#039;asset_base_url&#039;, `${relativePath}/assets`);
+        }
+        nconf.set(&#039;port&#039;, nconf.get(&#039;PORT&#039;) || nconf.get(&#039;port&#039;) || urlObject.port || (nconf.get(&#039;PORT_ENV_VAR&#039;) ? nconf.get(nconf.get(&#039;PORT_ENV_VAR&#039;)) : false) || 4567);
+
+        // cookies don&#039;t provide isolation by port: http://stackoverflow.com/a/16328399/122353
+        const domain = nconf.get(&#039;cookieDomain&#039;) || urlObject.hostname;
+        const origins = nconf.get(&#039;socket.io:origins&#039;) || `${urlObject.protocol}//${domain}:*`;
+        nconf.set(&#039;socket.io:origins&#039;, origins);
+    }
+}
+
+function versionCheck() {
+    const version = process.version.slice(1);
+    const range = pkg.engines.node;
+    const semver = require(&#039;semver&#039;);
+    const compatible = semver.satisfies(version, range);
+
+    if (!compatible) {
+        winston.warn(&#039;Your version of Node.js is too outdated for NodeBB. Please update your version of Node.js.&#039;);
+        winston.warn(`Recommended ${chalk.green(range)}, ${chalk.yellow(version)} provided\n`);
+    }
+}
+
+exports.setupWinston = setupWinston;
+exports.loadConfig = loadConfig;
+exports.versionCheck = versionCheck;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

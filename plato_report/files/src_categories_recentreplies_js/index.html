@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/categories/recentreplies.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/categories/recentreplies.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">211</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">43.50</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.75</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const posts = require(&#039;../posts&#039;);
+const topics = require(&#039;../topics&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const batch = require(&#039;../batch&#039;);
+
+module.exports = function (Categories) {
+    Categories.getRecentReplies = async function (cid, uid, start, stop) {
+        // backwards compatibility, treat start as count
+        if (stop === undefined &amp;&amp; start &gt; 0) {
+            winston.warn(&#039;[Categories.getRecentReplies] 3 params deprecated please use Categories.getRecentReplies(cid, uid, start, stop)&#039;);
+            stop = start - 1;
+            start = 0;
+        }
+        let pids = await db.getSortedSetRevRange(`cid:${cid}:pids`, start, stop);
+        pids = await privileges.posts.filter(&#039;topics:read&#039;, pids, uid);
+        return await posts.getPostSummaryByPids(pids, uid, { stripTags: true });
+    };
+
+    Categories.updateRecentTid = async function (cid, tid) {
+        const [count, numRecentReplies] = await Promise.all([
+            db.sortedSetCard(`cid:${cid}:recent_tids`),
+            db.getObjectField(`category:${cid}`, &#039;numRecentReplies&#039;),
+        ]);
+
+        if (count &gt;= numRecentReplies) {
+            const data = await db.getSortedSetRangeWithScores(`cid:${cid}:recent_tids`, 0, count - numRecentReplies);
+            const shouldRemove = !(data.length === 1 &amp;&amp; count === 1 &amp;&amp; data[0].value === String(tid));
+            if (data.length &amp;&amp; shouldRemove) {
+                await db.sortedSetsRemoveRangeByScore([`cid:${cid}:recent_tids`], &#039;-inf&#039;, data[data.length - 1].score);
+            }
+        }
+        if (numRecentReplies &gt; 0) {
+            await db.sortedSetAdd(`cid:${cid}:recent_tids`, Date.now(), tid);
+        }
+        await plugins.hooks.fire(&#039;action:categories.updateRecentTid&#039;, { cid: cid, tid: tid });
+    };
+
+    Categories.updateRecentTidForCid = async function (cid) {
+        let postData;
+        let topicData;
+        let index = 0;
+        do {
+            /* eslint-disable no-await-in-loop */
+            const pids = await db.getSortedSetRevRange(`cid:${cid}:pids`, index, index);
+            if (!pids.length) {
+                return;
+            }
+            postData = await posts.getPostFields(pids[0], [&#039;tid&#039;, &#039;deleted&#039;]);
+
+            if (postData &amp;&amp; postData.tid &amp;&amp; !postData.deleted) {
+                topicData = await topics.getTopicData(postData.tid);
+            }
+            index += 1;
+        } while (!topicData || topicData.deleted || topicData.scheduled);
+
+        if (postData &amp;&amp; postData.tid) {
+            await Categories.updateRecentTid(cid, postData.tid);
+        }
+    };
+
+    Categories.getRecentTopicReplies = async function (categoryData, uid, query) {
+        if (!Array.isArray(categoryData) || !categoryData.length) {
+            return;
+        }
+        const categoriesToLoad =
+            categoryData.filter(c =&gt; c &amp;&amp; c.numRecentReplies &amp;&amp; parseInt(c.numRecentReplies, 10) &gt; 0);
+        let keys = [];
+        if (plugins.hooks.hasListeners(&#039;filter:categories.getRecentTopicReplies&#039;)) {
+            const result = await plugins.hooks.fire(&#039;filter:categories.getRecentTopicReplies&#039;, {
+                categories: categoriesToLoad,
+                uid: uid,
+                query: query,
+                keys: [],
+            });
+            keys = result.keys;
+        } else {
+            keys = categoriesToLoad.map(c =&gt; `cid:${c.cid}:recent_tids`);
+        }
+
+        const results = await db.getSortedSetsMembers(keys);
+        let tids = _.uniq(_.flatten(results).filter(Boolean));
+
+        tids = await privileges.topics.filterTids(&#039;topics:read&#039;, tids, uid);
+        const topics = await getTopics(tids, uid);
+        assignTopicsToCategories(categoryData, topics);
+
+        bubbleUpChildrenPosts(categoryData);
+    };
+
+    async function getTopics(tids, uid) {
+        const topicData = await topics.getTopicsFields(
+            tids,
+            [&#039;tid&#039;, &#039;mainPid&#039;, &#039;slug&#039;, &#039;title&#039;, &#039;teaserPid&#039;, &#039;cid&#039;, &#039;postcount&#039;]
+        );
+        topicData.forEach((topic) =&gt; {
+            if (topic) {
+                topic.teaserPid = topic.teaserPid || topic.mainPid;
+            }
+        });
+        const cids = _.uniq(topicData.map(t =&gt; t &amp;&amp; t.cid).filter(cid =&gt; parseInt(cid, 10)));
+        const getToRoot = async () =&gt; await Promise.all(cids.map(Categories.getParentCids));
+        const [toRoot, teasers] = await Promise.all([
+            getToRoot(),
+            topics.getTeasers(topicData, uid),
+        ]);
+        const cidToRoot = _.zipObject(cids, toRoot);
+
+        teasers.forEach((teaser, index) =&gt; {
+            if (teaser) {
+                teaser.cid = topicData[index].cid;
+                teaser.parentCids = cidToRoot[teaser.cid];
+                teaser.tid = undefined;
+                teaser.uid = undefined;
+                teaser.topic = {
+                    slug: topicData[index].slug,
+                    title: topicData[index].title,
+                };
+            }
+        });
+        return teasers.filter(Boolean);
+    }
+
+    function assignTopicsToCategories(categories, topics) {
+        categories.forEach((category) =&gt; {
+            if (category) {
+                category.posts = topics
+                    .filter(t =&gt; t.cid &amp;&amp; (t.cid === category.cid || t.parentCids.includes(category.cid)))
+                    .sort((a, b) =&gt; b.pid - a.pid)
+                    .slice(0, parseInt(category.numRecentReplies, 10));
+            }
+        });
+        topics.forEach((t) =&gt; { t.parentCids = undefined; });
+    }
+
+    function bubbleUpChildrenPosts(categoryData) {
+        categoryData.forEach((category) =&gt; {
+            if (category) {
+                if (category.posts.length) {
+                    return;
+                }
+                const posts = [];
+                getPostsRecursive(category, posts);
+
+                posts.sort((a, b) =&gt; b.pid - a.pid);
+                if (posts.length) {
+                    category.posts = [posts[0]];
+                }
+            }
+        });
+    }
+
+    function getPostsRecursive(category, posts) {
+        if (Array.isArray(category.posts)) {
+            category.posts.forEach(p =&gt; posts.push(p));
+        }
+
+        category.children.forEach(child =&gt; getPostsRecursive(child, posts));
+    }
+
+    // terrible name, should be topics.moveTopicPosts
+    Categories.moveRecentReplies = async function (tid, oldCid, cid) {
+        await updatePostCount(tid, oldCid, cid);
+        const [pids, topicDeleted] = await Promise.all([
+            topics.getPids(tid),
+            topics.getTopicField(tid, &#039;deleted&#039;),
+        ]);
+
+        await batch.processArray(pids, async (pids) =&gt; {
+            const postData = await posts.getPostsFields(pids, [&#039;pid&#039;, &#039;deleted&#039;, &#039;uid&#039;, &#039;timestamp&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;]);
+
+            const bulkRemove = [];
+            const bulkAdd = [];
+            postData.forEach((post) =&gt; {
+                bulkRemove.push([`cid:${oldCid}:uid:${post.uid}:pids`, post.pid]);
+                bulkRemove.push([`cid:${oldCid}:uid:${post.uid}:pids:votes`, post.pid]);
+                bulkAdd.push([`cid:${cid}:uid:${post.uid}:pids`, post.timestamp, post.pid]);
+                if (post.votes &gt; 0 || post.votes &lt; 0) {
+                    bulkAdd.push([`cid:${cid}:uid:${post.uid}:pids:votes`, post.votes, post.pid]);
+                }
+            });
+
+            const postsToReAdd = postData.filter(p =&gt; !p.deleted &amp;&amp; !topicDeleted);
+            const timestamps = postsToReAdd.map(p =&gt; p &amp;&amp; p.timestamp);
+            await Promise.all([
+                db.sortedSetRemove(`cid:${oldCid}:pids`, pids),
+                db.sortedSetAdd(`cid:${cid}:pids`, timestamps, postsToReAdd.map(p =&gt; p.pid)),
+                db.sortedSetRemoveBulk(bulkRemove),
+                db.sortedSetAddBulk(bulkAdd),
+            ]);
+        }, { batch: 500 });
+    };
+
+    async function updatePostCount(tid, oldCid, newCid) {
+        const postCount = await topics.getTopicField(tid, &#039;postcount&#039;);
+        if (!postCount) {
+            return;
+        }
+
+        await Promise.all([
+            db.incrObjectFieldBy(`category:${oldCid}`, &#039;post_count&#039;, -postCount),
+            db.incrObjectFieldBy(`category:${newCid}`, &#039;post_count&#039;, postCount),
+        ]);
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

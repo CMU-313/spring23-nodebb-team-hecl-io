@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/plugins/hooks.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/plugins/hooks.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">66.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">280</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">45.66</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.71</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const util = require(&#039;util&#039;);
+const winston = require(&#039;winston&#039;);
+const plugins = require(&#039;.&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const Hooks = module.exports;
+
+Hooks._deprecated = new Map([
+    [&#039;filter:email.send&#039;, {
+        new: &#039;static:email.send&#039;,
+        since: &#039;v1.17.0&#039;,
+        until: &#039;v2.0.0&#039;,
+    }],
+    [&#039;filter:router.page&#039;, {
+        new: &#039;response:router.page&#039;,
+        since: &#039;v1.15.3&#039;,
+        until: &#039;v2.1.0&#039;,
+    }],
+    [&#039;filter:post.purge&#039;, {
+        new: &#039;filter:posts.purge&#039;,
+        since: &#039;v1.19.6&#039;,
+        until: &#039;v2.1.0&#039;,
+    }],
+    [&#039;action:post.purge&#039;, {
+        new: &#039;action:posts.purge&#039;,
+        since: &#039;v1.19.6&#039;,
+        until: &#039;v2.1.0&#039;,
+    }],
+    [&#039;filter:user.verify.code&#039;, {
+        new: &#039;filter:user.verify&#039;,
+        since: &#039;v2.2.0&#039;,
+        until: &#039;v3.0.0&#039;,
+    }],
+    [&#039;filter:flags.getFilters&#039;, {
+        new: &#039;filter:flags.init&#039;,
+        since: &#039;v2.7.0&#039;,
+        until: &#039;v3.0.0&#039;,
+    }],
+]);
+
+Hooks.internals = {
+    _register: function (data) {
+        plugins.loadedHooks[data.hook] = plugins.loadedHooks[data.hook] || [];
+        plugins.loadedHooks[data.hook].push(data);
+    },
+};
+
+const hookTypeToMethod = {
+    filter: fireFilterHook,
+    action: fireActionHook,
+    static: fireStaticHook,
+    response: fireResponseHook,
+};
+
+/*
+    `data` is an object consisting of (* is required):
+        `data.hook`*, the name of the NodeBB hook
+        `data.method`*, the method called in that plugin (can be an array of functions)
+        `data.priority`, the relative priority of the method when it is eventually called (default: 10)
+*/
+Hooks.register = function (id, data) {
+    if (!data.hook || !data.method) {
+        winston.warn(`[plugins/${id}] registerHook called with invalid data.hook/method`, data);
+        return;
+    }
+
+    // `hasOwnProperty` needed for hooks with no alternative (set to null)
+    if (Hooks._deprecated.has(data.hook)) {
+        const deprecation = Hooks._deprecated.get(data.hook);
+        if (!deprecation.hasOwnProperty(&#039;affected&#039;)) {
+            deprecation.affected = new Set();
+        }
+        deprecation.affected.add(id);
+        Hooks._deprecated.set(data.hook, deprecation);
+    }
+
+    data.id = id;
+    if (!data.priority) {
+        data.priority = 10;
+    }
+
+    if (Array.isArray(data.method) &amp;&amp; data.method.every(method =&gt; typeof method === &#039;function&#039; || typeof method === &#039;string&#039;)) {
+        // Go go gadget recursion!
+        data.method.forEach((method) =&gt; {
+            const singularData = { ...data, method: method };
+            Hooks.register(id, singularData);
+        });
+    } else if (typeof data.method === &#039;string&#039; &amp;&amp; data.method.length &gt; 0) {
+        const method = data.method.split(&#039;.&#039;).reduce((memo, prop) =&gt; {
+            if (memo &amp;&amp; memo[prop]) {
+                return memo[prop];
+            }
+            // Couldn&#039;t find method by path, aborting
+            return null;
+        }, plugins.libraries[data.id]);
+
+        // Write the actual method reference to the hookObj
+        data.method = method;
+
+        Hooks.internals._register(data);
+    } else if (typeof data.method === &#039;function&#039;) {
+        Hooks.internals._register(data);
+    } else {
+        winston.warn(`[plugins/${id}] Hook method mismatch: ${data.hook} =&gt; ${data.method}`);
+    }
+};
+
+Hooks.unregister = function (id, hook, method) {
+    const hooks = plugins.loadedHooks[hook] || [];
+    plugins.loadedHooks[hook] = hooks.filter(hookData =&gt; hookData &amp;&amp; hookData.id !== id &amp;&amp; hookData.method !== method);
+};
+
+Hooks.fire = async function (hook, params) {
+    const hookList = plugins.loadedHooks[hook];
+    const hookType = hook.split(&#039;:&#039;)[0];
+    if (global.env === &#039;development&#039; &amp;&amp; hook !== &#039;action:plugins.firehook&#039; &amp;&amp; hook !== &#039;filter:plugins.firehook&#039;) {
+        winston.verbose(`[plugins/fireHook] ${hook}`);
+    }
+
+    if (!hookTypeToMethod[hookType]) {
+        winston.warn(`[plugins] Unknown hookType: ${hookType}, hook : ${hook}`);
+        return;
+    }
+    let deleteCaller = false;
+    if (params &amp;&amp; typeof params === &#039;object&#039; &amp;&amp; !Array.isArray(params) &amp;&amp; !params.hasOwnProperty(&#039;caller&#039;)) {
+        const als = require(&#039;../als&#039;);
+        params.caller = als.getStore();
+        deleteCaller = true;
+    }
+    const result = await hookTypeToMethod[hookType](hook, hookList, params);
+
+    if (hook !== &#039;action:plugins.firehook&#039; &amp;&amp; hook !== &#039;filter:plugins.firehook&#039;) {
+        const payload = await Hooks.fire(&#039;filter:plugins.firehook&#039;, { hook: hook, params: result || params });
+        Hooks.fire(&#039;action:plugins.firehook&#039;, payload);
+    }
+    if (result !== undefined) {
+        if (deleteCaller &amp;&amp; result &amp;&amp; result.hasOwnProperty(&#039;caller&#039;)) {
+            delete result.caller;
+        }
+        return result;
+    }
+};
+
+Hooks.hasListeners = function (hook) {
+    return !!(plugins.loadedHooks[hook] &amp;&amp; plugins.loadedHooks[hook].length &gt; 0);
+};
+
+async function fireFilterHook(hook, hookList, params) {
+    if (!Array.isArray(hookList) || !hookList.length) {
+        return params;
+    }
+
+    async function fireMethod(hookObj, params) {
+        if (typeof hookObj.method !== &#039;function&#039;) {
+            if (global.env === &#039;development&#039;) {
+                winston.warn(`[plugins] Expected method for hook &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039; not found, skipping.`);
+            }
+            return params;
+        }
+
+        if (hookObj.method.constructor &amp;&amp; hookObj.method.constructor.name === &#039;AsyncFunction&#039;) {
+            return await hookObj.method(params);
+        }
+        return new Promise((resolve, reject) =&gt; {
+            let resolved = false;
+            function _resolve(result) {
+                if (resolved) {
+                    winston.warn(`[plugins] ${hook} already resolved in plugin ${hookObj.id}`);
+                    return;
+                }
+                resolved = true;
+                resolve(result);
+            }
+            const returned = hookObj.method(params, (err, result) =&gt; {
+                if (err) reject(err); else _resolve(result);
+            });
+
+            if (utils.isPromise(returned)) {
+                returned.then(
+                    payload =&gt; _resolve(payload),
+                    err =&gt; reject(err)
+                );
+                return;
+            }
+            if (returned) {
+                _resolve(returned);
+            }
+        });
+    }
+
+    for (const hookObj of hookList) {
+        // eslint-disable-next-line
+        params = await fireMethod(hookObj, params);
+    }
+    return params;
+}
+
+async function fireActionHook(hook, hookList, params) {
+    if (!Array.isArray(hookList) || !hookList.length) {
+        return;
+    }
+    for (const hookObj of hookList) {
+        if (typeof hookObj.method !== &#039;function&#039;) {
+            if (global.env === &#039;development&#039;) {
+                winston.warn(`[plugins] Expected method for hook &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039; not found, skipping.`);
+            }
+        } else {
+            // eslint-disable-next-line
+            await hookObj.method(params);
+        }
+    }
+}
+
+async function fireStaticHook(hook, hookList, params) {
+    if (!Array.isArray(hookList) || !hookList.length) {
+        return;
+    }
+    // don&#039;t bubble errors from these hooks, so bad plugins don&#039;t stop startup
+    const noErrorHooks = [&#039;static:app.load&#039;, &#039;static:assets.prepare&#039;, &#039;static:app.preload&#039;];
+
+    for (const hookObj of hookList) {
+        if (typeof hookObj.method !== &#039;function&#039;) {
+            if (global.env === &#039;development&#039;) {
+                winston.warn(`[plugins] Expected method for hook &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039; not found, skipping.`);
+            }
+        } else {
+            let hookFn = hookObj.method;
+            if (hookFn.constructor &amp;&amp; hookFn.constructor.name !== &#039;AsyncFunction&#039;) {
+                hookFn = util.promisify(hookFn);
+            }
+
+            try {
+                // eslint-disable-next-line
+                await timeout(hookFn(params), 5000, &#039;timeout&#039;);
+            } catch (err) {
+                if (err &amp;&amp; err.message === &#039;timeout&#039;) {
+                    winston.warn(`[plugins] Callback timed out, hook &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039;`);
+                } else {
+                    winston.error(`[plugins] Error executing &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039;\n${err.stack}`);
+                    if (!noErrorHooks.includes(hook)) {
+                        throw err;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// https://advancedweb.hu/how-to-add-timeout-to-a-promise-in-javascript/
+const timeout = (prom, time, error) =&gt; {
+    let timer;
+    return Promise.race([
+        prom,
+        new Promise((resolve, reject) =&gt; {
+            timer = setTimeout(reject, time, new Error(error));
+        }),
+    ]).finally(() =&gt; clearTimeout(timer));
+};
+
+async function fireResponseHook(hook, hookList, params) {
+    if (!Array.isArray(hookList) || !hookList.length) {
+        return;
+    }
+    for (const hookObj of hookList) {
+        if (typeof hookObj.method !== &#039;function&#039;) {
+            if (global.env === &#039;development&#039;) {
+                winston.warn(`[plugins] Expected method for hook &#039;${hook}&#039; in plugin &#039;${hookObj.id}&#039; not found, skipping.`);
+            }
+        } else {
+            // Skip remaining hooks if headers have been sent
+            if (params.res.headersSent) {
+                return;
+            }
+            // eslint-disable-next-line
+            await hookObj.method(params);
+        }
+    }
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

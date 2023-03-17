@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/middleware/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/middleware/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.86</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">254</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.69</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.09</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const path = require(&#039;path&#039;);
+const csrf = require(&#039;csurf&#039;);
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+const toobusy = require(&#039;toobusy-js&#039;);
+const util = require(&#039;util&#039;);
+
+const plugins = require(&#039;../plugins&#039;);
+const meta = require(&#039;../meta&#039;);
+const user = require(&#039;../user&#039;);
+const groups = require(&#039;../groups&#039;);
+const analytics = require(&#039;../analytics&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const cacheCreate = require(&#039;../cache/lru&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const controllers = {
+    api: require(&#039;../controllers/api&#039;),
+    helpers: require(&#039;../controllers/helpers&#039;),
+};
+
+const delayCache = cacheCreate({
+    ttl: 1000 * 60,
+});
+
+const middleware = module.exports;
+
+const relative_path = nconf.get(&#039;relative_path&#039;);
+
+middleware.regexes = {
+    timestampedUpload: /^\d+-.+$/,
+};
+
+const csrfMiddleware = csrf();
+
+middleware.applyCSRF = function (req, res, next) {
+    if (req.uid &gt;= 0) {
+        csrfMiddleware(req, res, next);
+    } else {
+        next();
+    }
+};
+middleware.applyCSRFasync = util.promisify(middleware.applyCSRF);
+
+middleware.ensureLoggedIn = (req, res, next) =&gt; {
+    if (!req.loggedIn) {
+        return controllers.helpers.notAllowed(req, res);
+    }
+
+    setImmediate(next);
+};
+
+Object.assign(middleware, {
+    admin: require(&#039;./admin&#039;),
+    ...require(&#039;./header&#039;),
+});
+require(&#039;./render&#039;)(middleware);
+require(&#039;./maintenance&#039;)(middleware);
+require(&#039;./user&#039;)(middleware);
+middleware.uploads = require(&#039;./uploads&#039;);
+require(&#039;./headers&#039;)(middleware);
+require(&#039;./expose&#039;)(middleware);
+middleware.assert = require(&#039;./assert&#039;);
+
+middleware.stripLeadingSlashes = function stripLeadingSlashes(req, res, next) {
+    const target = req.originalUrl.replace(relative_path, &#039;&#039;);
+    if (target.startsWith(&#039;//&#039;)) {
+        return res.redirect(relative_path + target.replace(/^\/+/, &#039;/&#039;));
+    }
+    next();
+};
+
+middleware.pageView = helpers.try(async (req, res, next) =&gt; {
+    if (req.loggedIn) {
+        await Promise.all([
+            user.updateOnlineUsers(req.uid),
+            user.updateLastOnlineTime(req.uid),
+        ]);
+    }
+    next();
+    await analytics.pageView({ ip: req.ip, uid: req.uid });
+    plugins.hooks.fire(&#039;action:middleware.pageView&#039;, { req: req });
+});
+
+middleware.pluginHooks = helpers.try(async (req, res, next) =&gt; {
+    // TODO: Deprecate in v2.0
+    await async.each(plugins.loadedHooks[&#039;filter:router.page&#039;] || [], (hookObj, next) =&gt; {
+        hookObj.method(req, res, next);
+    });
+
+    await plugins.hooks.fire(&#039;response:router.page&#039;, {
+        req: req,
+        res: res,
+    });
+
+    if (!res.headersSent) {
+        next();
+    }
+});
+
+middleware.validateFiles = function validateFiles(req, res, next) {
+    if (!Array.isArray(req.files.files) || !req.files.files.length) {
+        return next(new Error([&#039;[[error:invalid-files]]&#039;]));
+    }
+
+    next();
+};
+
+middleware.prepareAPI = function prepareAPI(req, res, next) {
+    res.locals.isAPI = true;
+    next();
+};
+
+middleware.routeTouchIcon = function routeTouchIcon(req, res) {
+    if (meta.config[&#039;brand:touchIcon&#039;] &amp;&amp; validator.isURL(meta.config[&#039;brand:touchIcon&#039;])) {
+        return res.redirect(meta.config[&#039;brand:touchIcon&#039;]);
+    }
+    let iconPath = &#039;&#039;;
+    if (meta.config[&#039;brand:touchIcon&#039;]) {
+        iconPath = path.join(nconf.get(&#039;upload_path&#039;), meta.config[&#039;brand:touchIcon&#039;].replace(/assets\/uploads/, &#039;&#039;));
+    } else {
+        iconPath = path.join(nconf.get(&#039;base_dir&#039;), &#039;public/images/touch/512.png&#039;);
+    }
+
+    return res.sendFile(iconPath, {
+        maxAge: req.app.enabled(&#039;cache&#039;) ? 5184000000 : 0,
+    });
+};
+
+middleware.privateTagListing = helpers.try(async (req, res, next) =&gt; {
+    const canView = await privileges.global.can(&#039;view:tags&#039;, req.uid);
+    if (!canView) {
+        return controllers.helpers.notAllowed(req, res);
+    }
+    next();
+});
+
+middleware.exposeGroupName = helpers.try(async (req, res, next) =&gt; {
+    await expose(&#039;groupName&#039;, groups.getGroupNameByGroupSlug, &#039;slug&#039;, req, res, next);
+});
+
+middleware.exposeUid = helpers.try(async (req, res, next) =&gt; {
+    await expose(&#039;uid&#039;, user.getUidByUserslug, &#039;userslug&#039;, req, res, next);
+});
+
+async function expose(exposedField, method, field, req, res, next) {
+    if (!req.params.hasOwnProperty(field)) {
+        return next();
+    }
+    res.locals[exposedField] = await method(req.params[field]);
+    next();
+}
+
+middleware.privateUploads = function privateUploads(req, res, next) {
+    if (req.loggedIn || !meta.config.privateUploads) {
+        return next();
+    }
+
+    if (req.path.startsWith(`${nconf.get(&#039;relative_path&#039;)}/assets/uploads/files`)) {
+        const extensions = (meta.config.privateUploadsExtensions || &#039;&#039;).split(&#039;,&#039;).filter(Boolean);
+        let ext = path.extname(req.path);
+        ext = ext ? ext.replace(/^\./, &#039;&#039;) : ext;
+        if (!extensions.length || extensions.includes(ext)) {
+            return res.status(403).json(&#039;not-allowed&#039;);
+        }
+    }
+    next();
+};
+
+middleware.busyCheck = function busyCheck(req, res, next) {
+    if (global.env === &#039;production&#039; &amp;&amp; meta.config.eventLoopCheckEnabled &amp;&amp; toobusy()) {
+        analytics.increment(&#039;errors:503&#039;);
+        res.status(503).type(&#039;text/html&#039;).sendFile(path.join(__dirname, &#039;../../public/503.html&#039;));
+    } else {
+        setImmediate(next);
+    }
+};
+
+middleware.applyBlacklist = async function applyBlacklist(req, res, next) {
+    try {
+        await meta.blacklist.test(req.ip);
+        next();
+    } catch (err) {
+        next(err);
+    }
+};
+
+middleware.delayLoading = function delayLoading(req, res, next) {
+    // Introduces an artificial delay during load so that brute force attacks are effectively mitigated
+
+    // Add IP to cache so if too many requests are made, subsequent requests are blocked for a minute
+    let timesSeen = delayCache.get(req.ip) || 0;
+    if (timesSeen &gt; 10) {
+        return res.sendStatus(429);
+    }
+    delayCache.set(req.ip, timesSeen += 1);
+
+    setTimeout(next, 1000);
+};
+
+middleware.buildSkinAsset = helpers.try(async (req, res, next) =&gt; {
+    // If this middleware is reached, a skin was requested, so it is built on-demand
+    const target = path.basename(req.originalUrl).match(/(client-[a-z]+)/);
+    if (!target) {
+        return next();
+    }
+
+    await plugins.prepareForBuild([&#039;client side styles&#039;]);
+    const css = await meta.css.buildBundle(target[0], true);
+    require(&#039;../meta/minifier&#039;).killAll();
+    res.status(200).type(&#039;text/css&#039;).send(css);
+});
+
+middleware.addUploadHeaders = function addUploadHeaders(req, res, next) {
+    // Trim uploaded files&#039; timestamps when downloading + force download if html
+    let basename = path.basename(req.path);
+    const extname = path.extname(req.path);
+    if (req.path.startsWith(&#039;/uploads/files/&#039;) &amp;&amp; middleware.regexes.timestampedUpload.test(basename)) {
+        basename = basename.slice(14);
+        res.header(&#039;Content-Disposition&#039;, `${extname.startsWith(&#039;.htm&#039;) ? &#039;attachment&#039; : &#039;inline&#039;}; filename=&quot;${basename}&quot;`);
+    }
+
+    next();
+};
+
+middleware.validateAuth = helpers.try(async (req, res, next) =&gt; {
+    try {
+        await plugins.hooks.fire(&#039;static:auth.validate&#039;, {
+            user: res.locals.user,
+            strategy: res.locals.strategy,
+        });
+        next();
+    } catch (err) {
+        const regenerateSession = util.promisify(cb =&gt; req.session.regenerate(cb));
+        await regenerateSession();
+        req.uid = 0;
+        req.loggedIn = false;
+        next(err);
+    }
+});
+
+middleware.checkRequired = function (fields, req, res, next) {
+    // Used in API calls to ensure that necessary parameters/data values are present
+    const missing = fields.filter(field =&gt; !req.body.hasOwnProperty(field));
+
+    if (!missing.length) {
+        return next();
+    }
+
+    controllers.helpers.formatApiResponse(400, res, new Error(`[[error:required-parameters-missing, ${missing.join(&#039; &#039;)}]]`));
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

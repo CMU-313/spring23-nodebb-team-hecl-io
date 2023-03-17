@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/mods.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/mods.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">55.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">200</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.56</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.03</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const flags = require(&#039;../flags&#039;);
+const analytics = require(&#039;../analytics&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const pagination = require(&#039;../pagination&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const utils = require(&#039;../utils&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const modsController = module.exports;
+modsController.flags = {};
+
+modsController.flags.list = async function (req, res) {
+    const validFilters = [&#039;assignee&#039;, &#039;state&#039;, &#039;reporterId&#039;, &#039;type&#039;, &#039;targetUid&#039;, &#039;cid&#039;, &#039;quick&#039;, &#039;page&#039;, &#039;perPage&#039;];
+    const validSorts = [&#039;newest&#039;, &#039;oldest&#039;, &#039;reports&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;, &#039;replies&#039;];
+
+    const results = await Promise.all([
+        user.isAdminOrGlobalMod(req.uid),
+        user.getModeratedCids(req.uid),
+        plugins.hooks.fire(&#039;filter:flags.validateFilters&#039;, { filters: validFilters }),
+        plugins.hooks.fire(&#039;filter:flags.validateSort&#039;, { sorts: validSorts }),
+    ]);
+    const [isAdminOrGlobalMod, moderatedCids,, { sorts }] = results;
+    let [,, { filters }] = results;
+
+    if (!(isAdminOrGlobalMod || !!moderatedCids.length)) {
+        return helpers.notAllowed(req, res);
+    }
+
+    if (!isAdminOrGlobalMod &amp;&amp; moderatedCids.length) {
+        res.locals.cids = moderatedCids.map(cid =&gt; String(cid));
+    }
+
+    // Parse query string params for filters, eliminate non-valid filters
+    filters = filters.reduce((memo, cur) =&gt; {
+        if (req.query.hasOwnProperty(cur)) {
+            if (typeof req.query[cur] === &#039;string&#039; &amp;&amp; req.query[cur].trim() !== &#039;&#039;) {
+                memo[cur] = req.query[cur].trim();
+            } else if (Array.isArray(req.query[cur]) &amp;&amp; req.query[cur].length) {
+                memo[cur] = req.query[cur];
+            }
+        }
+
+        return memo;
+    }, {});
+
+    let hasFilter = !!Object.keys(filters).length;
+
+    if (res.locals.cids) {
+        if (!filters.cid) {
+            // If mod and no cid filter, add filter for their modded categories
+            filters.cid = res.locals.cids;
+        } else if (Array.isArray(filters.cid)) {
+            // Remove cids they do not moderate
+            filters.cid = filters.cid.filter(cid =&gt; res.locals.cids.includes(String(cid)));
+        } else if (!res.locals.cids.includes(String(filters.cid))) {
+            filters.cid = res.locals.cids;
+            hasFilter = false;
+        }
+    }
+
+    // Pagination doesn&#039;t count as a filter
+    if (
+        (Object.keys(filters).length === 1 &amp;&amp; filters.hasOwnProperty(&#039;page&#039;)) ||
+        (Object.keys(filters).length === 2 &amp;&amp; filters.hasOwnProperty(&#039;page&#039;) &amp;&amp; filters.hasOwnProperty(&#039;perPage&#039;))
+    ) {
+        hasFilter = false;
+    }
+
+    // Parse sort from query string
+    let sort;
+    if (req.query.sort) {
+        sort = sorts.includes(req.query.sort) ? req.query.sort : null;
+    }
+    if (sort === &#039;newest&#039;) {
+        sort = undefined;
+    }
+    hasFilter = hasFilter || !!sort;
+
+    const [flagsData, analyticsData, selectData] = await Promise.all([
+        flags.list({
+            filters: filters,
+            sort: sort,
+            uid: req.uid,
+            query: req.query,
+        }),
+        analytics.getDailyStatsForSet(&#039;analytics:flags&#039;, Date.now(), 30),
+        helpers.getSelectedCategory(filters.cid),
+    ]);
+
+    res.render(&#039;flags/list&#039;, {
+        flags: flagsData.flags,
+        analytics: analyticsData,
+        selectedCategory: selectData.selectedCategory,
+        hasFilter: hasFilter,
+        filters: filters,
+        expanded: !!(filters.assignee || filters.reporterId || filters.targetUid),
+        sort: sort || &#039;newest&#039;,
+        title: &#039;[[pages:flags]]&#039;,
+        pagination: pagination.create(flagsData.page, flagsData.pageCount, req.query),
+        breadcrumbs: helpers.buildBreadcrumbs([{ text: &#039;[[pages:flags]]&#039; }]),
+    });
+};
+
+modsController.flags.detail = async function (req, res, next) {
+    const results = await utils.promiseParallel({
+        isAdminOrGlobalMod: user.isAdminOrGlobalMod(req.uid),
+        moderatedCids: user.getModeratedCids(req.uid),
+        flagData: flags.get(req.params.flagId),
+        assignees: user.getAdminsandGlobalModsandModerators(),
+        privileges: Promise.all([&#039;global&#039;, &#039;admin&#039;].map(async type =&gt; privileges[type].get(req.uid))),
+    });
+    results.privileges = { ...results.privileges[0], ...results.privileges[1] };
+
+    if (!results.flagData || (!(results.isAdminOrGlobalMod || !!results.moderatedCids.length))) {
+        return next(); // 404
+    }
+
+    results.flagData.history = results.isAdminOrGlobalMod ? (await flags.getHistory(req.params.flagId)) : null;
+
+    if (results.flagData.type === &#039;user&#039;) {
+        results.flagData.type_path = &#039;uid&#039;;
+    } else if (results.flagData.type === &#039;post&#039;) {
+        results.flagData.type_path = &#039;post&#039;;
+    }
+
+    res.render(&#039;flags/detail&#039;, Object.assign(results.flagData, {
+        assignees: results.assignees,
+        type_bool: [&#039;post&#039;, &#039;user&#039;, &#039;empty&#039;].reduce((memo, cur) =&gt; {
+            if (cur !== &#039;empty&#039;) {
+                memo[cur] = results.flagData.type === cur &amp;&amp; (
+                    !results.flagData.target ||
+                    !!Object.keys(results.flagData.target).length
+                );
+            } else {
+                memo[cur] = !Object.keys(results.flagData.target).length;
+            }
+
+            return memo;
+        }, {}),
+        states: Object.fromEntries(flags._states),
+        title: `[[pages:flag-details, ${req.params.flagId}]]`,
+        privileges: results.privileges,
+        breadcrumbs: helpers.buildBreadcrumbs([
+            { text: &#039;[[pages:flags]]&#039;, url: &#039;/flags&#039; },
+            { text: `[[pages:flag-details, ${req.params.flagId}]]` },
+        ]),
+    }));
+};
+
+modsController.postQueue = async function (req, res, next) {
+    if (!req.loggedIn) {
+        return next();
+    }
+    const { id } = req.params;
+    const { cid } = req.query;
+    const page = parseInt(req.query.page, 10) || 1;
+    const postsPerPage = 20;
+
+    let postData = await posts.getQueuedPosts({ id: id });
+    const [isAdmin, isGlobalMod, moderatedCids, categoriesData] = await Promise.all([
+        user.isAdministrator(req.uid),
+        user.isGlobalModerator(req.uid),
+        user.getModeratedCids(req.uid),
+        helpers.getSelectedCategory(cid),
+    ]);
+
+    postData = postData.filter(p =&gt; p &amp;&amp;
+        (!categoriesData.selectedCids.length || categoriesData.selectedCids.includes(p.category.cid)) &amp;&amp;
+        (isAdmin || isGlobalMod || moderatedCids.includes(Number(p.category.cid)) || req.uid === p.user.uid));
+
+    ({ posts: postData } = await plugins.hooks.fire(&#039;filter:post-queue.get&#039;, {
+        posts: postData,
+        req: req,
+    }));
+
+    const pageCount = Math.max(1, Math.ceil(postData.length / postsPerPage));
+    const start = (page - 1) * postsPerPage;
+    const stop = start + postsPerPage - 1;
+    postData = postData.slice(start, stop + 1);
+    const crumbs = [{ text: &#039;[[pages:post-queue]]&#039;, url: id ? &#039;/post-queue&#039; : undefined }];
+    if (id &amp;&amp; postData.length) {
+        const text = postData[0].data.tid ? &#039;[[post-queue:reply]]&#039; : &#039;[[post-queue:topic]]&#039;;
+        crumbs.push({ text: text });
+    }
+    res.render(&#039;post-queue&#039;, {
+        title: &#039;[[pages:post-queue]]&#039;,
+        posts: postData,
+        isAdmin: isAdmin,
+        canAccept: isAdmin || isGlobalMod || !!moderatedCids.length,
+        ...categoriesData,
+        allCategoriesUrl: `post-queue${helpers.buildQueryString(req.query, &#039;cid&#039;, &#039;&#039;)}`,
+        pagination: pagination.create(page, pageCount),
+        breadcrumbs: helpers.buildBreadcrumbs(crumbs),
+        singlePost: !!id,
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

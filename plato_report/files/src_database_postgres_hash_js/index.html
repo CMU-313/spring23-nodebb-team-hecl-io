@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/database/postgres/hash.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/database/postgres/hash.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">388</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">57.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.67</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+module.exports = function (module) {
+    const helpers = require(&#039;./helpers&#039;);
+
+    module.setObject = async function (key, data) {
+        if (!key || !data) {
+            return;
+        }
+
+        if (data.hasOwnProperty(&#039;&#039;)) {
+            delete data[&#039;&#039;];
+        }
+        if (!Object.keys(data).length) {
+            return;
+        }
+        await module.transaction(async (client) =&gt; {
+            const dataString = JSON.stringify(data);
+
+            if (Array.isArray(key)) {
+                await helpers.ensureLegacyObjectsType(client, key, &#039;hash&#039;);
+                await client.query({
+                    name: &#039;setObjectKeys&#039;,
+                    text: `
+    INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+    SELECT k, $2::TEXT::JSONB
+    FROM UNNEST($1::TEXT[]) vs(k)
+    ON CONFLICT (&quot;_key&quot;)
+    DO UPDATE SET &quot;data&quot; = &quot;legacy_hash&quot;.&quot;data&quot; || $2::TEXT::JSONB`,
+                    values: [key, dataString],
+                });
+            } else {
+                await helpers.ensureLegacyObjectType(client, key, &#039;hash&#039;);
+                await client.query({
+                    name: &#039;setObject&#039;,
+                    text: `
+    INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+    VALUES ($1::TEXT, $2::TEXT::JSONB)
+    ON CONFLICT (&quot;_key&quot;)
+    DO UPDATE SET &quot;data&quot; = &quot;legacy_hash&quot;.&quot;data&quot; || $2::TEXT::JSONB`,
+                    values: [key, dataString],
+                });
+            }
+        });
+    };
+
+    module.setObjectBulk = async function (...args) {
+        let data = args[0];
+        if (!Array.isArray(data) || !data.length) {
+            return;
+        }
+        if (Array.isArray(args[1])) {
+            console.warn(&#039;[deprecated] db.setObjectBulk(keys, data) usage is deprecated, please use db.setObjectBulk(data)&#039;);
+            // conver old format to new format for backwards compatibility
+            data = args[0].map((key, i) =&gt; [key, args[1][i]]);
+        }
+        await module.transaction(async (client) =&gt; {
+            data = data.filter((item) =&gt; {
+                if (item[1].hasOwnProperty(&#039;&#039;)) {
+                    delete item[1][&#039;&#039;];
+                }
+                return !!Object.keys(item[1]).length;
+            });
+            const keys = data.map(item =&gt; item[0]);
+            if (!keys.length) {
+                return;
+            }
+
+            await helpers.ensureLegacyObjectsType(client, keys, &#039;hash&#039;);
+            const dataStrings = data.map(item =&gt; JSON.stringify(item[1]));
+            await client.query({
+                name: &#039;setObjectBulk&#039;,
+                text: `
+            INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+            SELECT k, d
+            FROM UNNEST($1::TEXT[], $2::TEXT::JSONB[]) vs(k, d)
+            ON CONFLICT (&quot;_key&quot;)
+            DO UPDATE SET &quot;data&quot; = &quot;legacy_hash&quot;.&quot;data&quot; || EXCLUDED.data`,
+                values: [keys, dataStrings],
+            });
+        });
+    };
+
+    module.setObjectField = async function (key, field, value) {
+        if (!field) {
+            return;
+        }
+
+        await module.transaction(async (client) =&gt; {
+            const valueString = JSON.stringify(value);
+            if (Array.isArray(key)) {
+                await module.setObject(key, { [field]: value });
+            } else {
+                await helpers.ensureLegacyObjectType(client, key, &#039;hash&#039;);
+                await client.query({
+                    name: &#039;setObjectField&#039;,
+                    text: `
+    INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+    VALUES ($1::TEXT, jsonb_build_object($2::TEXT, $3::TEXT::JSONB))
+    ON CONFLICT (&quot;_key&quot;)
+    DO UPDATE SET &quot;data&quot; = jsonb_set(&quot;legacy_hash&quot;.&quot;data&quot;, ARRAY[$2::TEXT], $3::TEXT::JSONB)`,
+                    values: [key, field, valueString],
+                });
+            }
+        });
+    };
+
+    module.getObject = async function (key, fields = []) {
+        if (!key) {
+            return null;
+        }
+        if (fields.length) {
+            return await module.getObjectFields(key, fields);
+        }
+        const res = await module.pool.query({
+            name: &#039;getObject&#039;,
+            text: `
+SELECT h.&quot;data&quot;
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_hash&quot; h
+         ON o.&quot;_key&quot; = h.&quot;_key&quot;
+        AND o.&quot;type&quot; = h.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].data : null;
+    };
+
+    module.getObjects = async function (keys, fields = []) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+        if (fields.length) {
+            return await module.getObjectsFields(keys, fields);
+        }
+        const res = await module.pool.query({
+            name: &#039;getObjects&#039;,
+            text: `
+SELECT h.&quot;data&quot;
+  FROM UNNEST($1::TEXT[]) WITH ORDINALITY k(&quot;_key&quot;, i)
+  LEFT OUTER JOIN &quot;legacy_object_live&quot; o
+               ON o.&quot;_key&quot; = k.&quot;_key&quot;
+  LEFT OUTER JOIN &quot;legacy_hash&quot; h
+               ON o.&quot;_key&quot; = h.&quot;_key&quot;
+              AND o.&quot;type&quot; = h.&quot;type&quot;
+ ORDER BY k.i ASC`,
+            values: [keys],
+        });
+
+        return res.rows.map(row =&gt; row.data);
+    };
+
+    module.getObjectField = async function (key, field) {
+        if (!key) {
+            return null;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;getObjectField&#039;,
+            text: `
+SELECT h.&quot;data&quot;-&gt;&gt;$2::TEXT f
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_hash&quot; h
+         ON o.&quot;_key&quot; = h.&quot;_key&quot;
+        AND o.&quot;type&quot; = h.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key, field],
+        });
+
+        return res.rows.length ? res.rows[0].f : null;
+    };
+
+    module.getObjectFields = async function (key, fields) {
+        if (!key) {
+            return null;
+        }
+        if (!Array.isArray(fields) || !fields.length) {
+            return await module.getObject(key);
+        }
+        const res = await module.pool.query({
+            name: &#039;getObjectFields&#039;,
+            text: `
+SELECT (SELECT jsonb_object_agg(f, d.&quot;value&quot;)
+          FROM UNNEST($2::TEXT[]) f
+          LEFT OUTER JOIN jsonb_each(h.&quot;data&quot;) d
+                       ON d.&quot;key&quot; = f) d
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_hash&quot; h
+         ON o.&quot;_key&quot; = h.&quot;_key&quot;
+        AND o.&quot;type&quot; = h.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT`,
+            values: [key, fields],
+        });
+
+        if (res.rows.length) {
+            return res.rows[0].d;
+        }
+
+        const obj = {};
+        fields.forEach((f) =&gt; {
+            obj[f] = null;
+        });
+
+        return obj;
+    };
+
+    module.getObjectsFields = async function (keys, fields) {
+        if (!Array.isArray(keys) || !keys.length) {
+            return [];
+        }
+
+        if (!Array.isArray(fields) || !fields.length) {
+            return await module.getObjects(keys);
+        }
+        const res = await module.pool.query({
+            name: &#039;getObjectsFields&#039;,
+            text: `
+SELECT (SELECT jsonb_object_agg(f, d.&quot;value&quot;)
+          FROM UNNEST($2::TEXT[]) f
+          LEFT OUTER JOIN jsonb_each(h.&quot;data&quot;) d
+                       ON d.&quot;key&quot; = f) d
+  FROM UNNEST($1::text[]) WITH ORDINALITY k(&quot;_key&quot;, i)
+  LEFT OUTER JOIN &quot;legacy_object_live&quot; o
+               ON o.&quot;_key&quot; = k.&quot;_key&quot;
+  LEFT OUTER JOIN &quot;legacy_hash&quot; h
+               ON o.&quot;_key&quot; = h.&quot;_key&quot;
+              AND o.&quot;type&quot; = h.&quot;type&quot;
+ ORDER BY k.i ASC`,
+            values: [keys, fields],
+        });
+
+        return res.rows.map(row =&gt; row.d);
+    };
+
+    module.getObjectKeys = async function (key) {
+        if (!key) {
+            return;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;getObjectKeys&#039;,
+            text: `
+SELECT ARRAY(SELECT jsonb_object_keys(h.&quot;data&quot;)) k
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_hash&quot; h
+         ON o.&quot;_key&quot; = h.&quot;_key&quot;
+        AND o.&quot;type&quot; = h.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key],
+        });
+
+        return res.rows.length ? res.rows[0].k : [];
+    };
+
+    module.getObjectValues = async function (key) {
+        const data = await module.getObject(key);
+        return data ? Object.values(data) : [];
+    };
+
+    module.isObjectField = async function (key, field) {
+        if (!key) {
+            return;
+        }
+
+        const res = await module.pool.query({
+            name: &#039;isObjectField&#039;,
+            text: `
+SELECT (h.&quot;data&quot; ? $2::TEXT AND h.&quot;data&quot;-&gt;&gt;$2::TEXT IS NOT NULL) b
+  FROM &quot;legacy_object_live&quot; o
+ INNER JOIN &quot;legacy_hash&quot; h
+         ON o.&quot;_key&quot; = h.&quot;_key&quot;
+        AND o.&quot;type&quot; = h.&quot;type&quot;
+ WHERE o.&quot;_key&quot; = $1::TEXT
+ LIMIT 1`,
+            values: [key, field],
+        });
+
+        return res.rows.length ? res.rows[0].b : false;
+    };
+
+    module.isObjectFields = async function (key, fields) {
+        if (!key) {
+            return;
+        }
+
+        const data = await module.getObjectFields(key, fields);
+        if (!data) {
+            return fields.map(() =&gt; false);
+        }
+        return fields.map(field =&gt; data.hasOwnProperty(field) &amp;&amp; data[field] !== null);
+    };
+
+    module.deleteObjectField = async function (key, field) {
+        await module.deleteObjectFields(key, [field]);
+    };
+
+    module.deleteObjectFields = async function (key, fields) {
+        if (!key || (Array.isArray(key) &amp;&amp; !key.length) || !Array.isArray(fields) || !fields.length) {
+            return;
+        }
+
+        if (Array.isArray(key)) {
+            await module.pool.query({
+                name: &#039;deleteObjectFieldsKeys&#039;,
+                text: `
+    UPDATE &quot;legacy_hash&quot;
+       SET &quot;data&quot; = COALESCE((SELECT jsonb_object_agg(&quot;key&quot;, &quot;value&quot;)
+                                FROM jsonb_each(&quot;data&quot;)
+                               WHERE &quot;key&quot; &lt;&gt; ALL ($2::TEXT[])), &#039;{}&#039;)
+     WHERE &quot;_key&quot; = ANY($1::TEXT[])`,
+                values: [key, fields],
+            });
+        } else {
+            await module.pool.query({
+                name: &#039;deleteObjectFields&#039;,
+                text: `
+    UPDATE &quot;legacy_hash&quot;
+       SET &quot;data&quot; = COALESCE((SELECT jsonb_object_agg(&quot;key&quot;, &quot;value&quot;)
+                                FROM jsonb_each(&quot;data&quot;)
+                               WHERE &quot;key&quot; &lt;&gt; ALL ($2::TEXT[])), &#039;{}&#039;)
+     WHERE &quot;_key&quot; = $1::TEXT`,
+                values: [key, fields],
+            });
+        }
+    };
+
+    module.incrObjectField = async function (key, field) {
+        return await module.incrObjectFieldBy(key, field, 1);
+    };
+
+    module.decrObjectField = async function (key, field) {
+        return await module.incrObjectFieldBy(key, field, -1);
+    };
+
+    module.incrObjectFieldBy = async function (key, field, value) {
+        value = parseInt(value, 10);
+
+        if (!key || isNaN(value)) {
+            return null;
+        }
+
+        return await module.transaction(async (client) =&gt; {
+            if (Array.isArray(key)) {
+                await helpers.ensureLegacyObjectsType(client, key, &#039;hash&#039;);
+            } else {
+                await helpers.ensureLegacyObjectType(client, key, &#039;hash&#039;);
+            }
+
+            const res = await client.query(Array.isArray(key) ? {
+                name: &#039;incrObjectFieldByMulti&#039;,
+                text: `
+INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+SELECT UNNEST($1::TEXT[]), jsonb_build_object($2::TEXT, $3::NUMERIC)
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;data&quot; = jsonb_set(&quot;legacy_hash&quot;.&quot;data&quot;, ARRAY[$2::TEXT], to_jsonb(COALESCE((&quot;legacy_hash&quot;.&quot;data&quot;-&gt;&gt;$2::TEXT)::NUMERIC, 0) + $3::NUMERIC))
+RETURNING (&quot;data&quot;-&gt;&gt;$2::TEXT)::NUMERIC v`,
+                values: [key, field, value],
+            } : {
+                name: &#039;incrObjectFieldBy&#039;,
+                text: `
+INSERT INTO &quot;legacy_hash&quot; (&quot;_key&quot;, &quot;data&quot;)
+VALUES ($1::TEXT, jsonb_build_object($2::TEXT, $3::NUMERIC))
+ON CONFLICT (&quot;_key&quot;)
+DO UPDATE SET &quot;data&quot; = jsonb_set(&quot;legacy_hash&quot;.&quot;data&quot;, ARRAY[$2::TEXT], to_jsonb(COALESCE((&quot;legacy_hash&quot;.&quot;data&quot;-&gt;&gt;$2::TEXT)::NUMERIC, 0) + $3::NUMERIC))
+RETURNING (&quot;data&quot;-&gt;&gt;$2::TEXT)::NUMERIC v`,
+                values: [key, field, value],
+            });
+            return Array.isArray(key) ? res.rows.map(r =&gt; parseFloat(r.v)) : parseFloat(res.rows[0].v);
+        });
+    };
+
+    module.incrObjectFieldByBulk = async function (data) {
+        if (!Array.isArray(data) || !data.length) {
+            return;
+        }
+        // TODO: perf?
+        await Promise.all(data.map(async (item) =&gt; {
+            for (const [field, value] of Object.entries(item[1])) {
+                // eslint-disable-next-line no-await-in-loop
+                await module.incrObjectFieldBy(item[0], field, value);
+            }
+        }));
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/tags.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/tags.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">54.51</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">269</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">40.12</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.42</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+
+const plugins = require(&#039;../plugins&#039;);
+const Meta = require(&#039;./index&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const Tags = module.exports;
+
+const url = nconf.get(&#039;url&#039;);
+const relative_path = nconf.get(&#039;relative_path&#039;);
+const upload_url = nconf.get(&#039;upload_url&#039;);
+
+Tags.parse = async (req, data, meta, link) =&gt; {
+    // Meta tags
+    const defaultTags = [{
+        name: &#039;viewport&#039;,
+        content: &#039;width=device-width, initial-scale=1.0&#039;,
+    }, {
+        name: &#039;content-type&#039;,
+        content: &#039;text/html; charset=UTF-8&#039;,
+        noEscape: true,
+    }, {
+        name: &#039;apple-mobile-web-app-capable&#039;,
+        content: &#039;yes&#039;,
+    }, {
+        name: &#039;mobile-web-app-capable&#039;,
+        content: &#039;yes&#039;,
+    }, {
+        property: &#039;og:site_name&#039;,
+        content: Meta.config.title || &#039;NodeBB&#039;,
+    }, {
+        name: &#039;msapplication-badge&#039;,
+        content: `frequency=30; polling-uri=${url}/sitemap.xml`,
+        noEscape: true,
+    }, {
+        name: &#039;theme-color&#039;,
+        content: Meta.config.themeColor || &#039;#ffffff&#039;,
+    }];
+
+    if (Meta.config.keywords) {
+        defaultTags.push({
+            name: &#039;keywords&#039;,
+            content: Meta.config.keywords,
+        });
+    }
+
+    if (Meta.config[&#039;brand:logo&#039;]) {
+        defaultTags.push({
+            name: &#039;msapplication-square150x150logo&#039;,
+            content: Meta.config[&#039;brand:logo&#039;],
+            noEscape: true,
+        });
+    }
+
+    const faviconPath = `${relative_path}/assets/uploads/system/favicon.ico`;
+    const cacheBuster = `${Meta.config[&#039;cache-buster&#039;] ? `?${Meta.config[&#039;cache-buster&#039;]}` : &#039;&#039;}`;
+
+    // Link Tags
+    const defaultLinks = [{
+        rel: &#039;icon&#039;,
+        type: &#039;image/x-icon&#039;,
+        href: `${faviconPath}${cacheBuster}`,
+    }, {
+        rel: &#039;manifest&#039;,
+        href: `${relative_path}/manifest.webmanifest`,
+        crossorigin: `use-credentials`,
+    }];
+
+    if (plugins.hooks.hasListeners(&#039;filter:search.query&#039;)) {
+        defaultLinks.push({
+            rel: &#039;search&#039;,
+            type: &#039;application/opensearchdescription+xml&#039;,
+            title: utils.escapeHTML(String(Meta.config.title || Meta.config.browserTitle || &#039;NodeBB&#039;)),
+            href: `${relative_path}/osd.xml`,
+        });
+    }
+
+    // Touch icons for mobile-devices
+    if (Meta.config[&#039;brand:touchIcon&#039;]) {
+        defaultLinks.push({
+            rel: &#039;apple-touch-icon&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-orig.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;36x36&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-36.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;48x48&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-48.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;72x72&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-72.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;96x96&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-96.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;144x144&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-144.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;192x192&#039;,
+            href: `${relative_path + upload_url}/system/touchicon-192.png`,
+        });
+    } else {
+        defaultLinks.push({
+            rel: &#039;apple-touch-icon&#039;,
+            href: `${relative_path}/assets/images/touch/512.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;36x36&#039;,
+            href: `${relative_path}/assets/images/touch/36.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;48x48&#039;,
+            href: `${relative_path}/assets/images/touch/48.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;72x72&#039;,
+            href: `${relative_path}/assets/images/touch/72.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;96x96&#039;,
+            href: `${relative_path}/assets/images/touch/96.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;144x144&#039;,
+            href: `${relative_path}/assets/images/touch/144.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;192x192&#039;,
+            href: `${relative_path}/assets/images/touch/192.png`,
+        }, {
+            rel: &#039;icon&#039;,
+            sizes: &#039;512x512&#039;,
+            href: `${relative_path}/assets/images/touch/512.png`,
+        });
+    }
+
+    const results = await utils.promiseParallel({
+        tags: plugins.hooks.fire(&#039;filter:meta.getMetaTags&#039;, { req: req, data: data, tags: defaultTags }),
+        links: plugins.hooks.fire(&#039;filter:meta.getLinkTags&#039;, { req: req, data: data, links: defaultLinks }),
+    });
+
+    meta = results.tags.tags.concat(meta || []).map((tag) =&gt; {
+        if (!tag || typeof tag.content !== &#039;string&#039;) {
+            winston.warn(&#039;Invalid meta tag. &#039;, tag);
+            return tag;
+        }
+
+        if (!tag.noEscape) {
+            const attributes = Object.keys(tag);
+            attributes.forEach((attr) =&gt; {
+                tag[attr] = utils.escapeHTML(String(tag[attr]));
+            });
+        }
+
+        return tag;
+    });
+
+    await addSiteOGImage(meta);
+
+    addIfNotExists(meta, &#039;property&#039;, &#039;og:title&#039;, Meta.config.title || &#039;NodeBB&#039;);
+    const ogUrl = url + (req.originalUrl !== &#039;/&#039; ? stripRelativePath(req.originalUrl) : &#039;&#039;);
+    addIfNotExists(meta, &#039;property&#039;, &#039;og:url&#039;, ogUrl);
+    addIfNotExists(meta, &#039;name&#039;, &#039;description&#039;, Meta.config.description);
+    addIfNotExists(meta, &#039;property&#039;, &#039;og:description&#039;, Meta.config.description);
+
+    link = results.links.links.concat(link || []).map((tag) =&gt; {
+        if (!tag.noEscape) {
+            const attributes = Object.keys(tag);
+            attributes.forEach((attr) =&gt; {
+                tag[attr] = utils.escapeHTML(String(tag[attr]));
+            });
+        }
+
+        return tag;
+    });
+
+    return { meta, link };
+};
+
+function addIfNotExists(meta, keyName, tagName, value) {
+    let exists = false;
+    meta.forEach((tag) =&gt; {
+        if (tag[keyName] === tagName) {
+            exists = true;
+        }
+    });
+
+    if (!exists &amp;&amp; value) {
+        const data = {
+            content: utils.escapeHTML(String(value)),
+        };
+        data[keyName] = tagName;
+        meta.push(data);
+    }
+}
+
+function stripRelativePath(url) {
+    if (url.startsWith(relative_path)) {
+        return url.slice(relative_path.length);
+    }
+
+    return url;
+}
+
+async function addSiteOGImage(meta) {
+    const key = Meta.config[&#039;og:image&#039;] ? &#039;og:image&#039; : &#039;brand:logo&#039;;
+    let ogImage = stripRelativePath(Meta.config[key] || &#039;&#039;);
+    if (ogImage &amp;&amp; !ogImage.startsWith(&#039;http&#039;)) {
+        ogImage = url + ogImage;
+    }
+
+    const { images } = await plugins.hooks.fire(&#039;filter:meta.addSiteOGImage&#039;, {
+        images: [{
+            url: ogImage || `${url}/assets/images/logo@3x.png`,
+            width: ogImage ? Meta.config[`${key}:width`] : 963,
+            height: ogImage ? Meta.config[`${key}:height`] : 225,
+        }],
+    });
+
+    const properties = [&#039;url&#039;, &#039;secure_url&#039;, &#039;type&#039;, &#039;width&#039;, &#039;height&#039;, &#039;alt&#039;];
+    images.forEach((image) =&gt; {
+        for (const property of properties) {
+            if (image.hasOwnProperty(property)) {
+                switch (property) {
+                case &#039;url&#039;: {
+                    meta.push({
+                        property: &#039;og:image&#039;,
+                        content: image.url,
+                        noEscape: true,
+                    }, {
+                        property: &#039;og:image:url&#039;,
+                        content: image.url,
+                        noEscape: true,
+                    });
+                    break;
+                }
+
+                case &#039;secure_url&#039;: {
+                    meta.push({
+                        property: `og:${property}`,
+                        content: image[property],
+                        noEscape: true,
+                    });
+                    break;
+                }
+
+                case &#039;type&#039;:
+                case &#039;alt&#039;:
+                case &#039;width&#039;:
+                case &#039;height&#039;: {
+                    meta.push({
+                        property: `og:image:${property}`,
+                        content: String(image[property]),
+                    });
+                }
+                }
+            }
+        }
+    });
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

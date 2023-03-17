@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/account/header.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/account/header.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">287</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">32.90</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.00</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/account/header&#039;, [
+    &#039;coverPhoto&#039;,
+    &#039;pictureCropper&#039;,
+    &#039;components&#039;,
+    &#039;translator&#039;,
+    &#039;benchpress&#039;,
+    &#039;accounts/delete&#039;,
+    &#039;api&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (coverPhoto, pictureCropper, components, translator, Benchpress, AccountsDelete, api, bootbox, alerts) {
+    const AccountHeader = {};
+    let isAdminOrSelfOrGlobalMod;
+
+    AccountHeader.init = function () {
+        isAdminOrSelfOrGlobalMod = ajaxify.data.isAdmin || ajaxify.data.isSelf || ajaxify.data.isGlobalModerator;
+
+        hidePrivateLinks();
+        selectActivePill();
+
+        if (isAdminOrSelfOrGlobalMod) {
+            setupCoverPhoto();
+        }
+
+        components.get(&#039;account/follow&#039;).on(&#039;click&#039;, function () {
+            toggleFollow(&#039;follow&#039;);
+        });
+
+        components.get(&#039;account/unfollow&#039;).on(&#039;click&#039;, function () {
+            toggleFollow(&#039;unfollow&#039;);
+        });
+
+        components.get(&#039;account/chat&#039;).on(&#039;click&#039;, async function () {
+            const roomId = await socket.emit(&#039;modules.chats.hasPrivateChat&#039;, ajaxify.data.uid);
+            const chat = await app.require(&#039;chat&#039;);
+            if (roomId) {
+                chat.openChat(roomId);
+            } else {
+                chat.newChat(ajaxify.data.uid);
+            }
+        });
+
+        components.get(&#039;account/new-chat&#039;).on(&#039;click&#039;, async function () {
+            const chat = await app.require(&#039;chat&#039;);
+            chat.newChat(ajaxify.data.uid, function () {
+                components.get(&#039;account/chat&#039;).parent().removeClass(&#039;hidden&#039;);
+            });
+        });
+
+
+        components.get(&#039;account/ban&#039;).on(&#039;click&#039;, function () {
+            banAccount(ajaxify.data.theirid);
+        });
+        components.get(&#039;account/mute&#039;).on(&#039;click&#039;, function () {
+            muteAccount(ajaxify.data.theirid);
+        });
+        components.get(&#039;account/unban&#039;).on(&#039;click&#039;, function () {
+            unbanAccount(ajaxify.data.theirid);
+        });
+        components.get(&#039;account/unmute&#039;).on(&#039;click&#039;, function () {
+            unmuteAccount(ajaxify.data.theirid);
+        });
+        components.get(&#039;account/delete-account&#039;).on(&#039;click&#039;, handleDeleteEvent.bind(null, &#039;account&#039;));
+        components.get(&#039;account/delete-content&#039;).on(&#039;click&#039;, handleDeleteEvent.bind(null, &#039;content&#039;));
+        components.get(&#039;account/delete-all&#039;).on(&#039;click&#039;, handleDeleteEvent.bind(null, &#039;purge&#039;));
+        components.get(&#039;account/flag&#039;).on(&#039;click&#039;, flagAccount);
+        components.get(&#039;account/block&#039;).on(&#039;click&#039;, toggleBlockAccount);
+    };
+
+    function handleDeleteEvent(type) {
+        AccountsDelete[type](ajaxify.data.theirid);
+    }
+
+    // TODO: This exported method is used in forum/flags/detail -- refactor??
+    AccountHeader.banAccount = banAccount;
+    AccountHeader.muteAccount = muteAccount;
+    AccountHeader.unbanAccount = unbanAccount;
+    AccountHeader.unmuteAccount = unmuteAccount;
+
+    function hidePrivateLinks() {
+        if (!app.user.uid || app.user.uid !== parseInt(ajaxify.data.theirid, 10)) {
+            $(&#039;.account-sub-links .plugin-link.private&#039;).addClass(&#039;hide&#039;);
+        }
+    }
+
+    function selectActivePill() {
+        $(&#039;.account-sub-links li&#039;).removeClass(&#039;active&#039;).each(function () {
+            const href = $(this).find(&#039;a&#039;).attr(&#039;href&#039;);
+
+            if (decodeURIComponent(href) === decodeURIComponent(window.location.pathname)) {
+                $(this).addClass(&#039;active&#039;);
+                return false;
+            }
+        });
+    }
+
+    function setupCoverPhoto() {
+        coverPhoto.init(
+            components.get(&#039;account/cover&#039;),
+            function (imageData, position, callback) {
+                socket.emit(&#039;user.updateCover&#039;, {
+                    uid: ajaxify.data.uid,
+                    imageData: imageData,
+                    position: position,
+                }, callback);
+            },
+            function () {
+                pictureCropper.show({
+                    title: &#039;[[user:upload_cover_picture]]&#039;,
+                    socketMethod: &#039;user.updateCover&#039;,
+                    aspectRatio: NaN,
+                    allowSkippingCrop: true,
+                    restrictImageDimension: false,
+                    paramName: &#039;uid&#039;,
+                    paramValue: ajaxify.data.theirid,
+                    accept: &#039;.png,.jpg,.bmp&#039;,
+                }, function (imageUrlOnServer) {
+                    imageUrlOnServer = (!imageUrlOnServer.startsWith(&#039;http&#039;) ? config.relative_path : &#039;&#039;) + imageUrlOnServer + &#039;?&#039; + Date.now();
+                    components.get(&#039;account/cover&#039;).css(&#039;background-image&#039;, &#039;url(&#039; + imageUrlOnServer + &#039;)&#039;);
+                });
+            },
+            removeCover
+        );
+    }
+
+    function toggleFollow(type) {
+        api[type === &#039;follow&#039; ? &#039;put&#039; : &#039;del&#039;](&#039;/users/&#039; + ajaxify.data.uid + &#039;/follow&#039;, undefined, function (err) {
+            if (err) {
+                return alerts.error(err);
+            }
+            components.get(&#039;account/follow&#039;).toggleClass(&#039;hide&#039;, type === &#039;follow&#039;);
+            components.get(&#039;account/unfollow&#039;).toggleClass(&#039;hide&#039;, type === &#039;unfollow&#039;);
+            alerts.success(&#039;[[global:alert.&#039; + type + &#039;, &#039; + ajaxify.data.username + &#039;]]&#039;);
+        });
+
+        return false;
+    }
+
+    function banAccount(theirid, onSuccess) {
+        theirid = theirid || ajaxify.data.theirid;
+
+        Benchpress.render(&#039;admin/partials/temporary-ban&#039;, {}).then(function (html) {
+            bootbox.dialog({
+                className: &#039;ban-modal&#039;,
+                title: &#039;[[user:ban_account]]&#039;,
+                message: html,
+                show: true,
+                buttons: {
+                    close: {
+                        label: &#039;[[global:close]]&#039;,
+                        className: &#039;btn-link&#039;,
+                    },
+                    submit: {
+                        label: &#039;[[user:ban_account]]&#039;,
+                        callback: function () {
+                            const formData = $(&#039;.ban-modal form&#039;).serializeArray().reduce(function (data, cur) {
+                                data[cur.name] = cur.value;
+                                return data;
+                            }, {});
+
+                            const until = formData.length &gt; 0 ? (
+                                Date.now() + (formData.length * 1000 * 60 * 60 * (parseInt(formData.unit, 10) ? 24 : 1))
+                            ) : 0;
+
+                            api.put(&#039;/users/&#039; + theirid + &#039;/ban&#039;, {
+                                until: until,
+                                reason: formData.reason || &#039;&#039;,
+                            }).then(() =&gt; {
+                                if (typeof onSuccess === &#039;function&#039;) {
+                                    return onSuccess();
+                                }
+
+                                ajaxify.refresh();
+                            }).catch(alerts.error);
+                        },
+                    },
+                },
+            });
+        });
+    }
+
+    function unbanAccount(theirid) {
+        api.del(&#039;/users/&#039; + theirid + &#039;/ban&#039;).then(() =&gt; {
+            ajaxify.refresh();
+        }).catch(alerts.error);
+    }
+
+    function muteAccount(theirid, onSuccess) {
+        theirid = theirid || ajaxify.data.theirid;
+        Benchpress.render(&#039;admin/partials/temporary-mute&#039;, {}).then(function (html) {
+            bootbox.dialog({
+                className: &#039;mute-modal&#039;,
+                title: &#039;[[user:mute_account]]&#039;,
+                message: html,
+                show: true,
+                buttons: {
+                    close: {
+                        label: &#039;[[global:close]]&#039;,
+                        className: &#039;btn-link&#039;,
+                    },
+                    submit: {
+                        label: &#039;[[user:mute_account]]&#039;,
+                        callback: function () {
+                            const formData = $(&#039;.mute-modal form&#039;).serializeArray().reduce(function (data, cur) {
+                                data[cur.name] = cur.value;
+                                return data;
+                            }, {});
+
+                            const until = formData.length &gt; 0 ? (
+                                Date.now() + (formData.length * 1000 * 60 * 60 * (parseInt(formData.unit, 10) ? 24 : 1))
+                            ) : 0;
+
+                            api.put(&#039;/users/&#039; + theirid + &#039;/mute&#039;, {
+                                until: until,
+                                reason: formData.reason || &#039;&#039;,
+                            }).then(() =&gt; {
+                                if (typeof onSuccess === &#039;function&#039;) {
+                                    return onSuccess();
+                                }
+                                ajaxify.refresh();
+                            }).catch(alerts.error);
+                        },
+                    },
+                },
+            });
+        });
+    }
+
+    function unmuteAccount(theirid) {
+        api.del(&#039;/users/&#039; + theirid + &#039;/mute&#039;).then(() =&gt; {
+            ajaxify.refresh();
+        }).catch(alerts.error);
+    }
+
+    function flagAccount() {
+        require([&#039;flags&#039;], function (flags) {
+            flags.showFlagModal({
+                type: &#039;user&#039;,
+                id: ajaxify.data.uid,
+            });
+        });
+    }
+
+    function toggleBlockAccount() {
+        const targetEl = this;
+        socket.emit(&#039;user.toggleBlock&#039;, {
+            blockeeUid: ajaxify.data.uid,
+            blockerUid: app.user.uid,
+        }, function (err, blocked) {
+            if (err) {
+                return alerts.error(err);
+            }
+
+            translator.translate(&#039;[[user:&#039; + (blocked ? &#039;unblock&#039; : &#039;block&#039;) + &#039;_user]]&#039;, function (label) {
+                $(targetEl).text(label);
+            });
+        });
+
+        // Keep dropdown open
+        return false;
+    }
+
+    function removeCover() {
+        translator.translate(&#039;[[user:remove_cover_picture_confirm]]&#039;, function (translated) {
+            bootbox.confirm(translated, function (confirm) {
+                if (!confirm) {
+                    return;
+                }
+
+                socket.emit(&#039;user.removeCover&#039;, {
+                    uid: ajaxify.data.uid,
+                }, function (err) {
+                    if (!err) {
+                        ajaxify.refresh();
+                    } else {
+                        alerts.error(err);
+                    }
+                });
+            });
+        });
+    }
+
+    return AccountHeader;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

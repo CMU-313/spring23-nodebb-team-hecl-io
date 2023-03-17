@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/groups.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/groups.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.50</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">291</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">67.43</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.24</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const groups = require(&#039;../groups&#039;);
+const user = require(&#039;../user&#039;);
+const utils = require(&#039;../utils&#039;);
+const events = require(&#039;../events&#039;);
+const privileges = require(&#039;../privileges&#039;);
+
+const SocketGroups = module.exports;
+
+SocketGroups.before = async (socket, method, data) =&gt; {
+    if (!data) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+};
+
+SocketGroups.addMember = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    if (data.groupName === &#039;administrators&#039; || groups.isPrivilegeGroup(data.groupName)) {
+        throw new Error(&#039;[[error:not-allowed]]&#039;);
+    }
+    if (!data.uid) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    data.uid = !Array.isArray(data.uid) ? [data.uid] : data.uid;
+    if (data.uid.filter(uid =&gt; !(parseInt(uid, 10) &gt; 0)).length) {
+        throw new Error(&#039;[[error:invalid-uid]]&#039;);
+    }
+    for (const uid of data.uid) {
+        // eslint-disable-next-line no-await-in-loop
+        await groups.join(data.groupName, uid);
+    }
+
+    logGroupEvent(socket, &#039;group-add-member&#039;, {
+        groupName: data.groupName,
+        targetUid: String(data.uid),
+    });
+};
+
+async function isOwner(socket, data) {
+    if (typeof data.groupName !== &#039;string&#039;) {
+        throw new Error(&#039;[[error:invalid-group-name]]&#039;);
+    }
+    const results = await utils.promiseParallel({
+        hasAdminPrivilege: privileges.admin.can(&#039;admin:groups&#039;, socket.uid),
+        isGlobalModerator: user.isGlobalModerator(socket.uid),
+        isOwner: groups.ownership.isOwner(socket.uid, data.groupName),
+        group: groups.getGroupData(data.groupName),
+    });
+
+    const isOwner = results.isOwner ||
+        results.hasAdminPrivilege ||
+        (results.isGlobalModerator &amp;&amp; !results.group.system);
+    if (!isOwner) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+}
+
+async function isInvited(socket, data) {
+    if (typeof data.groupName !== &#039;string&#039;) {
+        throw new Error(&#039;[[error:invalid-group-name]]&#039;);
+    }
+    const invited = await groups.isInvited(socket.uid, data.groupName);
+    if (!invited) {
+        throw new Error(&#039;[[error:not-invited]]&#039;);
+    }
+}
+
+SocketGroups.accept = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await groups.acceptMembership(data.groupName, data.toUid);
+    logGroupEvent(socket, &#039;group-accept-membership&#039;, {
+        groupName: data.groupName,
+        targetUid: data.toUid,
+    });
+};
+
+SocketGroups.reject = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await groups.rejectMembership(data.groupName, data.toUid);
+    logGroupEvent(socket, &#039;group-reject-membership&#039;, {
+        groupName: data.groupName,
+        targetUid: data.toUid,
+    });
+};
+
+SocketGroups.acceptAll = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await acceptRejectAll(SocketGroups.accept, socket, data);
+};
+
+SocketGroups.rejectAll = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await acceptRejectAll(SocketGroups.reject, socket, data);
+};
+
+async function acceptRejectAll(method, socket, data) {
+    if (typeof data.groupName !== &#039;string&#039;) {
+        throw new Error(&#039;[[error:invalid-group-name]]&#039;);
+    }
+    const uids = await groups.getPending(data.groupName);
+    await Promise.all(uids.map(async (uid) =&gt; {
+        await method(socket, { groupName: data.groupName, toUid: uid });
+    }));
+}
+
+SocketGroups.issueInvite = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await groups.invite(data.groupName, data.toUid);
+    logGroupEvent(socket, &#039;group-invite&#039;, {
+        groupName: data.groupName,
+        targetUid: data.toUid,
+    });
+};
+
+SocketGroups.issueMassInvite = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    if (!data || !data.usernames || !data.groupName) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    let usernames = String(data.usernames).split(&#039;,&#039;);
+    usernames = usernames.map(username =&gt; username &amp;&amp; username.trim());
+
+    let uids = await user.getUidsByUsernames(usernames);
+    uids = uids.filter(uid =&gt; !!uid &amp;&amp; parseInt(uid, 10));
+
+    await groups.invite(data.groupName, uids);
+
+    for (const uid of uids) {
+        logGroupEvent(socket, &#039;group-invite&#039;, {
+            groupName: data.groupName,
+            targetUid: uid,
+        });
+    }
+};
+
+SocketGroups.rescindInvite = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    await groups.rejectMembership(data.groupName, data.toUid);
+};
+
+SocketGroups.acceptInvite = async (socket, data) =&gt; {
+    await isInvited(socket, data);
+    await groups.acceptMembership(data.groupName, socket.uid);
+    logGroupEvent(socket, &#039;group-invite-accept&#039;, {
+        groupName: data.groupName,
+    });
+};
+
+SocketGroups.rejectInvite = async (socket, data) =&gt; {
+    await isInvited(socket, data);
+    await groups.rejectMembership(data.groupName, socket.uid);
+    logGroupEvent(socket, &#039;group-invite-reject&#039;, {
+        groupName: data.groupName,
+    });
+};
+
+SocketGroups.kick = async (socket, data) =&gt; {
+    await isOwner(socket, data);
+    if (socket.uid === parseInt(data.uid, 10)) {
+        throw new Error(&#039;[[error:cant-kick-self]]&#039;);
+    }
+
+    const isOwnerBit = await groups.ownership.isOwner(data.uid, data.groupName);
+    await groups.kick(data.uid, data.groupName, isOwnerBit);
+    logGroupEvent(socket, &#039;group-kick&#039;, {
+        groupName: data.groupName,
+        targetUid: data.uid,
+    });
+};
+
+SocketGroups.search = async (socket, data) =&gt; {
+    data.options = data.options || {};
+
+    if (!data.query) {
+        const groupsPerPage = 15;
+        const groupData = await groups.getGroupsBySort(data.options.sort, 0, groupsPerPage - 1);
+        return groupData;
+    }
+    data.options.filterHidden = data.options.filterHidden || !await user.isAdministrator(socket.uid);
+    return await groups.search(data.query, data.options);
+};
+
+SocketGroups.loadMore = async (socket, data) =&gt; {
+    if (!data.sort || !utils.isNumber(data.after) || parseInt(data.after, 10) &lt; 0) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const groupsPerPage = 10;
+    const start = parseInt(data.after, 10);
+    const stop = start + groupsPerPage - 1;
+    const groupData = await groups.getGroupsBySort(data.sort, start, stop);
+    return { groups: groupData, nextStart: stop + 1 };
+};
+
+SocketGroups.searchMembers = async (socket, data) =&gt; {
+    if (!data.groupName) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await canSearchMembers(socket.uid, data.groupName);
+    if (!await privileges.global.can(&#039;search:users&#039;, socket.uid)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    return await groups.searchMembers({
+        uid: socket.uid,
+        query: data.query,
+        groupName: data.groupName,
+    });
+};
+
+SocketGroups.loadMoreMembers = async (socket, data) =&gt; {
+    if (!data.groupName || !utils.isNumber(data.after) || parseInt(data.after, 10) &lt; 0) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await canSearchMembers(socket.uid, data.groupName);
+    data.after = parseInt(data.after, 10);
+    const users = await groups.getOwnersAndMembers(data.groupName, socket.uid, data.after, data.after + 9);
+    return {
+        users: users,
+        nextStart: data.after + 10,
+    };
+};
+
+async function canSearchMembers(uid, groupName) {
+    const [isHidden, isMember, hasAdminPrivilege, isGlobalMod, viewGroups] = await Promise.all([
+        groups.isHidden(groupName),
+        groups.isMember(uid, groupName),
+        privileges.admin.can(&#039;admin:groups&#039;, uid),
+        user.isGlobalModerator(uid),
+        privileges.global.can(&#039;view:groups&#039;, uid),
+    ]);
+
+    if (!viewGroups || (isHidden &amp;&amp; !isMember &amp;&amp; !hasAdminPrivilege &amp;&amp; !isGlobalMod)) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+}
+
+SocketGroups.cover = {};
+
+SocketGroups.cover.update = async (socket, data) =&gt; {
+    if (!socket.uid) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+    if (data.file || (!data.imageData &amp;&amp; !data.position)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+    await canModifyGroup(socket.uid, data.groupName);
+    return await groups.updateCover(socket.uid, {
+        groupName: data.groupName,
+        imageData: data.imageData,
+        position: data.position,
+    });
+};
+
+SocketGroups.cover.remove = async (socket, data) =&gt; {
+    if (!socket.uid) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+
+    await canModifyGroup(socket.uid, data.groupName);
+    await groups.removeCover({
+        groupName: data.groupName,
+    });
+};
+
+async function canModifyGroup(uid, groupName) {
+    if (typeof groupName !== &#039;string&#039;) {
+        throw new Error(&#039;[[error:invalid-group-name]]&#039;);
+    }
+    const results = await utils.promiseParallel({
+        isOwner: groups.ownership.isOwner(uid, groupName),
+        system: groups.getGroupField(groupName, &#039;system&#039;),
+        hasAdminPrivilege: privileges.admin.can(&#039;admin:groups&#039;, uid),
+        isGlobalMod: user.isGlobalModerator(uid),
+    });
+
+    if (!(results.isOwner || results.hasAdminPrivilege || (results.isGlobalMod &amp;&amp; !results.system))) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+}
+
+function logGroupEvent(socket, event, additional) {
+    events.log({
+        type: event,
+        uid: socket.uid,
+        ip: socket.ip,
+        ...additional,
+    });
+}
+
+require(&#039;../promisify&#039;)(SocketGroups);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/manage/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/manage/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.61</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">264</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">59.61</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.36</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;row manage-users\&quot;&gt;\n    &lt;div class=\&quot;col-lg-12\&quot;&gt;\n        &lt;div class=\&quot;clearfix\&quot;&gt;\n\n            &lt;div class=\&quot;pull-right\&quot;&gt;\n                &lt;div class=\&quot;btn-group\&quot;&gt;\n                    &lt;button class=\&quot;btn btn-primary dropdown-toggle\&quot; id=\&quot;action-dropdown\&quot; data-toggle=\&quot;dropdown\&quot; type=\&quot;button\&quot; disabled=\&quot;disabled\&quot;&gt;[[admin/manage/users:edit]] &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;&lt;/button&gt;\n                    &lt;ul class=\&quot;dropdown-menu dropdown-menu-right\&quot;&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;validate-email\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-check\&quot;&gt;&lt;/i&gt; [[admin/manage/users:validate-email]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;send-validation-email\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-mail-forward\&quot;&gt;&lt;/i&gt; [[admin/manage/users:send-validation-email]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;password-reset-email\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-key\&quot;&gt;&lt;/i&gt; [[admin/manage/users:password-reset-email]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;force-password-reset\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-unlock-alt\&quot;&gt;&lt;/i&gt; [[admin/manage/users:force-password-reset]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;manage-groups\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-users\&quot;&gt;&lt;/i&gt; [[admin/manage/users:manage-groups]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li class=\&quot;divider\&quot;&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;ban-user\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-gavel\&quot;&gt;&lt;/i&gt; [[admin/manage/users:ban]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;ban-user-temporary\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-clock-o\&quot;&gt;&lt;/i&gt; [[admin/manage/users:temp-ban]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;unban-user\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-comment-o\&quot;&gt;&lt;/i&gt; [[admin/manage/users:unban]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;reset-lockout\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-unlock\&quot;&gt;&lt;/i&gt; [[admin/manage/users:reset-lockout]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li class=\&quot;divider\&quot;&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;delete-user\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-trash-o\&quot;&gt;&lt;/i&gt; [[admin/manage/users:delete]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;delete-user-content\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-trash-o\&quot;&gt;&lt;/i&gt; [[admin/manage/users:delete-content]]&lt;/a&gt;&lt;/li&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; class=\&quot;delete-user-and-content\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-trash-o\&quot;&gt;&lt;/i&gt; [[admin/manage/users:purge]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;/ul&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;btn-group\&quot;&gt;\n                    &lt;button class=\&quot;btn btn-default dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; type=\&quot;button\&quot;&gt;&lt;i class=\&quot;fa fa-ellipsis-v\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n                    &lt;ul class=\&quot;dropdown-menu dropdown-menu-right\&quot;&gt;\n                        &lt;li&gt;&lt;a href=\&quot;#\&quot; data-action=\&quot;create\&quot;&gt;[[admin/manage/users:create]]&lt;/a&gt;&lt;/li&gt;\n                        &quot; + 
+      (guard((context != null) ? context[&#039;showInviteButton&#039;] : null) ?
+        &quot;&lt;li&gt;&lt;a href=\&quot;#\&quot; component=\&quot;user/invite\&quot;&gt;[[admin/manage/users:invite]]&lt;/a&gt;&lt;/li&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;\n                        &lt;li&gt;&lt;a target=\&quot;_blank\&quot; href=\&quot;#\&quot; class=\&quot;export-csv\&quot;&gt;[[admin/manage/users:download-csv]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;/ul&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n\n            &lt;form class=\&quot;form-inline pull-left\&quot;&gt;\n                &lt;div class=\&quot;input-group\&quot;&gt;\n                    &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; placeholder=\&quot;[[global:search]]\&quot; id=\&quot;user-search\&quot; value=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;query&#039;] : null)) + 
+      &quot;\&quot;&gt;\n                    &lt;span class=\&quot;input-group-addon search-button\&quot;&gt;&lt;i class=\&quot;fa fa-search\&quot;&gt;&lt;/i&gt;&lt;/span&gt;\n                &lt;/div&gt;\n                &lt;select id=\&quot;user-search-by\&quot; class=\&quot;form-control\&quot;&gt;\n                    &lt;option value=\&quot;username\&quot; &quot; + 
+      (guard((context != null) ? context[&#039;searchBy_username&#039;] : null) ?
+        &quot;selected&quot; :
+        &quot;&quot;) + 
+      &quot;&gt;[[admin/manage/users:search.username]]&lt;/option&gt;\n                    &lt;option value=\&quot;email\&quot; &quot; + 
+      (guard((context != null) ? context[&#039;searchBy_email&#039;] : null) ?
+        &quot;selected&quot; :
+        &quot;&quot;) + 
+      &quot;&gt;[[admin/manage/users:search.email]]&lt;/option&gt;\n                    &lt;option value=\&quot;uid\&quot; &quot; + 
+      (guard((context != null) ? context[&#039;searchBy_uid&#039;] : null) ?
+        &quot;selected&quot; :
+        &quot;&quot;) + 
+      &quot;&gt;[[admin/manage/users:search.uid]]&lt;/option&gt;\n                    &lt;option value=\&quot;ip\&quot; &quot; + 
+      (guard((context != null) ? context[&#039;searchBy_ip&#039;] : null) ?
+        &quot;selected&quot; :
+        &quot;&quot;) + 
+      &quot;&gt;[[admin/manage/users:search.ip]]&lt;/option&gt;\n                &lt;/select&gt;\n                &lt;select id=\&quot;results-per-page\&quot; class=\&quot;form-control\&quot;&gt;\n                    &lt;option value=\&quot;50\&quot;&gt;[[admin/manage/users:50-per-page]]&lt;/option&gt;\n                    &lt;option value=\&quot;100\&quot;&gt;[[admin/manage/users:100-per-page]]&lt;/option&gt;\n                    &lt;option value=\&quot;250\&quot;&gt;[[admin/manage/users:250-per-page]]&lt;/option&gt;\n                    &lt;option value=\&quot;500\&quot;&gt;[[admin/manage/users:500-per-page]]&lt;/option&gt;\n                &lt;/select&gt;\n\n                &lt;div class=\&quot;btn-group\&quot; id=\&quot;filter-by\&quot;&gt;\n                    &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-link dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot;&gt;\n                        [[admin/manage/users:filter-by]] &lt;span class=\&quot;caret\&quot;&gt;&lt;/span&gt;\n                    &lt;/button&gt;\n                    &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                        &lt;li data-filter-by=\&quot;unverified\&quot; role=\&quot;presentation\&quot;&gt;\n                            &lt;a role=\&quot;menuitem\&quot; href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-fw &quot; + 
+      (guard((context != null) ? context[&#039;filterBy_unverified&#039;] : null) ?
+        &quot;fa-check&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot;&gt;&lt;/i&gt;[[admin/manage/users:pills.unvalidated]]&lt;/a&gt;\n                        &lt;/li&gt;\n                        &lt;li data-filter-by=\&quot;verified\&quot; role=\&quot;presentation\&quot;&gt;\n                            &lt;a role=\&quot;menuitem\&quot; href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-fw &quot; + 
+      (guard((context != null) ? context[&#039;filterBy_verified&#039;] : null) ?
+        &quot;fa-check&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot;&gt;&lt;/i&gt;[[admin/manage/users:pills.validated]]&lt;/a&gt;\n                        &lt;/li&gt;\n                        &lt;li data-filter-by=\&quot;banned\&quot; role=\&quot;presentation\&quot;&gt;\n                            &lt;a role=\&quot;menuitem\&quot; href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-fw &quot; + 
+      (guard((context != null) ? context[&#039;filterBy_banned&#039;] : null) ?
+        &quot;fa-check&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot;&gt;&lt;/i&gt;[[admin/manage/users:pills.banned]]&lt;/a&gt;\n                        &lt;/li&gt;\n                    &lt;/ul&gt;\n                &lt;/div&gt;\n            &lt;/form&gt;\n        &lt;/div&gt;\n\n        &lt;hr/&gt;\n\n        &lt;div class=\&quot;search &quot; + 
+      __escape(guard((context != null) ? context[&#039;search_display&#039;] : null)) + 
+      &quot;\&quot;&gt;\n            &lt;i class=\&quot;fa fa-spinner fa-spin hidden\&quot;&gt;&lt;/i&gt;\n\n            &lt;div id=\&quot;user-found-notify\&quot; class=\&quot;label label-info &quot; + 
+      (guard((context != null) ? context[&#039;matchCount&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot;\&quot;&gt;[[admin/manage/users:alerts.x-users-found, &quot; + 
+      __escape(guard((context != null) ? context[&#039;matchCount&#039;] : null)) + 
+      &quot;, &quot; + 
+      __escape(guard((context != null) ? context[&#039;timing&#039;] : null)) + 
+      &quot;]]&lt;/div&gt;\n\n            &lt;div id=\&quot;user-notfound-notify\&quot; class=\&quot;label label-danger &quot; + 
+      (guard((context != null) ? context[&#039;query&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hidden&quot;) + 
+      &quot; &quot; + 
+      (guard((context != null) ? context[&#039;matchCount&#039;] : null) ?
+        &quot;hidden&quot; :
+        &quot;&quot;) + 
+      &quot;\&quot;&gt;[[admin/manage/users:search.not-found]]&lt;/div&gt;\n        &lt;/div&gt;\n\n        &quot; + 
+      (guard((context != null) ? context[&#039;inactive&#039;] : null) ?
+        &quot;\n        &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/users/inactive?months=3&amp;resultsPerPage=&quot; + 
+          __escape(guard((context != null) ? context[&#039;resultsPerPage&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;btn btn-default\&quot;&gt;[[admin/manage/users:inactive.3-months]]&lt;/a&gt;\n        &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/users/inactive?months=6&amp;resultsPerPage=&quot; + 
+          __escape(guard((context != null) ? context[&#039;resultsPerPage&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;btn btn-default\&quot;&gt;[[admin/manage/users:inactive.6-months]]&lt;/a&gt;\n        &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/manage/users/inactive?months=12&amp;resultsPerPage=&quot; + 
+          __escape(guard((context != null) ? context[&#039;resultsPerPage&#039;] : null)) + 
+          &quot;\&quot; class=\&quot;btn btn-default\&quot;&gt;[[admin/manage/users:inactive.12-months]]&lt;/a&gt;\n        &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n        &lt;div class=\&quot;table-responsive\&quot;&gt;\n            &lt;table class=\&quot;table table-striped users-table\&quot;&gt;\n                &lt;thead&gt;\n                    &lt;tr&gt;\n                        &lt;th&gt;&lt;input component=\&quot;user/select/all\&quot; type=\&quot;checkbox\&quot;/&gt;&lt;/th&gt;\n                        &lt;th class=\&quot;text-right text-muted\&quot;&gt;[[admin/manage/users:users.uid]]&lt;/th&gt;\n                        &lt;th class=\&quot;text-muted\&quot;&gt;[[admin/manage/users:users.username]]&lt;/th&gt;\n                        &lt;th class=\&quot;text-muted\&quot;&gt;[[admin/manage/users:users.email]]&lt;/th&gt;\n                        &lt;th class=\&quot;text-muted\&quot;&gt;[[admin/manage/users:users.ip]]&lt;/th&gt;\n                        &lt;th data-sort=\&quot;postcount\&quot; class=\&quot;text-right pointer\&quot;&gt;[[admin/manage/users:users.postcount]] &quot; + 
+      (guard((context != null) ? context[&#039;sort_postcount&#039;] : null) ?
+        &quot;&lt;i class=\&quot;fa fa-sort-&quot; + 
+          (guard((context != null) ? context[&#039;reverse&#039;] : null) ?
+            &quot;down&quot; :
+            &quot;up&quot;) + 
+          &quot;\&quot;&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;&lt;/th&gt;\n                        &lt;th data-sort=\&quot;reputation\&quot; class=\&quot;text-right pointer\&quot;&gt;[[admin/manage/users:users.reputation]] &quot; + 
+      (guard((context != null) ? context[&#039;sort_reputation&#039;] : null) ?
+        &quot;&lt;i class=\&quot;fa fa-sort-&quot; + 
+          (guard((context != null) ? context[&#039;reverse&#039;] : null) ?
+            &quot;down&quot; :
+            &quot;up&quot;) + 
+          &quot;\&quot;&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;&lt;/th&gt;\n                        &lt;th data-sort=\&quot;flags\&quot; class=\&quot;text-right pointer\&quot;&gt;[[admin/manage/users:users.flags]] &quot; + 
+      (guard((context != null) ? context[&#039;sort_flags&#039;] : null) ?
+        &quot;&lt;i class=\&quot;fa fa-sort-&quot; + 
+          (guard((context != null) ? context[&#039;reverse&#039;] : null) ?
+            &quot;down&quot; :
+            &quot;up&quot;) + 
+          &quot;\&quot;&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;&lt;/th&gt;\n                        &lt;th data-sort=\&quot;joindate\&quot; class=\&quot;pointer\&quot;&gt;[[admin/manage/users:users.joined]] &quot; + 
+      (guard((context != null) ? context[&#039;sort_joindate&#039;] : null) ?
+        &quot;&lt;i class=\&quot;fa fa-sort-&quot; + 
+          (guard((context != null) ? context[&#039;reverse&#039;] : null) ?
+            &quot;down&quot; :
+            &quot;up&quot;) + 
+          &quot;\&quot;&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;&lt;/th&gt;\n                        &lt;th data-sort=\&quot;lastonline\&quot; class=\&quot;pointer\&quot;&gt;[[admin/manage/users:users.last-online]] &quot; + 
+      (guard((context != null) ? context[&#039;sort_lastonline&#039;] : null) ?
+        &quot;&lt;i class=\&quot;fa fa-sort-&quot; + 
+          (guard((context != null) ? context[&#039;reverse&#039;] : null) ?
+            &quot;down&quot; :
+            &quot;up&quot;) + 
+          &quot;\&quot;&gt;&quot; :
+        &quot;&quot;) + 
+      &quot;&lt;/th&gt;\n                    &lt;/tr&gt;\n                &lt;/thead&gt;\n                &lt;tbody&gt;\n                    &quot; + 
+      compiled.blocks[&#039;users&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n                &lt;/tbody&gt;\n            &lt;/table&gt;\n        &lt;/div&gt;\n\n        &lt;div component=\&quot;pagination\&quot; class=\&quot;text-center pagination-container&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot; hidden&quot;) + 
+      &quot;\&quot;&gt;\n    &lt;ul class=\&quot;pagination hidden-xs\&quot;&gt;\n        &lt;li class=\&quot;previous pull-left&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &quot; + 
+      compiled.blocks[&#039;pagination.pages&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\n        &lt;li class=\&quot;next pull-right&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n\n    &lt;ul class=\&quot;pagination hidden-sm hidden-md hidden-lg\&quot;&gt;\n        &lt;li class=\&quot;first&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;first&#039;] != null) ? context[&#039;pagination&#039;][&#039;first&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;1\&quot;&gt;&lt;i class=\&quot;fa fa-fast-backward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;previous&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;prev&#039;] != null) ? context[&#039;pagination&#039;][&#039;prev&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n            &lt;a href=\&quot;#\&quot;&gt;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;currentPage&#039;] : null)) + 
+      &quot; / &quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;next&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;page&#039;] : null)) + 
+      &quot;\&quot;&gt; &lt;i class=\&quot;fa fa-chevron-right\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/li&gt;\n\n        &lt;li class=\&quot;last&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;next&#039;] != null) ? context[&#039;pagination&#039;][&#039;next&#039;][&#039;active&#039;] : null) ?
+        &quot;&quot; :
+        &quot; disabled&quot;) + 
+      &quot;\&quot;&gt;\n            &lt;a href=\&quot;?&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;last&#039;] != null) ? context[&#039;pagination&#039;][&#039;last&#039;][&#039;qs&#039;] : null)) + 
+      &quot;\&quot; data-page=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pageCount&#039;] : null)) + 
+      &quot;\&quot;&gt;&lt;i class=\&quot;fa fa-fast-forward\&quot;&gt;&lt;/i&gt; &lt;/a&gt;\n        &lt;/li&gt;\n    &lt;/ul&gt;\n&lt;/div&gt;\n\n    &lt;/div&gt;\n&lt;/div&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;users&#039;: function users(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;users&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                    &lt;tr class=\&quot;user-row\&quot;&gt;\n                        &lt;th&gt;&lt;input component=\&quot;user/select/single\&quot; data-uid=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;uid&#039;] : null)) + 
+          &quot;\&quot; type=\&quot;checkbox\&quot;/&gt;&lt;/th&gt;\n                        &lt;td class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;uid&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                        &lt;td&gt;\n                            &lt;i title=\&quot;[[admin/manage/users:users.banned]]\&quot; class=\&quot;ban fa fa-gavel text-danger&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;banned&#039;] : null) ?
+            &quot;&quot; :
+            &quot; hidden&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                            &lt;i class=\&quot;administrator fa fa-shield text-success&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;administrator&#039;] : null) ?
+            &quot;&quot; :
+            &quot; hidden&quot;) + 
+          &quot;\&quot;&gt;&lt;/i&gt;\n                            &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/user/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;userslug&#039;] : null)) + 
+          &quot;\&quot;&gt; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;username&#039;] : null)) + 
+          &quot;&lt;/a&gt;\n                        &lt;/td&gt;\n                        &lt;td&gt;\n                            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;email&#039;] : null) ?
+            &quot;\n                            &lt;i class=\&quot;validated fa fa-check text-success&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;email:confirmed&#039;] : null) ?
+                &quot;&quot; :
+                &quot; hidden&quot;) + 
+              &quot;\&quot; title=\&quot;validated\&quot;&gt;&lt;/i&gt;\n                            &lt;i class=\&quot;notvalidated fa fa-check text-muted&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;email:confirmed&#039;] : null) ?
+                &quot; hidden&quot; :
+                &quot;&quot;) + 
+              &quot;\&quot; title=\&quot;not validated\&quot;&gt;&lt;/i&gt;\n                            &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;email&#039;] : null)) + 
+              &quot;\n                            &quot; :
+            &quot;\n                            &lt;i class=\&quot;notvalidated fa fa-check text-muted\&quot; title=\&quot;not validated\&quot;&gt;&lt;/i&gt;\n                            &lt;em class=\&quot;text-muted\&quot;&gt;[[admin/manage/users:users.no-email]]&lt;/em&gt;\n                            &quot;) + 
+          &quot;\n                        &lt;/td&gt;\n                        &lt;td&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;ip&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                        &lt;td class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;postcount&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                        &lt;td class=\&quot;text-right\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;reputation&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                        &lt;td class=\&quot;text-right\&quot;&gt;&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;flags&#039;] : null) ?
+            __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;flags&#039;] : null)) :
+            &quot;0&quot;) + 
+          &quot;&lt;/td&gt;\n                        &lt;td&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;joindateISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt;&lt;/td&gt;\n                        &lt;td&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;users&#039;] != null &amp;&amp; context[&#039;users&#039;][key0] != null) ? context[&#039;users&#039;][key0][&#039;lastonlineISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt;&lt;/td&gt;\n                    &lt;/tr&gt;\n                    &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;pagination.pages&#039;: function paginationpages(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;separator&#039;] : null) ?
+            &quot;\n            &lt;li component=\&quot;pagination/select-page\&quot; class=\&quot;page select-page\&quot;&gt;\n                &lt;a href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-ellipsis-h\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot; :
+            &quot;\n            &lt;li class=\&quot;page&quot; + 
+              (guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;active&#039;] : null) ?
+                &quot; active&quot; :
+                &quot;&quot;) + 
+              &quot;\&quot; &gt;\n                &lt;a href=\&quot;?&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;qs&#039;] : null)) + 
+              &quot;\&quot; data-page=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;pagination&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;] != null &amp;&amp; context[&#039;pagination&#039;][&#039;pages&#039;][key0] != null) ? context[&#039;pagination&#039;][&#039;pages&#039;][key0][&#039;page&#039;] : null)) + 
+              &quot;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot;) + 
+          &quot;\n        &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

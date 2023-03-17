@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">53.82</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">375</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.81</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.67</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+
+const meta = require(&#039;../meta&#039;);
+const user = require(&#039;../user&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const Controllers = module.exports;
+
+Controllers.ping = require(&#039;./ping&#039;);
+Controllers.home = require(&#039;./home&#039;);
+Controllers.topics = require(&#039;./topics&#039;);
+Controllers.posts = require(&#039;./posts&#039;);
+Controllers.career = require(&#039;./career&#039;);
+Controllers.categories = require(&#039;./categories&#039;);
+Controllers.category = require(&#039;./category&#039;);
+Controllers.unread = require(&#039;./unread&#039;);
+Controllers.recent = require(&#039;./recent&#039;);
+Controllers.popular = require(&#039;./popular&#039;);
+Controllers.top = require(&#039;./top&#039;);
+Controllers.tags = require(&#039;./tags&#039;);
+Controllers.search = require(&#039;./search&#039;);
+Controllers.user = require(&#039;./user&#039;);
+Controllers.users = require(&#039;./users&#039;);
+Controllers.groups = require(&#039;./groups&#039;);
+Controllers.accounts = require(&#039;./accounts&#039;);
+Controllers.authentication = require(&#039;./authentication&#039;);
+Controllers.api = require(&#039;./api&#039;);
+Controllers.admin = require(&#039;./admin&#039;);
+Controllers.globalMods = require(&#039;./globalmods&#039;);
+Controllers.mods = require(&#039;./mods&#039;);
+Controllers.sitemap = require(&#039;./sitemap&#039;);
+Controllers.osd = require(&#039;./osd&#039;);
+Controllers[&#039;404&#039;] = require(&#039;./404&#039;);
+Controllers.errors = require(&#039;./errors&#039;);
+Controllers.composer = require(&#039;./composer&#039;);
+
+Controllers.write = require(&#039;./write&#039;);
+
+Controllers.reset = async function (req, res) {
+    if (meta.config[&#039;password:disableEdit&#039;]) {
+        return helpers.notAllowed(req, res);
+    }
+
+    res.locals.metaTags = {
+        ...res.locals.metaTags,
+        name: &#039;robots&#039;,
+        content: &#039;noindex&#039;,
+    };
+
+    const renderReset = function (code, valid) {
+        res.render(&#039;reset_code&#039;, {
+            valid: valid,
+            displayExpiryNotice: req.session.passwordExpired,
+            code: code,
+            minimumPasswordLength: meta.config.minimumPasswordLength,
+            minimumPasswordStrength: meta.config.minimumPasswordStrength,
+            breadcrumbs: helpers.buildBreadcrumbs([
+                {
+                    text: &#039;[[reset_password:reset_password]]&#039;,
+                    url: &#039;/reset&#039;,
+                },
+                {
+                    text: &#039;[[reset_password:update_password]]&#039;,
+                },
+            ]),
+            title: &#039;[[pages:reset]]&#039;,
+        });
+        delete req.session.passwordExpired;
+    };
+
+    if (req.params.code) {
+        req.session.reset_code = req.params.code;
+    }
+
+    if (req.session.reset_code) {
+        // Validate and save to local variable before removing from session
+        const valid = await user.reset.validate(req.session.reset_code);
+        renderReset(req.session.reset_code, valid);
+        delete req.session.reset_code;
+    } else {
+        res.render(&#039;reset&#039;, {
+            code: null,
+            breadcrumbs: helpers.buildBreadcrumbs([{
+                text: &#039;[[reset_password:reset_password]]&#039;,
+            }]),
+            title: &#039;[[pages:reset]]&#039;,
+        });
+    }
+};
+
+Controllers.login = async function (req, res) {
+    const data = { loginFormEntry: [] };
+    const loginStrategies = require(&#039;../routes/authentication&#039;).getLoginStrategies();
+    const registrationType = meta.config.registrationType || &#039;normal&#039;;
+    const allowLoginWith = (meta.config.allowLoginWith || &#039;username-email&#039;);
+
+    let errorText;
+    if (req.query.error === &#039;csrf-invalid&#039;) {
+        errorText = &#039;[[error:csrf-invalid]]&#039;;
+    } else if (req.query.error) {
+        errorText = validator.escape(String(req.query.error));
+    }
+
+    if (req.headers[&#039;x-return-to&#039;]) {
+        req.session.returnTo = req.headers[&#039;x-return-to&#039;];
+    }
+
+    // Occasionally, x-return-to is passed a full url.
+    req.session.returnTo = req.session.returnTo &amp;&amp; req.session.returnTo.replace(nconf.get(&#039;base_url&#039;), &#039;&#039;).replace(nconf.get(&#039;relative_path&#039;), &#039;&#039;);
+
+    data.alternate_logins = loginStrategies.length &gt; 0;
+    data.authentication = loginStrategies;
+    data.allowRegistration = registrationType === &#039;normal&#039;;
+    data.allowLoginWith = `[[login:${allowLoginWith}]]`;
+    data.breadcrumbs = helpers.buildBreadcrumbs([{
+        text: &#039;[[global:login]]&#039;,
+    }]);
+    data.error = req.flash(&#039;error&#039;)[0] || errorText;
+    data.title = &#039;[[pages:login]]&#039;;
+    data.allowPasswordReset = !meta.config[&#039;password:disableEdit&#039;];
+
+    const hasLoginPrivilege = await privileges.global.canGroup(&#039;local:login&#039;, &#039;registered-users&#039;);
+    data.allowLocalLogin = hasLoginPrivilege || parseInt(req.query.local, 10) === 1;
+
+    if (!data.allowLocalLogin &amp;&amp; !data.allowRegistration &amp;&amp; data.alternate_logins &amp;&amp; data.authentication.length === 1) {
+        return helpers.redirect(res, { external: data.authentication[0].url });
+    }
+
+    // Re-auth challenge, pre-fill username
+    if (req.loggedIn) {
+        const userData = await user.getUserFields(req.uid, [&#039;username&#039;]);
+        data.username = userData.username;
+        data.alternate_logins = false;
+    }
+    res.render(&#039;login&#039;, data);
+};
+
+Controllers.register = async function (req, res, next) {
+    const registrationType = meta.config.registrationType || &#039;normal&#039;;
+
+    if (registrationType === &#039;disabled&#039;) {
+        return setImmediate(next);
+    }
+
+    let errorText;
+    const returnTo = (req.headers[&#039;x-return-to&#039;] || &#039;&#039;).replace(nconf.get(&#039;base_url&#039;) + nconf.get(&#039;relative_path&#039;), &#039;&#039;);
+    if (req.query.error === &#039;csrf-invalid&#039;) {
+        errorText = &#039;[[error:csrf-invalid]]&#039;;
+    }
+    try {
+        if (registrationType === &#039;invite-only&#039; || registrationType === &#039;admin-invite-only&#039;) {
+            try {
+                await user.verifyInvitation(req.query);
+            } catch (e) {
+                return res.render(&#039;400&#039;, {
+                    error: e.message,
+                });
+            }
+        }
+
+        if (returnTo) {
+            req.session.returnTo = returnTo;
+        }
+
+        const loginStrategies = require(&#039;../routes/authentication&#039;).getLoginStrategies();
+        res.render(&#039;register&#039;, {
+            &#039;register_window:spansize&#039;: loginStrategies.length ? &#039;col-md-6&#039; : &#039;col-md-12&#039;,
+            alternate_logins: !!loginStrategies.length,
+            authentication: loginStrategies,
+
+            minimumUsernameLength: meta.config.minimumUsernameLength,
+            maximumUsernameLength: meta.config.maximumUsernameLength,
+            minimumPasswordLength: meta.config.minimumPasswordLength,
+            minimumPasswordStrength: meta.config.minimumPasswordStrength,
+            breadcrumbs: helpers.buildBreadcrumbs([{
+                text: &#039;[[register:register]]&#039;,
+            }]),
+            regFormEntry: [
+                {
+                    label: &#039;Account Type&#039;,
+                    styleName: &#039;account-type&#039;,
+                    html: `
+                        &lt;select class=&quot;form-control&quot; name=&quot;account-type&quot; aria-label=&quot;Account Type&quot;&gt;
+                            &lt;option value=&quot;student&quot; selected&gt;Student&lt;/option&gt;
+                            &lt;option value=&quot;instructor&quot;&gt;Instructor&lt;/option&gt;
+                        &lt;/select&gt;
+                    `,
+                },
+            ],
+            error: req.flash(&#039;error&#039;)[0] || errorText,
+            title: &#039;[[pages:register]]&#039;,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+Controllers.registerInterstitial = async function (req, res, next) {
+    if (!req.session.hasOwnProperty(&#039;registration&#039;)) {
+        return res.redirect(`${nconf.get(&#039;relative_path&#039;)}/register`);
+    }
+    try {
+        const data = await plugins.hooks.fire(&#039;filter:register.interstitial&#039;, {
+            req,
+            userData: req.session.registration,
+            interstitials: [],
+        });
+
+        if (!data.interstitials.length) {
+            // No interstitials, redirect to home
+            const returnTo = req.session.returnTo || req.session.registration.returnTo;
+            delete req.session.registration;
+            return helpers.redirect(res, returnTo || &#039;/&#039;);
+        }
+
+        const errors = req.flash(&#039;errors&#039;);
+        const renders = data.interstitials.map(
+            interstitial =&gt; req.app.renderAsync(interstitial.template, { ...interstitial.data || {}, errors })
+        );
+        const sections = await Promise.all(renders);
+
+        res.render(&#039;registerComplete&#039;, {
+            title: &#039;[[pages:registration-complete]]&#039;,
+            register: data.userData.register,
+            sections,
+            errors,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+Controllers.confirmEmail = async (req, res, next) =&gt; {
+    try {
+        await user.email.confirmByCode(req.params.code, req.session.id);
+    } catch (e) {
+        if (e.message === &#039;[[error:invalid-data]]&#039;) {
+            return next();
+        }
+
+        throw e;
+    }
+
+    res.render(&#039;confirm&#039;, {
+        title: &#039;[[pages:confirm]]&#039;,
+    });
+};
+
+Controllers.robots = function (req, res) {
+    res.set(&#039;Content-Type&#039;, &#039;text/plain&#039;);
+
+    if (meta.config[&#039;robots:txt&#039;]) {
+        res.send(meta.config[&#039;robots:txt&#039;]);
+    } else {
+        res.send(`${&#039;User-agent: *\n&#039; +
+            &#039;Disallow: &#039;}${nconf.get(&#039;relative_path&#039;)}/admin/\n` +
+            `Disallow: ${nconf.get(&#039;relative_path&#039;)}/reset/\n` +
+            `Disallow: ${nconf.get(&#039;relative_path&#039;)}/compose\n` +
+            `Sitemap: ${nconf.get(&#039;url&#039;)}/sitemap.xml`);
+    }
+};
+
+Controllers.manifest = async function (req, res) {
+    const manifest = {
+        name: meta.config.title || &#039;NodeBB&#039;,
+        short_name: meta.config[&#039;title:short&#039;] || meta.config.title || &#039;NodeBB&#039;,
+        start_url: nconf.get(&#039;url&#039;),
+        display: &#039;standalone&#039;,
+        orientation: &#039;portrait&#039;,
+        theme_color: meta.config.themeColor || &#039;#ffffff&#039;,
+        background_color: meta.config.backgroundColor || &#039;#ffffff&#039;,
+        icons: [],
+    };
+
+    if (meta.config[&#039;brand:touchIcon&#039;]) {
+        manifest.icons.push({
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-36.png`,
+            sizes: &#039;36x36&#039;,
+            type: &#039;image/png&#039;,
+            density: 0.75,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-48.png`,
+            sizes: &#039;48x48&#039;,
+            type: &#039;image/png&#039;,
+            density: 1.0,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-72.png`,
+            sizes: &#039;72x72&#039;,
+            type: &#039;image/png&#039;,
+            density: 1.5,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-96.png`,
+            sizes: &#039;96x96&#039;,
+            type: &#039;image/png&#039;,
+            density: 2.0,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-144.png`,
+            sizes: &#039;144x144&#039;,
+            type: &#039;image/png&#039;,
+            density: 3.0,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-192.png`,
+            sizes: &#039;192x192&#039;,
+            type: &#039;image/png&#039;,
+            density: 4.0,
+        }, {
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-512.png`,
+            sizes: &#039;512x512&#039;,
+            type: &#039;image/png&#039;,
+            density: 10.0,
+        });
+    }
+
+
+    if (meta.config[&#039;brand:maskableIcon&#039;]) {
+        manifest.icons.push({
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/maskableicon-orig.png`,
+            type: &#039;image/png&#039;,
+            purpose: &#039;maskable&#039;,
+        });
+    } else if (meta.config[&#039;brand:touchIcon&#039;]) {
+        manifest.icons.push({
+            src: `${nconf.get(&#039;relative_path&#039;)}/assets/uploads/system/touchicon-orig.png`,
+            type: &#039;image/png&#039;,
+            purpose: &#039;maskable&#039;,
+        });
+    }
+
+    const data = await plugins.hooks.fire(&#039;filter:manifest.build&#039;, {
+        req: req,
+        res: res,
+        manifest: manifest,
+    });
+    res.status(200).json(data.manifest);
+};
+
+Controllers.outgoing = function (req, res, next) {
+    const url = req.query.url || &#039;&#039;;
+    const allowedProtocols = [
+        &#039;http&#039;, &#039;https&#039;, &#039;ftp&#039;, &#039;ftps&#039;, &#039;mailto&#039;, &#039;news&#039;, &#039;irc&#039;, &#039;gopher&#039;,
+        &#039;nntp&#039;, &#039;feed&#039;, &#039;telnet&#039;, &#039;mms&#039;, &#039;rtsp&#039;, &#039;svn&#039;, &#039;tel&#039;, &#039;fax&#039;, &#039;xmpp&#039;, &#039;webcal&#039;,
+    ];
+    const parsed = require(&#039;url&#039;).parse(url);
+
+    if (!url || !parsed.protocol || !allowedProtocols.includes(parsed.protocol.slice(0, -1))) {
+        return next();
+    }
+
+    res.render(&#039;outgoing&#039;, {
+        outgoing: validator.escape(String(url)),
+        title: meta.config.title,
+        breadcrumbs: helpers.buildBreadcrumbs([{
+            text: &#039;[[notifications:outgoing_link]]&#039;,
+        }]),
+    });
+};
+
+Controllers.termsOfUse = async function (req, res, next) {
+    if (!meta.config.termsOfUse) {
+        return next();
+    }
+    const termsOfUse = await plugins.hooks.fire(&#039;filter:parse.post&#039;, {
+        postData: {
+            content: meta.config.termsOfUse || &#039;&#039;,
+        },
+    });
+    res.render(&#039;tos&#039;, {
+        termsOfUse: termsOfUse.postData.content,
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

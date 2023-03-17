@@ -1,4 +1,5 @@
 node_modules/
+plato_report/
 *.sublime-project
 *.sublime-workspace
 .project

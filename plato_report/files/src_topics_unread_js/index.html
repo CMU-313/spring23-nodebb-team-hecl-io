@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/unread.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/unread.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.42</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">388</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">78.85</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.65</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const categories = require(&#039;../categories&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const meta = require(&#039;../meta&#039;);
+const utils = require(&#039;../utils&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+module.exports = function (Topics) {
+    Topics.getTotalUnread = async function (uid, filter) {
+        filter = filter || &#039;&#039;;
+        const counts = await Topics.getUnreadTids({ cid: 0, uid: uid, count: true });
+        return counts &amp;&amp; counts[filter];
+    };
+
+    Topics.getUnreadTopics = async function (params) {
+        const unreadTopics = {
+            showSelect: true,
+            nextStart: 0,
+            topics: [],
+        };
+        let tids = await Topics.getUnreadTids(params);
+        unreadTopics.topicCount = tids.length;
+
+        if (!tids.length) {
+            return unreadTopics;
+        }
+
+        tids = tids.slice(params.start, params.stop !== -1 ? params.stop + 1 : undefined);
+
+        const topicData = await Topics.getTopicsByTids(tids, params.uid);
+        if (!topicData.length) {
+            return unreadTopics;
+        }
+        Topics.calculateTopicIndices(topicData, params.start);
+        unreadTopics.topics = topicData;
+        unreadTopics.nextStart = params.stop + 1;
+        return unreadTopics;
+    };
+
+    Topics.unreadCutoff = async function (uid) {
+        const cutoff = Date.now() - (meta.config.unreadCutoff * 86400000);
+        const data = await plugins.hooks.fire(&#039;filter:topics.unreadCutoff&#039;, { uid: uid, cutoff: cutoff });
+        return parseInt(data.cutoff, 10);
+    };
+
+    Topics.getUnreadTids = async function (params) {
+        const results = await Topics.getUnreadData(params);
+        return params.count ? results.counts : results.tids;
+    };
+
+    Topics.getUnreadData = async function (params) {
+        const uid = parseInt(params.uid, 10);
+
+        params.filter = params.filter || &#039;&#039;;
+
+        if (params.cid &amp;&amp; !Array.isArray(params.cid)) {
+            params.cid = [params.cid];
+        }
+
+        const data = await getTids(params);
+        if (uid &lt;= 0 || !data.tids || !data.tids.length) {
+            return data;
+        }
+
+        const result = await plugins.hooks.fire(&#039;filter:topics.getUnreadTids&#039;, {
+            uid: uid,
+            tids: data.tids,
+            counts: data.counts,
+            tidsByFilter: data.tidsByFilter,
+            cid: params.cid,
+            filter: params.filter,
+            query: params.query || {},
+        });
+        return result;
+    };
+
+    async function getTids(params) {
+        const counts = { &#039;&#039;: 0, new: 0, watched: 0, unreplied: 0 };
+        const tidsByFilter = { &#039;&#039;: [], new: [], watched: [], unreplied: [] };
+
+        if (params.uid &lt;= 0) {
+            return { counts: counts, tids: [], tidsByFilter: tidsByFilter };
+        }
+
+        params.cutoff = await Topics.unreadCutoff(params.uid);
+
+        const [followedTids, ignoredTids, categoryTids, userScores, tids_unread] = await Promise.all([
+            getFollowedTids(params),
+            user.getIgnoredTids(params.uid, 0, -1),
+            getCategoryTids(params),
+            db.getSortedSetRevRangeByScoreWithScores(`uid:${params.uid}:tids_read`, 0, -1, &#039;+inf&#039;, params.cutoff),
+            db.getSortedSetRevRangeWithScores(`uid:${params.uid}:tids_unread`, 0, -1),
+        ]);
+
+        const userReadTimes = _.mapValues(_.keyBy(userScores, &#039;value&#039;), &#039;score&#039;);
+        const isTopicsFollowed = {};
+        followedTids.forEach((t) =&gt; {
+            isTopicsFollowed[t.value] = true;
+        });
+        const unreadFollowed = await db.isSortedSetMembers(
+            `uid:${params.uid}:followed_tids`, tids_unread.map(t =&gt; t.value)
+        );
+
+        tids_unread.forEach((t, i) =&gt; {
+            isTopicsFollowed[t.value] = unreadFollowed[i];
+        });
+
+        const unreadTopics = _.unionWith(categoryTids, followedTids, (a, b) =&gt; a.value === b.value)
+            .filter(t =&gt; !ignoredTids.includes(t.value) &amp;&amp;
+                    (!userReadTimes[t.value] || t.score &gt; userReadTimes[t.value]))
+            .concat(tids_unread.filter(t =&gt; !ignoredTids.includes(t.value)))
+            .sort((a, b) =&gt; b.score - a.score);
+
+        let tids = _.uniq(unreadTopics.map(topic =&gt; topic.value)).slice(0, 200);
+
+        if (!tids.length) {
+            return { counts: counts, tids: tids, tidsByFilter: tidsByFilter };
+        }
+
+        const blockedUids = await user.blocks.list(params.uid);
+
+        tids = await filterTidsThatHaveBlockedPosts({
+            uid: params.uid,
+            tids: tids,
+            blockedUids: blockedUids,
+            recentTids: categoryTids,
+        });
+
+        tids = await privileges.topics.filterTids(&#039;topics:read&#039;, tids, params.uid);
+        const topicData = (await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;cid&#039;, &#039;uid&#039;, &#039;postcount&#039;, &#039;deleted&#039;, &#039;scheduled&#039;]))
+            .filter(t =&gt; t.scheduled || !t.deleted);
+        const topicCids = _.uniq(topicData.map(topic =&gt; topic.cid)).filter(Boolean);
+
+        const categoryWatchState = await categories.getWatchState(topicCids, params.uid);
+        const userCidState = _.zipObject(topicCids, categoryWatchState);
+
+        const filterCids = params.cid &amp;&amp; params.cid.map(cid =&gt; parseInt(cid, 10));
+
+        topicData.forEach((topic) =&gt; {
+            if (topic &amp;&amp; topic.cid &amp;&amp; (!filterCids || filterCids.includes(topic.cid)) &amp;&amp;
+                !blockedUids.includes(topic.uid)) {
+                if (isTopicsFollowed[topic.tid] || userCidState[topic.cid] === categories.watchStates.watching) {
+                    tidsByFilter[&#039;&#039;].push(topic.tid);
+                }
+
+                if (isTopicsFollowed[topic.tid]) {
+                    tidsByFilter.watched.push(topic.tid);
+                }
+
+                if (topic.postcount &lt;= 1) {
+                    tidsByFilter.unreplied.push(topic.tid);
+                }
+
+                if (!userReadTimes[topic.tid]) {
+                    tidsByFilter.new.push(topic.tid);
+                }
+            }
+        });
+
+        counts[&#039;&#039;] = tidsByFilter[&#039;&#039;].length;
+        counts.watched = tidsByFilter.watched.length;
+        counts.unreplied = tidsByFilter.unreplied.length;
+        counts.new = tidsByFilter.new.length;
+
+        return {
+            counts: counts,
+            tids: tidsByFilter[params.filter],
+            tidsByFilter: tidsByFilter,
+        };
+    }
+
+    async function getCategoryTids(params) {
+        if (plugins.hooks.hasListeners(&#039;filter:topics.unread.getCategoryTids&#039;)) {
+            const result = await plugins.hooks.fire(&#039;filter:topics.unread.getCategoryTids&#039;, { params: params, tids: [] });
+            return result.tids;
+        }
+        if (params.filter === &#039;watched&#039;) {
+            return [];
+        }
+        const cids = params.cid || await user.getWatchedCategories(params.uid);
+        const keys = cids.map(cid =&gt; `cid:${cid}:tids:lastposttime`);
+        return await db.getSortedSetRevRangeByScoreWithScores(keys, 0, -1, &#039;+inf&#039;, params.cutoff);
+    }
+
+    async function getFollowedTids(params) {
+        let tids = await db.getSortedSetMembers(`uid:${params.uid}:followed_tids`);
+        const filterCids = params.cid &amp;&amp; params.cid.map(cid =&gt; parseInt(cid, 10));
+        if (filterCids) {
+            const topicData = await Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;cid&#039;]);
+            tids = topicData.filter(t =&gt; filterCids.includes(t.cid)).map(t =&gt; t.tid);
+        }
+        const scores = await db.sortedSetScores(&#039;topics:recent&#039;, tids);
+        const data = tids.map((tid, index) =&gt; ({ value: String(tid), score: scores[index] }));
+        return data.filter(item =&gt; item.score &gt; params.cutoff);
+    }
+
+    async function filterTidsThatHaveBlockedPosts(params) {
+        if (!params.blockedUids.length) {
+            return params.tids;
+        }
+        const topicScores = _.mapValues(_.keyBy(params.recentTids, &#039;value&#039;), &#039;score&#039;);
+
+        const results = await db.sortedSetScores(`uid:${params.uid}:tids_read`, params.tids);
+
+        const userScores = _.zipObject(params.tids, results);
+
+        return await async.filter(params.tids, async tid =&gt; await doesTidHaveUnblockedUnreadPosts(tid, {
+            blockedUids: params.blockedUids,
+            topicTimestamp: topicScores[tid],
+            userLastReadTimestamp: userScores[tid],
+        }));
+    }
+
+    async function doesTidHaveUnblockedUnreadPosts(tid, params) {
+        const { userLastReadTimestamp } = params;
+        if (!userLastReadTimestamp) {
+            return true;
+        }
+        let start = 0;
+        const count = 3;
+        let done = false;
+        let hasUnblockedUnread = params.topicTimestamp &gt; userLastReadTimestamp;
+        if (!params.blockedUids.length) {
+            return hasUnblockedUnread;
+        }
+        while (!done) {
+            /* eslint-disable no-await-in-loop */
+            const pidsSinceLastVisit = await db.getSortedSetRangeByScore(`tid:${tid}:posts`, start, count, userLastReadTimestamp, &#039;+inf&#039;);
+            if (!pidsSinceLastVisit.length) {
+                return hasUnblockedUnread;
+            }
+            let postData = await posts.getPostsFields(pidsSinceLastVisit, [&#039;pid&#039;, &#039;uid&#039;]);
+            postData = postData.filter(post =&gt; !params.blockedUids.includes(parseInt(post.uid, 10)));
+
+            done = postData.length &gt; 0;
+            hasUnblockedUnread = postData.length &gt; 0;
+            start += count;
+        }
+        return hasUnblockedUnread;
+    }
+
+    Topics.pushUnreadCount = async function (uid) {
+        if (!uid || parseInt(uid, 10) &lt;= 0) {
+            return;
+        }
+        const results = await Topics.getUnreadTids({ uid: uid, count: true });
+        require(&#039;../socket.io&#039;).in(`uid_${uid}`).emit(&#039;event:unread.updateCount&#039;, {
+            unreadTopicCount: results[&#039;&#039;],
+            unreadNewTopicCount: results.new,
+            unreadWatchedTopicCount: results.watched,
+            unreadUnrepliedTopicCount: results.unreplied,
+        });
+    };
+
+    Topics.markAsUnreadForAll = async function (tid) {
+        await Topics.markCategoryUnreadForAll(tid);
+    };
+
+    Topics.markAsRead = async function (tids, uid) {
+        if (!Array.isArray(tids) || !tids.length) {
+            return false;
+        }
+
+        tids = _.uniq(tids).filter(tid =&gt; tid &amp;&amp; utils.isNumber(tid));
+
+        if (!tids.length) {
+            return false;
+        }
+        const [topicScores, userScores] = await Promise.all([
+            Topics.getTopicsFields(tids, [&#039;tid&#039;, &#039;lastposttime&#039;, &#039;scheduled&#039;]),
+            db.sortedSetScores(`uid:${uid}:tids_read`, tids),
+        ]);
+
+        const topics = topicScores.filter((t, i) =&gt; t.lastposttime &amp;&amp;
+            (!userScores[i] || userScores[i] &lt; t.lastposttime));
+        tids = topics.map(t =&gt; t.tid);
+
+        if (!tids.length) {
+            return false;
+        }
+
+        const now = Date.now();
+        const scores = topics.map(topic =&gt; (topic.scheduled ? topic.lastposttime : now));
+        const [topicData] = await Promise.all([
+            Topics.getTopicsFields(tids, [&#039;cid&#039;]),
+            db.sortedSetAdd(`uid:${uid}:tids_read`, scores, tids),
+            db.sortedSetRemove(`uid:${uid}:tids_unread`, tids),
+        ]);
+
+        const cids = _.uniq(topicData.map(t =&gt; t &amp;&amp; t.cid).filter(Boolean));
+        await categories.markAsRead(cids, uid);
+
+        plugins.hooks.fire(&#039;action:topics.markAsRead&#039;, { uid: uid, tids: tids });
+        return true;
+    };
+
+    Topics.markAllRead = async function (uid) {
+        const cutoff = await Topics.unreadCutoff(uid);
+        const tids = await db.getSortedSetRevRangeByScore(&#039;topics:recent&#039;, 0, -1, &#039;+inf&#039;, cutoff);
+        Topics.markTopicNotificationsRead(tids, uid);
+        await Topics.markAsRead(tids, uid);
+        await db.delete(`uid:${uid}:tids_unread`);
+    };
+
+    Topics.markTopicNotificationsRead = async function (tids, uid) {
+        if (!Array.isArray(tids) || !tids.length) {
+            return;
+        }
+        const nids = await user.notifications.getUnreadByField(uid, &#039;tid&#039;, tids);
+        await notifications.markReadMultiple(nids, uid);
+        user.notifications.pushCount(uid);
+    };
+
+    Topics.markCategoryUnreadForAll = async function (tid) {
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+        await categories.markAsUnreadForAll(cid);
+    };
+
+    Topics.hasReadTopics = async function (tids, uid) {
+        if (!(parseInt(uid, 10) &gt; 0)) {
+            return tids.map(() =&gt; false);
+        }
+        const [topicScores, userScores, tids_unread, blockedUids] = await Promise.all([
+            db.sortedSetScores(&#039;topics:recent&#039;, tids),
+            db.sortedSetScores(`uid:${uid}:tids_read`, tids),
+            db.sortedSetScores(`uid:${uid}:tids_unread`, tids),
+            user.blocks.list(uid),
+        ]);
+
+        const cutoff = await Topics.unreadCutoff(uid);
+        const result = tids.map((tid, index) =&gt; {
+            const read = !tids_unread[index] &amp;&amp;
+                (topicScores[index] &lt; cutoff ||
+                !!(userScores[index] &amp;&amp; userScores[index] &gt;= topicScores[index]));
+            return { tid: tid, read: read, index: index };
+        });
+
+        return await async.map(result, async (data) =&gt; {
+            if (data.read) {
+                return true;
+            }
+            const hasUnblockedUnread = await doesTidHaveUnblockedUnreadPosts(data.tid, {
+                topicTimestamp: topicScores[data.index],
+                userLastReadTimestamp: userScores[data.index],
+                blockedUids: blockedUids,
+            });
+            if (!hasUnblockedUnread) {
+                data.read = true;
+            }
+            return data.read;
+        });
+    };
+
+    Topics.hasReadTopic = async function (tid, uid) {
+        const hasRead = await Topics.hasReadTopics([tid], uid);
+        return Array.isArray(hasRead) &amp;&amp; hasRead.length ? hasRead[0] : false;
+    };
+
+    Topics.markUnread = async function (tid, uid) {
+        const exists = await Topics.exists(tid);
+        if (!exists) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        await db.sortedSetRemove(`uid:${uid}:tids_read`, tid);
+        await db.sortedSetAdd(`uid:${uid}:tids_unread`, Date.now(), tid);
+    };
+
+    Topics.filterNewTids = async function (tids, uid) {
+        if (parseInt(uid, 10) &lt;= 0) {
+            return [];
+        }
+        const scores = await db.sortedSetScores(`uid:${uid}:tids_read`, tids);
+        return tids.filter((tid, index) =&gt; tid &amp;&amp; !scores[index]);
+    };
+
+    Topics.filterUnrepliedTids = async function (tids) {
+        const scores = await db.sortedSetScores(&#039;topics:posts&#039;, tids);
+        return tids.filter((tid, index) =&gt; tid &amp;&amp; scores[index] !== null &amp;&amp; scores[index] &lt;= 1);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

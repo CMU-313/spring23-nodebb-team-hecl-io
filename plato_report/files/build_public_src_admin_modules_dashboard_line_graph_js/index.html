@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/modules/dashboard-line-graph.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/modules/dashboard-line-graph.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.62</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">196</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.25</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/modules/dashboard-line-graph&#039;, [&#039;Chart&#039;, &#039;translator&#039;, &#039;benchpress&#039;, &#039;api&#039;, &#039;hooks&#039;, &#039;bootbox&#039;], function (Chart, translator, Benchpress, api, hooks, bootbox) {
+    const Graph = {
+        _current: null,
+    };
+    let isMobile = false;
+
+    Graph.init = ({ set, dataset }) =&gt; {
+        const canvas = document.getElementById(&#039;analytics-traffic&#039;);
+        const canvasCtx = canvas.getContext(&#039;2d&#039;);
+        const trafficLabels = utils.getHoursArray();
+
+        isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            Chart.defaults.global.tooltips.enabled = false;
+        }
+
+        Graph.handleUpdateControls({ set });
+
+        const t = translator.Translator.create();
+        return new Promise((resolve) =&gt; {
+            t.translateKey(`admin/menu:${ajaxify.data.template.name.replace(&#039;admin/&#039;, &#039;&#039;)}`, []).then((key) =&gt; {
+                const data = {
+                    labels: trafficLabels,
+                    datasets: [
+                        {
+                            label: key,
+                            backgroundColor: &#039;rgba(151,187,205,0.2)&#039;,
+                            borderColor: &#039;rgba(151,187,205,1)&#039;,
+                            pointBackgroundColor: &#039;rgba(151,187,205,1)&#039;,
+                            pointHoverBackgroundColor: &#039;rgba(151,187,205,1)&#039;,
+                            pointBorderColor: &#039;#fff&#039;,
+                            pointHoverBorderColor: &#039;rgba(151,187,205,1)&#039;,
+                            data: dataset || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        },
+                    ],
+                };
+
+                canvas.width = $(canvas).parent().width();
+
+                data.datasets[0].yAxisID = &#039;left-y-axis&#039;;
+
+                Graph._current = new Chart(canvasCtx, {
+                    type: &#039;line&#039;,
+                    data: data,
+                    options: {
+                        responsive: true,
+                        legend: {
+                            display: true,
+                        },
+                        scales: {
+                            yAxes: [{
+                                id: &#039;left-y-axis&#039;,
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0,
+                                },
+                                type: &#039;linear&#039;,
+                                position: &#039;left&#039;,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: key,
+                                },
+                            }],
+                        },
+                        tooltips: {
+                            mode: &#039;x&#039;,
+                        },
+                    },
+                });
+
+                if (!dataset) {
+                    Graph.update(set).then(resolve);
+                } else {
+                    resolve(Graph._current);
+                }
+            });
+        });
+    };
+
+    Graph.handleUpdateControls = ({ set }) =&gt; {
+        $(&#039;[data-action=&quot;updateGraph&quot;]:not([data-units=&quot;custom&quot;])&#039;).on(&#039;click&#039;, function () {
+            let until = new Date();
+            const amount = $(this).attr(&#039;data-amount&#039;);
+            if ($(this).attr(&#039;data-units&#039;) === &#039;days&#039;) {
+                until.setHours(0, 0, 0, 0);
+            }
+            until = until.getTime();
+            Graph.update(set, $(this).attr(&#039;data-units&#039;), until, amount);
+
+            require([&#039;translator&#039;], function (translator) {
+                translator.translate(&#039;[[admin/dashboard:page-views-custom]]&#039;, function (translated) {
+                    $(&#039;[data-action=&quot;updateGraph&quot;][data-units=&quot;custom&quot;]&#039;).text(translated);
+                });
+            });
+        });
+
+        $(&#039;[data-action=&quot;updateGraph&quot;][data-units=&quot;custom&quot;]&#039;).on(&#039;click&#039;, function () {
+            const targetEl = $(this);
+
+            Benchpress.render(&#039;admin/partials/pageviews-range-select&#039;, {}).then(function (html) {
+                const modal = bootbox.dialog({
+                    title: &#039;[[admin/dashboard:page-views-custom]]&#039;,
+                    message: html,
+                    buttons: {
+                        submit: {
+                            label: &#039;[[global:search]]&#039;,
+                            className: &#039;btn-primary&#039;,
+                            callback: submit,
+                        },
+                    },
+                }).on(&#039;shown.bs.modal&#039;, function () {
+                    const date = new Date();
+                    const today = date.toISOString().slice(0, 10);
+                    date.setDate(date.getDate() - 1);
+                    const yesterday = date.toISOString().slice(0, 10);
+
+                    modal.find(&#039;#startRange&#039;).val(targetEl.attr(&#039;data-startRange&#039;) || yesterday);
+                    modal.find(&#039;#endRange&#039;).val(targetEl.attr(&#039;data-endRange&#039;) || today);
+                });
+
+                function submit() {
+                    // NEED TO ADD VALIDATION HERE FOR YYYY-MM-DD
+                    const formData = modal.find(&#039;form&#039;).serializeObject();
+                    const validRegexp = /\d{4}-\d{2}-\d{2}/;
+
+                    // Input validation
+                    if (!formData.startRange &amp;&amp; !formData.endRange) {
+                        // No range? Assume last 30 days
+                        Graph.update(set, &#039;days&#039;);
+                        return;
+                    } else if (!validRegexp.test(formData.startRange) || !validRegexp.test(formData.endRange)) {
+                        // Invalid Input
+                        modal.find(&#039;.alert-danger&#039;).removeClass(&#039;hidden&#039;);
+                        return false;
+                    }
+
+                    let until = new Date(formData.endRange);
+                    until.setDate(until.getDate() + 1);
+                    until = until.getTime();
+                    const amount = (until - new Date(formData.startRange).getTime()) / (1000 * 60 * 60 * 24);
+
+                    Graph.update(set, &#039;days&#039;, until, amount);
+
+                    // Update &quot;custom range&quot; label
+                    targetEl.attr(&#039;data-startRange&#039;, formData.startRange);
+                    targetEl.attr(&#039;data-endRange&#039;, formData.endRange);
+                    targetEl.html(formData.startRange + &#039; &amp;ndash; &#039; + formData.endRange);
+                }
+            });
+        });
+    };
+
+    Graph.update = (
+        set,
+        units = ajaxify.data.query.units || &#039;hours&#039;,
+        until = ajaxify.data.query.until,
+        amount = ajaxify.data.query.count
+    ) =&gt; {
+        if (!Graph._current) {
+            return Promise.reject(new Error(&#039;[[error:invalid-data]]&#039;));
+        }
+
+        return new Promise((resolve) =&gt; {
+            api.get(`/admin/analytics/${set}`, { units, until, amount }).then((dataset) =&gt; {
+                if (units === &#039;days&#039;) {
+                    Graph._current.data.xLabels = utils.getDaysArray(until, amount);
+                } else {
+                    Graph._current.data.xLabels = utils.getHoursArray();
+                }
+
+                Graph._current.data.datasets[0].data = dataset;
+                Graph._current.data.labels = Graph._current.data.xLabels;
+                Graph._current.update();
+
+                // Update address bar and &quot;View as JSON&quot; button url
+                const apiEl = $(&#039;#view-as-json&#039;);
+                const newHref = $.param({
+                    units: units || &#039;hours&#039;,
+                    until: until,
+                    count: amount,
+                });
+                apiEl.attr(&#039;href&#039;, `${config.relative_path}/api/v3/admin/analytics/${ajaxify.data.set}?${newHref}`);
+                const url = ajaxify.removeRelativePath(ajaxify.data.url.slice(1));
+                ajaxify.updateHistory(`${url}?${newHref}`, true);
+                hooks.fire(&#039;action:admin.dashboard.updateGraph&#039;, {
+                    graph: Graph._current,
+                });
+                resolve(Graph._current);
+            });
+        });
+    };
+
+    return Graph;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

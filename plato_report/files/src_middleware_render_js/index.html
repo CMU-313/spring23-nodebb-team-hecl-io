@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/middleware/render.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/middleware/render.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.76</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">137</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">32.97</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.56</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+
+const plugins = require(&#039;../plugins&#039;);
+const meta = require(&#039;../meta&#039;);
+const translator = require(&#039;../translator&#039;);
+const widgets = require(&#039;../widgets&#039;);
+const utils = require(&#039;../utils&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const relative_path = nconf.get(&#039;relative_path&#039;);
+
+module.exports = function (middleware) {
+    middleware.processRender = function processRender(req, res, next) {
+        // res.render post-processing, modified from here: https://gist.github.com/mrlannigan/5051687
+        const { render } = res;
+
+        res.render = async function renderOverride(template, options, fn) {
+            const self = this;
+            const { req } = this;
+            async function renderMethod(template, options, fn) {
+                options = options || {};
+                if (typeof options === &#039;function&#039;) {
+                    fn = options;
+                    options = {};
+                }
+
+                options.loggedIn = req.uid &gt; 0;
+                options.relative_path = relative_path;
+                options.template = { name: template, [template]: true };
+                options.url = (req.baseUrl + req.path.replace(/^\/api/, &#039;&#039;));
+                options.bodyClass = helpers.buildBodyClass(req, res, options);
+
+                if (req.loggedIn) {
+                    res.set(&#039;cache-control&#039;, &#039;private&#039;);
+                }
+
+                const buildResult = await plugins.hooks.fire(`filter:${template}.build`, { req: req, res: res, templateData: options });
+                if (res.headersSent) {
+                    return;
+                }
+                const templateToRender = buildResult.templateData.templateToRender || template;
+
+                const renderResult = await plugins.hooks.fire(&#039;filter:middleware.render&#039;, { req: req, res: res, templateData: buildResult.templateData });
+                if (res.headersSent) {
+                    return;
+                }
+                options = renderResult.templateData;
+                options._header = {
+                    tags: await meta.tags.parse(req, renderResult, res.locals.metaTags, res.locals.linkTags),
+                };
+                options.widgets = await widgets.render(req.uid, {
+                    template: `${template}.tpl`,
+                    url: options.url,
+                    templateData: options,
+                    req: req,
+                    res: res,
+                });
+                res.locals.template = template;
+                options._locals = undefined;
+
+                if (res.locals.isAPI) {
+                    if (req.route &amp;&amp; req.route.path === &#039;/api/&#039;) {
+                        options.title = &#039;[[pages:home]]&#039;;
+                    }
+                    req.app.set(&#039;json spaces&#039;, global.env === &#039;development&#039; || req.query.pretty ? 4 : 0);
+                    return res.json(options);
+                }
+                const optionsString = JSON.stringify(options).replace(/&lt;\//g, &#039;&lt;\\/&#039;);
+                const results = await utils.promiseParallel({
+                    header: renderHeaderFooter(&#039;renderHeader&#039;, req, res, options),
+                    content: renderContent(render, templateToRender, req, res, options),
+                    footer: renderHeaderFooter(&#039;renderFooter&#039;, req, res, options),
+                });
+
+                const str = `${results.header +
+                    (res.locals.postHeader || &#039;&#039;) +
+                    results.content
+                }&lt;script id=&quot;ajaxify-data&quot; type=&quot;application/json&quot;&gt;${
+                    optionsString
+                }&lt;/script&gt;${
+                    res.locals.preFooter || &#039;&#039;
+                }${results.footer}`;
+
+                if (typeof fn !== &#039;function&#039;) {
+                    self.send(str);
+                } else {
+                    fn(null, str);
+                }
+            }
+
+            try {
+                await renderMethod(template, options, fn);
+            } catch (err) {
+                next(err);
+            }
+        };
+
+        next();
+    };
+
+    async function renderContent(render, tpl, req, res, options) {
+        return new Promise((resolve, reject) =&gt; {
+            render.call(res, tpl, options, async (err, str) =&gt; {
+                if (err) reject(err);
+                else resolve(await translate(str, getLang(req, res)));
+            });
+        });
+    }
+
+    async function renderHeaderFooter(method, req, res, options) {
+        let str = &#039;&#039;;
+        if (res.locals.renderHeader) {
+            str = await middleware[method](req, res, options);
+        } else if (res.locals.renderAdminHeader) {
+            str = await middleware.admin[method](req, res, options);
+        } else {
+            str = &#039;&#039;;
+        }
+        return await translate(str, getLang(req, res));
+    }
+
+    function getLang(req, res) {
+        let language = (res.locals.config &amp;&amp; res.locals.config.userLang) || &#039;en-GB&#039;;
+        if (res.locals.renderAdminHeader) {
+            language = (res.locals.config &amp;&amp; res.locals.config.acpLang) || &#039;en-GB&#039;;
+        }
+        return req.query.lang ? validator.escape(String(req.query.lang)) : language;
+    }
+
+    async function translate(str, language) {
+        const translated = await translator.translate(str, language);
+        return translator.unescape(translated);
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

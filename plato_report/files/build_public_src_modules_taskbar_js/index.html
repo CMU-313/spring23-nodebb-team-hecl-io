@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/taskbar.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/taskbar.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">213</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.75</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.31</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;taskbar&#039;, [&#039;benchpress&#039;, &#039;translator&#039;, &#039;hooks&#039;], function (Benchpress, translator, hooks) {
+    const taskbar = {};
+
+    taskbar.init = function () {
+        const self = this;
+
+        Benchpress.render(&#039;modules/taskbar&#039;, {}).then(function (html) {
+            self.taskbar = $(html);
+            self.tasklist = self.taskbar.find(&#039;ul&#039;);
+            $(document.body).append(self.taskbar);
+
+            self.taskbar.on(&#039;click&#039;, &#039;li&#039;, async function () {
+                const $btn = $(this);
+                const moduleName = $btn.attr(&#039;data-module&#039;);
+                const uuid = $btn.attr(&#039;data-uuid&#039;);
+
+                const module = await app.require(moduleName);
+                if (!$btn.hasClass(&#039;active&#039;)) {
+                    minimizeAll();
+                    module.load(uuid);
+                    taskbar.toggleNew(uuid, false);
+
+                    taskbar.tasklist.removeClass(&#039;active&#039;);
+                    $btn.addClass(&#039;active&#039;);
+                } else {
+                    module.minimize(uuid);
+                }
+                return false;
+            });
+        });
+
+        $(window).on(&#039;action:app.loggedOut&#039;, function () {
+            taskbar.closeAll();
+        });
+    };
+
+    taskbar.close = async function (moduleName, uuid) {
+        // Sends signal to the appropriate module&#039;s .close() fn (if present)
+        const btnEl = taskbar.tasklist.find(&#039;[data-module=&quot;&#039; + module + &#039;&quot;][data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        let fnName = &#039;close&#039;;
+
+        // TODO: Refactor chat module to not take uuid in close instead of by jQuery element
+        if (moduleName === &#039;chat&#039;) {
+            fnName = &#039;closeByUUID&#039;;
+        }
+
+        if (btnEl.length) {
+            const module = await app.require(moduleName);
+            if (module &amp;&amp; typeof module[fnName] === &#039;function&#039;) {
+                module[fnName](uuid);
+            }
+        }
+    };
+
+    taskbar.closeAll = function (module) {
+        // module is optional
+        let selector = &#039;[data-uuid]&#039;;
+
+        if (module) {
+            selector = &#039;[data-module=&quot;&#039; + module + &#039;&quot;]&#039; + selector;
+        }
+
+        taskbar.tasklist.find(selector).each(function (idx, el) {
+            taskbar.close(module || el.getAttribute(&#039;data-module&#039;), el.getAttribute(&#039;data-uuid&#039;));
+        });
+    };
+
+    taskbar.discard = function (module, uuid) {
+        const btnEl = taskbar.tasklist.find(&#039;[data-module=&quot;&#039; + module + &#039;&quot;][data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        btnEl.remove();
+
+        update();
+    };
+
+    taskbar.push = function (module, uuid, options, callback) {
+        callback = callback || function () {};
+        const element = taskbar.tasklist.find(&#039;li[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+
+        const data = {
+            module: module,
+            uuid: uuid,
+            options: options,
+            element: element,
+        };
+
+        hooks.fire(&#039;filter:taskbar.push&#039;, data);
+
+        if (!element.length &amp;&amp; data.module) {
+            createTaskbarItem(data, callback);
+        } else {
+            callback(element);
+        }
+    };
+
+    taskbar.get = function (module) {
+        const items = $(&#039;[data-module=&quot;&#039; + module + &#039;&quot;]&#039;).map(function (idx, el) {
+            return $(el).data();
+        });
+
+        return items;
+    };
+
+    taskbar.minimize = function (module, uuid) {
+        const btnEl = taskbar.tasklist.find(&#039;[data-module=&quot;&#039; + module + &#039;&quot;][data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        btnEl.toggleClass(&#039;active&#039;, false);
+    };
+
+    taskbar.toggleNew = function (uuid, state, silent) {
+        const btnEl = taskbar.tasklist.find(&#039;[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        btnEl.toggleClass(&#039;new&#039;, state);
+
+        if (!silent) {
+            hooks.fire(&#039;action:taskbar.toggleNew&#039;, uuid);
+        }
+    };
+
+    taskbar.updateActive = function (uuid) {
+        const tasks = taskbar.tasklist.find(&#039;li&#039;);
+        tasks.removeClass(&#039;active&#039;);
+        tasks.filter(&#039;[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;).addClass(&#039;active&#039;);
+
+        $(&#039;[data-uuid]:not([data-module])&#039;).toggleClass(&#039;modal-unfocused&#039;, true);
+        $(&#039;[data-uuid=&quot;&#039; + uuid + &#039;&quot;]:not([data-module])&#039;).toggleClass(&#039;modal-unfocused&#039;, false);
+    };
+
+    taskbar.isActive = function (uuid) {
+        const taskBtn = taskbar.tasklist.find(&#039;li[data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        return taskBtn.hasClass(&#039;active&#039;);
+    };
+
+    function update() {
+        const tasks = taskbar.tasklist.find(&#039;li&#039;);
+
+        if (tasks.length &gt; 0) {
+            taskbar.taskbar.attr(&#039;data-active&#039;, &#039;1&#039;);
+        } else {
+            taskbar.taskbar.removeAttr(&#039;data-active&#039;);
+        }
+    }
+
+    function minimizeAll() {
+        taskbar.tasklist.find(&#039;.active&#039;).removeClass(&#039;active&#039;);
+    }
+
+    function createTaskbarItem(data, callback) {
+        translator.translate(data.options.title, function (taskTitle) {
+            const title = $(&#039;&lt;div&gt;&lt;/div&gt;&#039;).text(taskTitle || &#039;NodeBB Task&#039;).html();
+
+            const taskbarEl = $(&#039;&lt;li&gt;&lt;/li&gt;&#039;)
+                .addClass(data.options.className)
+                .html(&#039;&lt;a href=&quot;#&quot;&#039; + (data.options.image ? &#039; style=&quot;background-image: url(\&#039;&#039; + data.options.image.replace(/&amp;#x2F;/g, &#039;/&#039;) + &#039;\&#039;); background-size: cover;&quot;&#039; : &#039;&#039;) + &#039;&gt;&#039; +
+                    (data.options.icon ? &#039;&lt;i class=&quot;fa &#039; + data.options.icon + &#039;&quot;&gt;&lt;/i&gt; &#039; : &#039;&#039;) +
+                    &#039;&lt;span aria-label=&quot;&#039; + title + &#039;&quot; component=&quot;taskbar/title&quot;&gt;&#039; + title + &#039;&lt;/span&gt;&#039; +
+                    &#039;&lt;/a&gt;&#039;)
+                .attr({
+                    title: title,
+                    &#039;data-module&#039;: data.module,
+                    &#039;data-uuid&#039;: data.uuid,
+                })
+                .addClass(data.options.state !== undefined ? data.options.state : &#039;active&#039;);
+
+            if (!data.options.state || data.options.state === &#039;active&#039;) {
+                minimizeAll();
+            }
+
+            taskbar.tasklist.append(taskbarEl);
+            update();
+
+            data.element = taskbarEl;
+
+            taskbarEl.data(data);
+            hooks.fire(&#039;action:taskbar.pushed&#039;, data);
+            callback(taskbarEl);
+        });
+    }
+
+    const processUpdate = function (element, key, value) {
+        switch (key) {
+        case &#039;title&#039;:
+            element.find(&#039;[component=&quot;taskbar/title&quot;]&#039;).text(value);
+            break;
+        case &#039;icon&#039;:
+            element.find(&#039;i&#039;).attr(&#039;class&#039;, &#039;fa fa-&#039; + value);
+            break;
+        case &#039;image&#039;:
+            element.find(&#039;a&#039;).css(&#039;background-image&#039;, value ? &#039;url(&quot;&#039; + value.replace(/&amp;#x2F;/g, &#039;/&#039;) + &#039;&quot;)&#039; : &#039;&#039;);
+            break;
+        case &#039;background-color&#039;:
+            element.find(&#039;a&#039;).css(&#039;background-color&#039;, value);
+            break;
+        }
+    };
+
+    taskbar.update = function (module, uuid, options) {
+        const element = taskbar.tasklist.find(&#039;[data-module=&quot;&#039; + module + &#039;&quot;][data-uuid=&quot;&#039; + uuid + &#039;&quot;]&#039;);
+        if (!element.length) {
+            return;
+        }
+        const data = element.data();
+
+        Object.keys(options).forEach(function (key) {
+            data[key] = options[key];
+            processUpdate(element, key, options[key]);
+        });
+
+        element.data(data);
+    };
+
+    return taskbar;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

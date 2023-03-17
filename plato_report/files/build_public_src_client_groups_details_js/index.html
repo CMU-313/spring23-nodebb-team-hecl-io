@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/groups/details.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/groups/details.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.74</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">303</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">27.18</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.15</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;forum/groups/details&#039;, [
+    &#039;forum/groups/memberlist&#039;,
+    &#039;iconSelect&#039;,
+    &#039;components&#039;,
+    &#039;coverPhoto&#039;,
+    &#039;pictureCropper&#039;,
+    &#039;translator&#039;,
+    &#039;api&#039;,
+    &#039;slugify&#039;,
+    &#039;categorySelector&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (
+    memberList,
+    iconSelect,
+    components,
+    coverPhoto,
+    pictureCropper,
+    translator,
+    api,
+    slugify,
+    categorySelector,
+    bootbox,
+    alerts
+) {
+    const Details = {};
+    let groupName;
+
+    Details.init = function () {
+        const detailsPage = components.get(&#039;groups/container&#039;);
+
+        groupName = ajaxify.data.group.name;
+
+        if (ajaxify.data.group.isOwner) {
+            Details.prepareSettings();
+
+            coverPhoto.init(
+                components.get(&#039;groups/cover&#039;),
+                function (imageData, position, callback) {
+                    socket.emit(&#039;groups.cover.update&#039;, {
+                        groupName: groupName,
+                        imageData: imageData,
+                        position: position,
+                    }, callback);
+                },
+                function () {
+                    pictureCropper.show({
+                        title: &#039;[[groups:upload-group-cover]]&#039;,
+                        socketMethod: &#039;groups.cover.update&#039;,
+                        aspectRatio: NaN,
+                        allowSkippingCrop: true,
+                        restrictImageDimension: false,
+                        paramName: &#039;groupName&#039;,
+                        paramValue: groupName,
+                    }, function (imageUrlOnServer) {
+                        imageUrlOnServer = (!imageUrlOnServer.startsWith(&#039;http&#039;) ? config.relative_path : &#039;&#039;) + imageUrlOnServer + &#039;?&#039; + Date.now();
+                        components.get(&#039;groups/cover&#039;).css(&#039;background-image&#039;, &#039;url(&#039; + imageUrlOnServer + &#039;)&#039;);
+                    });
+                },
+                removeCover
+            );
+        }
+
+        memberList.init();
+
+        handleMemberInvitations();
+
+        components.get(&#039;groups/activity&#039;).find(&#039;.content img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+
+        detailsPage.on(&#039;click&#039;, &#039;[data-action]&#039;, function () {
+            const btnEl = $(this);
+            const userRow = btnEl.parents(&#039;[data-uid]&#039;);
+            const ownerFlagEl = userRow.find(&#039;.member-name &gt; i&#039;);
+            const isOwner = !ownerFlagEl.hasClass(&#039;invisible&#039;);
+            const uid = userRow.attr(&#039;data-uid&#039;);
+            const action = btnEl.attr(&#039;data-action&#039;);
+
+            switch (action) {
+            case &#039;toggleOwnership&#039;:
+                api[isOwner ? &#039;del&#039; : &#039;put&#039;](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() =&gt; {
+                    ownerFlagEl.toggleClass(&#039;invisible&#039;);
+                }).catch(alerts.error);
+                break;
+
+            case &#039;kick&#039;:
+                translator.translate(&#039;[[groups:details.kick_confirm]]&#039;, function (translated) {
+                    bootbox.confirm(translated, function (confirm) {
+                        if (!confirm) {
+                            return;
+                        }
+
+                        api.del(`/groups/${ajaxify.data.group.slug}/membership/${uid}`, undefined).then(() =&gt; userRow.slideUp().remove()).catch(alerts.error);
+                    });
+                });
+                break;
+
+            case &#039;update&#039;:
+                Details.update();
+                break;
+
+            case &#039;delete&#039;:
+                Details.deleteGroup();
+                break;
+
+            case &#039;join&#039;:
+                api.put(&#039;/groups/&#039; + ajaxify.data.group.slug + &#039;/membership/&#039; + (uid || app.user.uid), undefined).then(() =&gt; ajaxify.refresh()).catch(alerts.error);
+                break;
+
+            case &#039;leave&#039;:
+                api.del(&#039;/groups/&#039; + ajaxify.data.group.slug + &#039;/membership/&#039; + (uid || app.user.uid), undefined).then(() =&gt; ajaxify.refresh()).catch(alerts.error);
+                break;
+
+                // TODO (14/10/2020): rewrite these to use api module and merge with above 2 case blocks
+            case &#039;accept&#039;: // intentional fall-throughs!
+            case &#039;reject&#039;:
+            case &#039;issueInvite&#039;:
+            case &#039;rescindInvite&#039;:
+            case &#039;acceptInvite&#039;:
+            case &#039;rejectInvite&#039;:
+            case &#039;acceptAll&#039;:
+            case &#039;rejectAll&#039;:
+                socket.emit(&#039;groups.&#039; + action, {
+                    toUid: uid,
+                    groupName: groupName,
+                }, function (err) {
+                    if (!err) {
+                        ajaxify.refresh();
+                    } else {
+                        alerts.error(err);
+                    }
+                });
+                break;
+            }
+        });
+    };
+
+    Details.prepareSettings = function () {
+        const settingsFormEl = components.get(&#039;groups/settings&#039;);
+        const labelColorValueEl = settingsFormEl.find(&#039;[name=&quot;labelColor&quot;]&#039;);
+        const textColorValueEl = settingsFormEl.find(&#039;[name=&quot;textColor&quot;]&#039;);
+        const iconBtn = settingsFormEl.find(&#039;[data-action=&quot;icon-select&quot;]&#039;);
+        const previewEl = settingsFormEl.find(&#039;.label&#039;);
+        const previewElText = settingsFormEl.find(&#039;.label-text&#039;);
+        const previewIcon = previewEl.find(&#039;i&#039;);
+        const userTitleEl = settingsFormEl.find(&#039;[name=&quot;userTitle&quot;]&#039;);
+        const userTitleEnabledEl = settingsFormEl.find(&#039;[name=&quot;userTitleEnabled&quot;]&#039;);
+        const iconValueEl = settingsFormEl.find(&#039;[name=&quot;icon&quot;]&#039;);
+
+        labelColorValueEl.on(&#039;input&#039;, function () {
+            previewEl.css(&#039;background-color&#039;, labelColorValueEl.val());
+        });
+
+        textColorValueEl.on(&#039;input&#039;, function () {
+            previewEl.css(&#039;color&#039;, textColorValueEl.val());
+        });
+
+        // Add icon selection interface
+        iconBtn.on(&#039;click&#039;, function () {
+            iconSelect.init(previewIcon, function () {
+                iconValueEl.val(previewIcon.val());
+            });
+        });
+
+        // If the user title changes, update that too
+        userTitleEl.on(&#039;keyup&#039;, function () {
+            previewElText.translateText((this.value || settingsFormEl.find(&#039;#name&#039;).val()));
+        });
+
+        // Disable user title customisation options if the the user title itself is disabled
+        userTitleEnabledEl.on(&#039;change&#039;, function () {
+            const customOpts = components.get(&#039;groups/userTitleOption&#039;);
+
+            if (this.checked) {
+                customOpts.removeAttr(&#039;disabled&#039;);
+                previewEl.removeClass(&#039;hide&#039;);
+            } else {
+                customOpts.attr(&#039;disabled&#039;, &#039;disabled&#039;);
+                previewEl.addClass(&#039;hide&#039;);
+            }
+        });
+
+        const cidSelector = categorySelector.init($(&#039;.member-post-cids-selector [component=&quot;category-selector&quot;]&#039;), {
+            onSelect: function (selectedCategory) {
+                let cids = ($(&#039;#memberPostCids&#039;).val() || &#039;&#039;).split(&#039;,&#039;).map(cid =&gt; parseInt(cid, 10));
+                cids.push(selectedCategory.cid);
+                cids = cids.filter((cid, index, array) =&gt; array.indexOf(cid) === index);
+                $(&#039;#memberPostCids&#039;).val(cids.join(&#039;,&#039;));
+                cidSelector.selectCategory(0);
+            },
+        });
+    };
+
+    Details.update = function () {
+        const settingsFormEl = components.get(&#039;groups/settings&#039;);
+        const checkboxes = settingsFormEl.find(&#039;input[type=&quot;checkbox&quot;][name]&#039;);
+
+        if (settingsFormEl.length) {
+            const settings = settingsFormEl.serializeObject();
+
+            // serializeObject doesnt return array for multi selects if only one item is selected
+            if (!Array.isArray(settings.memberPostCids)) {
+                settings.memberPostCids = $(&#039;#memberPostCids&#039;).val();
+            }
+
+            // Fix checkbox values
+            checkboxes.each(function (idx, inputEl) {
+                inputEl = $(inputEl);
+                if (inputEl.length) {
+                    settings[inputEl.attr(&#039;name&#039;)] = inputEl.prop(&#039;checked&#039;);
+                }
+            });
+
+            api.put(`/groups/${ajaxify.data.group.slug}`, settings).then(() =&gt; {
+                if (settings.name) {
+                    let pathname = window.location.pathname;
+                    pathname = pathname.slice(1, pathname.lastIndexOf(&#039;/&#039;) + 1);
+                    ajaxify.go(pathname + slugify(settings.name));
+                } else {
+                    ajaxify.refresh();
+                }
+
+                alerts.success(&#039;[[groups:event.updated]]&#039;);
+            }).catch(alerts.error);
+        }
+    };
+
+    Details.deleteGroup = function () {
+        bootbox.confirm(&#039;Are you sure you want to delete the group: &#039; + utils.escapeHTML(groupName), function (confirm) {
+            if (confirm) {
+                bootbox.prompt(&#039;Please enter the name of this group in order to delete it:&#039;, function (response) {
+                    if (response === groupName) {
+                        api.del(`/groups/${ajaxify.data.group.slug}`, {}).then(() =&gt; {
+                            alerts.success(&#039;[[groups:event.deleted, &#039; + utils.escapeHTML(groupName) + &#039;]]&#039;);
+                            ajaxify.go(&#039;groups&#039;);
+                        }).catch(alerts.error);
+                    }
+                });
+            }
+        });
+    };
+
+    function handleMemberInvitations() {
+        if (!ajaxify.data.group.isOwner) {
+            return;
+        }
+
+        const searchInput = $(&#039;[component=&quot;groups/members/invite&quot;]&#039;);
+        require([&#039;autocomplete&#039;], function (autocomplete) {
+            autocomplete.user(searchInput, function (event, selected) {
+                socket.emit(&#039;groups.issueInvite&#039;, {
+                    toUid: selected.item.user.uid,
+                    groupName: ajaxify.data.group.name,
+                }, function (err) {
+                    if (err) {
+                        return alerts.error(err);
+                    }
+                    ajaxify.refresh();
+                });
+            });
+        });
+
+        $(&#039;[component=&quot;groups/members/bulk-invite-button&quot;]&#039;).on(&#039;click&#039;, function () {
+            const usernames = $(&#039;[component=&quot;groups/members/bulk-invite&quot;]&#039;).val();
+            if (!usernames) {
+                return false;
+            }
+            socket.emit(&#039;groups.issueMassInvite&#039;, {
+                usernames: usernames,
+                groupName: ajaxify.data.group.name,
+            }, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                ajaxify.refresh();
+            });
+            return false;
+        });
+    }
+
+    function removeCover() {
+        translator.translate(&#039;[[groups:remove_group_cover_confirm]]&#039;, function (translated) {
+            bootbox.confirm(translated, function (confirm) {
+                if (!confirm) {
+                    return;
+                }
+
+                socket.emit(&#039;groups.cover.remove&#039;, {
+                    groupName: ajaxify.data.group.name,
+                }, function (err) {
+                    if (!err) {
+                        ajaxify.refresh();
+                    } else {
+                        alerts.error(err);
+                    }
+                });
+            });
+        });
+    }
+
+    return Details;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

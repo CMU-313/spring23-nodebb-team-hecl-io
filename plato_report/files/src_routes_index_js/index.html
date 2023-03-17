@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/routes/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/routes/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.19</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">231</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.94</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.42</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+const path = require(&#039;path&#039;);
+const express = require(&#039;express&#039;);
+const chalk = require(&#039;chalk&#039;);
+
+const meta = require(&#039;../meta&#039;);
+const controllers = require(&#039;../controllers&#039;);
+const controllerHelpers = require(&#039;../controllers/helpers&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+const authRoutes = require(&#039;./authentication&#039;);
+const writeRoutes = require(&#039;./write&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const { setupPageRoute } = helpers;
+
+const _mounts = {
+    user: require(&#039;./user&#039;),
+    meta: require(&#039;./meta&#039;),
+    api: require(&#039;./api&#039;),
+    admin: require(&#039;./admin&#039;),
+    feed: require(&#039;./feeds&#039;),
+};
+
+_mounts.main = (app, middleware, controllers) =&gt; {
+    const loginRegisterMiddleware = [middleware.redirectToAccountIfLoggedIn];
+
+    setupPageRoute(app, &#039;/login&#039;, loginRegisterMiddleware, controllers.login);
+    setupPageRoute(app, &#039;/register&#039;, loginRegisterMiddleware, controllers.register);
+    setupPageRoute(app, &#039;/register/complete&#039;, [], controllers.registerInterstitial);
+    setupPageRoute(app, &#039;/compose&#039;, [], controllers.composer.get);
+    setupPageRoute(app, &#039;/confirm/:code&#039;, [], controllers.confirmEmail);
+    setupPageRoute(app, &#039;/outgoing&#039;, [], controllers.outgoing);
+    setupPageRoute(app, &#039;/search&#039;, [], controllers.search.search);
+    setupPageRoute(app, &#039;/reset/:code?&#039;, [middleware.delayLoading], controllers.reset);
+    setupPageRoute(app, &#039;/tos&#039;, [], controllers.termsOfUse);
+
+    setupPageRoute(app, &#039;/email/unsubscribe/:token&#039;, [], controllers.accounts.settings.unsubscribe);
+    app.post(&#039;/email/unsubscribe/:token&#039;, controllers.accounts.settings.unsubscribePost);
+
+    app.post(&#039;/compose&#039;, middleware.applyCSRF, controllers.composer.post);
+};
+
+_mounts.mod = (app, middleware, controllers) =&gt; {
+    setupPageRoute(app, &#039;/flags&#039;, [], controllers.mods.flags.list);
+    setupPageRoute(app, &#039;/flags/:flagId&#039;, [], controllers.mods.flags.detail);
+    setupPageRoute(app, &#039;/post-queue/:id?&#039;, [], controllers.mods.postQueue);
+};
+
+_mounts.globalMod = (app, middleware, controllers) =&gt; {
+    setupPageRoute(app, &#039;/ip-blacklist&#039;, [], controllers.globalMods.ipBlacklist);
+    setupPageRoute(app, &#039;/registration-queue&#039;, [], controllers.globalMods.registrationQueue);
+};
+
+_mounts.topic = (app, name, middleware, controllers) =&gt; {
+    setupPageRoute(app, `/${name}/:topic_id/:slug/:post_index?`, [], controllers.topics.get);
+    setupPageRoute(app, `/${name}/:topic_id/:slug?`, [], controllers.topics.get);
+};
+
+_mounts.post = (app, name, middleware, controllers) =&gt; {
+    const middlewares = [
+        middleware.maintenanceMode,
+        middleware.authenticateRequest,
+        middleware.registrationComplete,
+        middleware.pluginHooks,
+    ];
+    app.get(`/${name}/:pid`, middleware.busyCheck, middlewares, controllers.posts.redirectToPost);
+    app.get(`/api/${name}/:pid`, middlewares, controllers.posts.redirectToPost);
+};
+
+_mounts.tags = (app, name, middleware, controllers) =&gt; {
+    setupPageRoute(app, `/${name}/:tag`, [middleware.privateTagListing], controllers.tags.getTag);
+    setupPageRoute(app, `/${name}`, [middleware.privateTagListing], controllers.tags.getTags);
+};
+
+_mounts.category = (app, name, middleware, controllers) =&gt; {
+    setupPageRoute(app, &#039;/categories&#039;, [], controllers.categories.list);
+    setupPageRoute(app, &#039;/popular&#039;, [], controllers.popular.get);
+    setupPageRoute(app, &#039;/recent&#039;, [], controllers.recent.get);
+    setupPageRoute(app, &#039;/top&#039;, [], controllers.top.get);
+    setupPageRoute(app, &#039;/unread&#039;, [middleware.ensureLoggedIn], controllers.unread.get);
+
+    setupPageRoute(app, `/${name}/:category_id/:slug/:topic_index`, [], controllers.category.get);
+    setupPageRoute(app, `/${name}/:category_id/:slug?`, [], controllers.category.get);
+};
+
+_mounts.career = (app, name, middleware, controllers) =&gt; {
+    const middlewares = [middleware.ensureLoggedIn];
+
+    setupPageRoute(app, `/${name}`, middlewares, controllers.career.get);
+};
+
+_mounts.users = (app, name, middleware, controllers) =&gt; {
+    const middlewares = [middleware.canViewUsers];
+
+    setupPageRoute(app, `/${name}`, middlewares, controllers.users.index);
+};
+
+_mounts.groups = (app, name, middleware, controllers) =&gt; {
+    const middlewares = [middleware.canViewGroups];
+
+    setupPageRoute(app, `/${name}`, middlewares, controllers.groups.list);
+    setupPageRoute(app, `/${name}/:slug`, middlewares, controllers.groups.details);
+    setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.groups.members);
+};
+
+module.exports = async function (app, middleware) {
+    const router = express.Router();
+    router.render = function (...args) {
+        app.render(...args);
+    };
+
+    // Allow plugins/themes to mount some routes elsewhere
+    const remountable = [&#039;admin&#039;, &#039;category&#039;, &#039;topic&#039;, &#039;post&#039;, &#039;users&#039;, &#039;user&#039;, &#039;groups&#039;, &#039;tags&#039;, &#039;career&#039;];
+    const { mounts } = await plugins.hooks.fire(&#039;filter:router.add&#039;, {
+        mounts: remountable.reduce((memo, mount) =&gt; {
+            memo[mount] = mount;
+            return memo;
+        }, {}),
+    });
+    // Guard against plugins sending back missing/extra mounts
+    Object.keys(mounts).forEach((mount) =&gt; {
+        if (!remountable.includes(mount)) {
+            delete mounts[mount];
+        } else if (typeof mount !== &#039;string&#039;) {
+            mounts[mount] = mount;
+        }
+    });
+    remountable.forEach((mount) =&gt; {
+        if (!mounts.hasOwnProperty(mount)) {
+            mounts[mount] = mount;
+        }
+    });
+
+    router.all(&#039;(/+api|/+api/*?)&#039;, middleware.prepareAPI);
+    router.all(`(/+api/admin|/+api/admin/*?${mounts.admin !== &#039;admin&#039; ? `|/+api/${mounts.admin}|/+api/${mounts.admin}/*?` : &#039;&#039;})`, middleware.authenticateRequest, middleware.ensureLoggedIn, middleware.admin.checkPrivileges);
+    router.all(`(/+admin|/+admin/*?${mounts.admin !== &#039;admin&#039; ? `|/+${mounts.admin}|/+${mounts.admin}/*?` : &#039;&#039;})`, middleware.ensureLoggedIn, middleware.applyCSRF, middleware.admin.checkPrivileges);
+
+    app.use(middleware.stripLeadingSlashes);
+
+    // handle custom homepage routes
+    router.use(&#039;/&#039;, controllers.home.rewrite);
+
+    // homepage handled by `action:homepage.get:[route]`
+    setupPageRoute(router, &#039;/&#039;, [], controllers.home.pluginHook);
+
+    await plugins.reloadRoutes({ router: router });
+    await authRoutes.reloadRoutes({ router: router });
+    await writeRoutes.reload({ router: router });
+    addCoreRoutes(app, router, middleware, mounts);
+
+    winston.info(&#039;[router] Routes added&#039;);
+};
+
+function addCoreRoutes(app, router, middleware, mounts) {
+    _mounts.meta(router, middleware, controllers);
+    _mounts.api(router, middleware, controllers);
+    _mounts.feed(router, middleware, controllers);
+
+    _mounts.main(router, middleware, controllers);
+    _mounts.mod(router, middleware, controllers);
+    _mounts.globalMod(router, middleware, controllers);
+
+    addRemountableRoutes(app, router, middleware, mounts);
+
+    const relativePath = nconf.get(&#039;relative_path&#039;);
+    app.use(relativePath || &#039;/&#039;, router);
+
+    if (process.env.NODE_ENV === &#039;development&#039;) {
+        require(&#039;./debug&#039;)(app, middleware, controllers);
+    }
+
+    app.use(middleware.privateUploads);
+
+    const statics = [
+        { route: &#039;/assets&#039;, path: path.join(__dirname, &#039;../../build/public&#039;) },
+        { route: &#039;/assets&#039;, path: path.join(__dirname, &#039;../../public&#039;) },
+    ];
+    const staticOptions = {
+        maxAge: app.enabled(&#039;cache&#039;) ? 5184000000 : 0,
+    };
+
+    if (path.resolve(__dirname, &#039;../../public/uploads&#039;) !== nconf.get(&#039;upload_path&#039;)) {
+        statics.unshift({ route: &#039;/assets/uploads&#039;, path: nconf.get(&#039;upload_path&#039;) });
+    }
+
+    statics.forEach((obj) =&gt; {
+        app.use(relativePath + obj.route, middleware.addUploadHeaders, express.static(obj.path, staticOptions));
+    });
+    app.use(`${relativePath}/uploads`, (req, res) =&gt; {
+        res.redirect(`${relativePath}/assets/uploads${req.path}?${meta.config[&#039;cache-buster&#039;]}`);
+    });
+    app.use(`${relativePath}/plugins`, (req, res) =&gt; {
+        winston.warn(`${chalk.bold.red(&#039;[deprecation]&#039;)} The \`/plugins\` shorthand prefix is deprecated, prefix with \`/assets/plugins\` instead (path: ${req.path})`);
+        res.redirect(`${relativePath}/assets/plugins${req.path}${req._parsedUrl.search || &#039;&#039;}`);
+    });
+
+    // Skins
+    meta.css.supportedSkins.forEach((skin) =&gt; {
+        app.use(`${relativePath}/assets/client-${skin}.css`, middleware.buildSkinAsset);
+    });
+
+    app.use(controllers[&#039;404&#039;].handle404);
+    app.use(controllers.errors.handleURIErrors);
+    app.use(controllers.errors.handleErrors);
+}
+
+function addRemountableRoutes(app, router, middleware, mounts) {
+    Object.keys(mounts).map(async (mount) =&gt; {
+        const original = mount;
+        mount = mounts[original];
+
+        if (!mount) { // do not mount at all
+            winston.warn(`[router] Not mounting /${original}`);
+            return;
+        }
+
+        if (mount !== original) {
+            // Set up redirect for fallback handling (some js/tpls may still refer to the traditional mount point)
+            winston.info(`[router] /${original} prefix re-mounted to /${mount}. Requests to /${original}/* will now redirect to /${mount}`);
+            router.use(new RegExp(`/(api/)?${original}`), (req, res) =&gt; {
+                controllerHelpers.redirect(res, `${nconf.get(&#039;relative_path&#039;)}/${mount}${req.path}`);
+            });
+        }
+
+        _mounts[original](router, mount, middleware, controllers);
+    });
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

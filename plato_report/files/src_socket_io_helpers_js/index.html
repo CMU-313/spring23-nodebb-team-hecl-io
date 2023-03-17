@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/socket.io/helpers.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/socket.io/helpers.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.53</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">200</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">33.67</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.54</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const websockets = require(&#039;./index&#039;);
+const user = require(&#039;../user&#039;);
+const posts = require(&#039;../posts&#039;);
+const topics = require(&#039;../topics&#039;);
+const categories = require(&#039;../categories&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const batch = require(&#039;../batch&#039;);
+
+const SocketHelpers = module.exports;
+
+SocketHelpers.notifyNew = async function (uid, type, result) {
+    let uids = await user.getUidsFromSet(&#039;users:online&#039;, 0, -1);
+    uids = uids.filter(toUid =&gt; parseInt(toUid, 10) !== uid);
+    await batch.processArray(uids, async (uids) =&gt; {
+        await notifyUids(uid, uids, type, result);
+    }, {
+        interval: 1000,
+    });
+};
+
+async function notifyUids(uid, uids, type, result) {
+    const post = result.posts[0];
+    const { tid } = post.topic;
+    const { cid } = post.topic;
+    uids = await privileges.topics.filterUids(&#039;topics:read&#039;, tid, uids);
+    const watchStateUids = uids;
+
+    const watchStates = await getWatchStates(watchStateUids, tid, cid);
+
+    const categoryWatchStates = _.zipObject(watchStateUids, watchStates.categoryWatchStates);
+    const topicFollowState = _.zipObject(watchStateUids, watchStates.topicFollowed);
+    uids = filterTidCidIgnorers(watchStateUids, watchStates);
+    uids = await user.blocks.filterUids(uid, uids);
+    uids = await user.blocks.filterUids(post.topic.uid, uids);
+    const data = await plugins.hooks.fire(&#039;filter:sockets.sendNewPostToUids&#039;, {
+        uidsTo: uids,
+        uidFrom: uid,
+        type: type,
+        post: post,
+    });
+
+    post.ip = undefined;
+
+    data.uidsTo.forEach((toUid) =&gt; {
+        post.categoryWatchState = categoryWatchStates[toUid];
+        post.topic.isFollowing = topicFollowState[toUid];
+        websockets.in(`uid_${toUid}`).emit(&#039;event:new_post&#039;, result);
+        if (result.topic &amp;&amp; type === &#039;newTopic&#039;) {
+            websockets.in(`uid_${toUid}`).emit(&#039;event:new_topic&#039;, result.topic);
+        }
+    });
+}
+
+async function getWatchStates(uids, tid, cid) {
+    return await utils.promiseParallel({
+        topicFollowed: db.isSetMembers(`tid:${tid}:followers`, uids),
+        topicIgnored: db.isSetMembers(`tid:${tid}:ignorers`, uids),
+        categoryWatchStates: categories.getUidsWatchStates(cid, uids),
+    });
+}
+
+function filterTidCidIgnorers(uids, watchStates) {
+    return uids.filter((uid, index) =&gt; watchStates.topicFollowed[index] ||
+        (!watchStates.topicIgnored[index] &amp;&amp;
+            watchStates.categoryWatchStates[index] !== categories.watchStates.ignoring));
+}
+
+SocketHelpers.sendNotificationToPostOwner = async function (pid, fromuid, command, notification) {
+    if (!pid || !fromuid || !notification) {
+        return;
+    }
+    fromuid = parseInt(fromuid, 10);
+    const postData = await posts.getPostFields(pid, [&#039;tid&#039;, &#039;uid&#039;, &#039;content&#039;]);
+    const [canRead, isIgnoring] = await Promise.all([
+        privileges.posts.can(&#039;topics:read&#039;, pid, postData.uid),
+        topics.isIgnoring([postData.tid], postData.uid),
+    ]);
+    if (!canRead || isIgnoring[0] || !postData.uid || fromuid === postData.uid) {
+        return;
+    }
+    const [userData, topicTitle, postObj] = await Promise.all([
+        user.getUserFields(fromuid, [&#039;username&#039;]),
+        topics.getTopicField(postData.tid, &#039;title&#039;),
+        posts.parsePost(postData),
+    ]);
+
+    const { displayname } = userData;
+
+    const title = utils.decodeHTMLEntities(topicTitle);
+    const titleEscaped = title.replace(/%/g, &#039;&amp;#37;&#039;).replace(/,/g, &#039;&amp;#44;&#039;);
+
+    const notifObj = await notifications.create({
+        type: command,
+        bodyShort: `[[${notification}, ${displayname}, ${titleEscaped}]]`,
+        bodyLong: postObj.content,
+        pid: pid,
+        tid: postData.tid,
+        path: `/post/${pid}`,
+        nid: `${command}:post:${pid}:uid:${fromuid}`,
+        from: fromuid,
+        mergeId: `${notification}|${pid}`,
+        topicTitle: topicTitle,
+    });
+
+    notifications.push(notifObj, [postData.uid]);
+};
+
+
+SocketHelpers.sendNotificationToTopicOwner = async function (tid, fromuid, command, notification) {
+    if (!tid || !fromuid || !notification) {
+        return;
+    }
+
+    fromuid = parseInt(fromuid, 10);
+
+    const [userData, topicData] = await Promise.all([
+        user.getUserFields(fromuid, [&#039;username&#039;]),
+        topics.getTopicFields(tid, [&#039;uid&#039;, &#039;slug&#039;, &#039;title&#039;]),
+    ]);
+
+    if (fromuid === topicData.uid) {
+        return;
+    }
+
+    const { displayname } = userData;
+
+    const ownerUid = topicData.uid;
+    const title = utils.decodeHTMLEntities(topicData.title);
+    const titleEscaped = title.replace(/%/g, &#039;&amp;#37;&#039;).replace(/,/g, &#039;&amp;#44;&#039;);
+
+    const notifObj = await notifications.create({
+        bodyShort: `[[${notification}, ${displayname}, ${titleEscaped}]]`,
+        path: `/topic/${topicData.slug}`,
+        nid: `${command}:tid:${tid}:uid:${fromuid}`,
+        from: fromuid,
+    });
+
+    if (ownerUid) {
+        notifications.push(notifObj, [ownerUid]);
+    }
+};
+
+SocketHelpers.upvote = async function (data, notification) {
+    if (!data || !data.post || !data.post.uid || !data.post.votes || !data.post.pid || !data.fromuid) {
+        return;
+    }
+
+    const { votes } = data.post;
+    const touid = data.post.uid;
+    const { fromuid } = data;
+    const { pid } = data.post;
+
+    const shouldNotify = {
+        all: function () {
+            return votes &gt; 0;
+        },
+        first: function () {
+            return votes === 1;
+        },
+        everyTen: function () {
+            return votes &gt; 0 &amp;&amp; votes % 10 === 0;
+        },
+        threshold: function () {
+            return [1, 5, 10, 25].includes(votes) || (votes &gt;= 50 &amp;&amp; votes % 50 === 0);
+        },
+        logarithmic: function () {
+            return votes &gt; 1 &amp;&amp; Math.log10(votes) % 1 === 0;
+        },
+        disabled: function () {
+            return false;
+        },
+    };
+    const settings = await user.getSettings(touid);
+    const should = shouldNotify[settings.upvoteNotifFreq] || shouldNotify.all;
+
+    if (should()) {
+        SocketHelpers.sendNotificationToPostOwner(pid, fromuid, &#039;upvote&#039;, notification);
+    }
+};
+
+SocketHelpers.rescindUpvoteNotification = async function (pid, fromuid) {
+    await notifications.rescind(`upvote:post:${pid}:uid:${fromuid}`);
+    const uid = await posts.getPostField(pid, &#039;uid&#039;);
+    const count = await user.notifications.getUnreadCount(uid);
+    websockets.in(`uid_${uid}`).emit(&#039;event:notifications.updateCount&#039;, count);
+};
+
+SocketHelpers.emitToUids = async function (event, data, uids) {
+    uids.forEach(toUid =&gt; websockets.in(`uid_${toUid}`).emit(event, data));
+};
+
+require(&#039;../promisify&#039;)(SocketHelpers);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

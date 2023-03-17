@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/start.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/start.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">60.63</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">145</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.59</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.22</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const winston = require(&#039;winston&#039;);
+
+const start = module.exports;
+
+start.start = async function () {
+    printStartupInfo();
+
+    addProcessHandlers();
+
+    try {
+        const db = require(&#039;./database&#039;);
+        await db.init();
+        await db.checkCompatibility();
+
+        const meta = require(&#039;./meta&#039;);
+        await meta.configs.init();
+
+        if (nconf.get(&#039;runJobs&#039;)) {
+            await runUpgrades();
+        }
+
+        if (nconf.get(&#039;dep-check&#039;) === undefined || nconf.get(&#039;dep-check&#039;) !== false) {
+            await meta.dependencies.check();
+        } else {
+            winston.warn(&#039;[init] Dependency checking skipped!&#039;);
+        }
+
+        await db.initSessionStore();
+
+        const webserver = require(&#039;./webserver&#039;);
+        const sockets = require(&#039;./socket.io&#039;);
+        await sockets.init(webserver.server);
+
+        if (nconf.get(&#039;runJobs&#039;)) {
+            require(&#039;./notifications&#039;).startJobs();
+            require(&#039;./user&#039;).startJobs();
+            require(&#039;./plugins&#039;).startJobs();
+            require(&#039;./topics&#039;).scheduled.startJobs();
+            await db.delete(&#039;locks&#039;);
+        }
+
+        await webserver.listen();
+
+        if (process.send) {
+            process.send({
+                action: &#039;listening&#039;,
+            });
+        }
+    } catch (err) {
+        switch (err.message) {
+        case &#039;dependencies-out-of-date&#039;:
+            winston.error(&#039;One or more of NodeBB\&#039;s dependent packages are out-of-date. Please run the following command to update them:&#039;);
+            winston.error(&#039;    ./nodebb upgrade&#039;);
+            break;
+        case &#039;dependencies-missing&#039;:
+            winston.error(&#039;One or more of NodeBB\&#039;s dependent packages are missing. Please run the following command to update them:&#039;);
+            winston.error(&#039;    ./nodebb upgrade&#039;);
+            break;
+        default:
+            winston.error(err.stack);
+            break;
+        }
+
+        // Either way, bad stuff happened. Abort start.
+        process.exit();
+    }
+};
+
+async function runUpgrades() {
+    const upgrade = require(&#039;./upgrade&#039;);
+    try {
+        await upgrade.check();
+    } catch (err) {
+        if (err &amp;&amp; err.message === &#039;schema-out-of-date&#039;) {
+            await upgrade.run();
+        } else {
+            throw err;
+        }
+    }
+}
+
+function printStartupInfo() {
+    if (nconf.get(&#039;isPrimary&#039;)) {
+        winston.info(&#039;Initializing NodeBB v%s %s&#039;, nconf.get(&#039;version&#039;), nconf.get(&#039;url&#039;));
+
+        const host = nconf.get(`${nconf.get(&#039;database&#039;)}:host`);
+        const storeLocation = host ? `at ${host}${!host.includes(&#039;/&#039;) ? `:${nconf.get(`${nconf.get(&#039;database&#039;)}:port`)}` : &#039;&#039;}` : &#039;&#039;;
+
+        winston.verbose(&#039;* using %s store %s&#039;, nconf.get(&#039;database&#039;), storeLocation);
+        winston.verbose(&#039;* using themes stored in: %s&#039;, nconf.get(&#039;themes_path&#039;));
+    }
+}
+
+function addProcessHandlers() {
+    process.on(&#039;SIGTERM&#039;, shutdown);
+    process.on(&#039;SIGINT&#039;, shutdown);
+    process.on(&#039;SIGHUP&#039;, restart);
+    process.on(&#039;uncaughtException&#039;, (err) =&gt; {
+        winston.error(err.stack);
+
+        require(&#039;./meta&#039;).js.killMinifier();
+        shutdown(1);
+    });
+    process.on(&#039;message&#039;, (msg) =&gt; {
+        if (msg &amp;&amp; msg.compiling === &#039;tpl&#039;) {
+            const benchpressjs = require(&#039;benchpressjs&#039;);
+            benchpressjs.flush();
+        } else if (msg &amp;&amp; msg.compiling === &#039;lang&#039;) {
+            const translator = require(&#039;./translator&#039;);
+            translator.flush();
+        }
+    });
+}
+
+function restart() {
+    if (process.send) {
+        winston.info(&#039;[app] Restarting...&#039;);
+        process.send({
+            action: &#039;restart&#039;,
+        });
+    } else {
+        winston.error(&#039;[app] Could not restart server. Shutting down.&#039;);
+        shutdown(1);
+    }
+}
+
+async function shutdown(code) {
+    winston.info(&#039;[app] Shutdown (SIGTERM/SIGINT) Initialised.&#039;);
+    try {
+        await require(&#039;./webserver&#039;).destroy();
+        winston.info(&#039;[app] Web server closed to connections.&#039;);
+        await require(&#039;./analytics&#039;).writeData();
+        winston.info(&#039;[app] Live analytics saved.&#039;);
+        await require(&#039;./database&#039;).close();
+        winston.info(&#039;[app] Database connection closed.&#039;);
+        winston.info(&#039;[app] Shutdown complete.&#039;);
+        process.exit(code || 0);
+    } catch (err) {
+        winston.error(err.stack);
+        return process.exit(code || 0);
+    }
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

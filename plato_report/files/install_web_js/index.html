@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - install/web.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>install/web.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.52</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">286</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">31.72</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.41</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const express = require(&#039;express&#039;);
+const bodyParser = require(&#039;body-parser&#039;);
+const fs = require(&#039;fs&#039;);
+const path = require(&#039;path&#039;);
+const childProcess = require(&#039;child_process&#039;);
+const less = require(&#039;less&#039;);
+
+const webpack = require(&#039;webpack&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const Benchpress = require(&#039;benchpressjs&#039;);
+const mkdirp = require(&#039;mkdirp&#039;);
+const { paths } = require(&#039;../src/constants&#039;);
+
+const app = express();
+let server;
+
+const formats = [
+    winston.format.colorize(),
+];
+
+const timestampFormat = winston.format((info) =&gt; {
+    const dateString = `${new Date().toISOString()} [${global.process.pid}]`;
+    info.level = `${dateString} - ${info.level}`;
+    return info;
+});
+formats.push(timestampFormat());
+formats.push(winston.format.splat());
+formats.push(winston.format.simple());
+
+winston.configure({
+    level: &#039;verbose&#039;,
+    format: winston.format.combine.apply(null, formats),
+    transports: [
+        new winston.transports.Console({
+            handleExceptions: true,
+        }),
+        new winston.transports.File({
+            filename: &#039;logs/webinstall.log&#039;,
+            handleExceptions: true,
+        }),
+    ],
+});
+
+const web = module.exports;
+let installing = false;
+let success = false;
+let error = false;
+let launchUrl;
+
+const viewsDir = path.join(paths.baseDir, &#039;build/public/templates&#039;);
+
+web.install = async function (port) {
+    port = port || 4567;
+    winston.info(`Launching web installer on port ${port}`);
+
+    app.use(express.static(&#039;public&#039;, {}));
+    app.use(&#039;/assets&#039;, express.static(path.join(__dirname, &#039;../build/public&#039;), {}));
+
+    app.engine(&#039;tpl&#039;, (filepath, options, callback) =&gt; {
+        filepath = filepath.replace(/\.tpl$/, &#039;.js&#039;);
+
+        Benchpress.__express(filepath, options, callback);
+    });
+    app.set(&#039;view engine&#039;, &#039;tpl&#039;);
+    app.set(&#039;views&#039;, viewsDir);
+    app.use(bodyParser.urlencoded({
+        extended: true,
+    }));
+    try {
+        await Promise.all([
+            compileTemplate(),
+            compileLess(),
+            runWebpack(),
+            copyCSS(),
+            loadDefaults(),
+        ]);
+        setupRoutes();
+        launchExpress(port);
+    } catch (err) {
+        winston.error(err.stack);
+    }
+};
+
+async function runWebpack() {
+    const util = require(&#039;util&#039;);
+    const webpackCfg = require(&#039;../webpack.installer&#039;);
+    const compiler = webpack(webpackCfg);
+    const webpackRun = util.promisify(compiler.run).bind(compiler);
+    await webpackRun();
+}
+
+function launchExpress(port) {
+    server = app.listen(port, () =&gt; {
+        winston.info(&#039;Web installer listening on http://%s:%s&#039;, &#039;0.0.0.0&#039;, port);
+    });
+}
+
+function setupRoutes() {
+    app.get(&#039;/&#039;, welcome);
+    app.post(&#039;/&#039;, install);
+    app.post(&#039;/launch&#039;, launch);
+    app.get(&#039;/ping&#039;, ping);
+    app.get(&#039;/sping&#039;, ping);
+}
+
+function ping(req, res) {
+    res.status(200).send(req.path === &#039;/sping&#039; ? &#039;healthy&#039; : &#039;200&#039;);
+}
+
+function welcome(req, res) {
+    const dbs = [&#039;mongo&#039;, &#039;redis&#039;, &#039;postgres&#039;];
+    const databases = dbs.map((databaseName) =&gt; {
+        const questions = require(`../src/database/${databaseName}`).questions.filter(question =&gt; question &amp;&amp; !question.hideOnWebInstall);
+
+        return {
+            name: databaseName,
+            questions: questions,
+        };
+    });
+
+    const defaults = require(&#039;./data/defaults.json&#039;);
+
+    res.render(&#039;install/index&#039;, {
+        url: nconf.get(&#039;url&#039;) || (`${req.protocol}://${req.get(&#039;host&#039;)}`),
+        launchUrl: launchUrl,
+        skipGeneralSetup: !!nconf.get(&#039;url&#039;),
+        databases: databases,
+        skipDatabaseSetup: !!nconf.get(&#039;database&#039;),
+        error: error,
+        success: success,
+        values: req.body,
+        minimumPasswordLength: defaults.minimumPasswordLength,
+        minimumPasswordStrength: defaults.minimumPasswordStrength,
+        installing: installing,
+    });
+}
+
+function install(req, res) {
+    if (installing) {
+        return welcome(req, res);
+    }
+    req.setTimeout(0);
+    installing = true;
+
+    const database = nconf.get(&#039;database&#039;) || req.body.database || &#039;mongo&#039;;
+    const setupEnvVars = {
+        ...process.env,
+        NODEBB_URL: nconf.get(&#039;url&#039;) || req.body.url || (`${req.protocol}://${req.get(&#039;host&#039;)}`),
+        NODEBB_PORT: nconf.get(&#039;port&#039;) || 4567,
+        NODEBB_ADMIN_USERNAME: nconf.get(&#039;admin:username&#039;) || req.body[&#039;admin:username&#039;],
+        NODEBB_ADMIN_PASSWORD: nconf.get(&#039;admin:password&#039;) || req.body[&#039;admin:password&#039;],
+        NODEBB_ADMIN_EMAIL: nconf.get(&#039;admin:email&#039;) || req.body[&#039;admin:email&#039;],
+        NODEBB_DB: database,
+        NODEBB_DB_HOST: nconf.get(`${database}:host`) || req.body[`${database}:host`],
+        NODEBB_DB_PORT: nconf.get(`${database}:port`) || req.body[`${database}:port`],
+        NODEBB_DB_USER: nconf.get(`${database}:username`) || req.body[`${database}:username`],
+        NODEBB_DB_PASSWORD: nconf.get(`${database}:password`) || req.body[`${database}:password`],
+        NODEBB_DB_NAME: nconf.get(`${database}:database`) || req.body[`${database}:database`],
+        NODEBB_DB_SSL: nconf.get(`${database}:ssl`) || req.body[`${database}:ssl`],
+        defaultPlugins: JSON.stringify(nconf.get(&#039;defaultplugins&#039;) || nconf.get(&#039;defaultPlugins&#039;) || []),
+    };
+
+    winston.info(&#039;Starting setup process&#039;);
+    launchUrl = setupEnvVars.NODEBB_URL;
+
+    const child = require(&#039;child_process&#039;).fork(&#039;app&#039;, [&#039;--setup&#039;], {
+        env: setupEnvVars,
+    });
+
+    child.on(&#039;close&#039;, (data) =&gt; {
+        installing = false;
+        success = data === 0;
+        error = data !== 0;
+
+        welcome(req, res);
+    });
+}
+
+async function launch(req, res) {
+    try {
+        res.json({});
+        server.close();
+        req.setTimeout(0);
+        let child;
+
+        if (!nconf.get(&#039;launchCmd&#039;)) {
+            child = childProcess.spawn(&#039;node&#039;, [&#039;loader.js&#039;], {
+                detached: true,
+                stdio: [&#039;ignore&#039;, &#039;ignore&#039;, &#039;ignore&#039;],
+            });
+
+            console.log(&#039;\nStarting NodeBB&#039;);
+            console.log(&#039;    &quot;./nodebb stop&quot; to stop the NodeBB server&#039;);
+            console.log(&#039;    &quot;./nodebb log&quot; to view server output&#039;);
+            console.log(&#039;    &quot;./nodebb restart&quot; to restart NodeBB&#039;);
+        } else {
+            // Use launchCmd instead, if specified
+            child = childProcess.exec(nconf.get(&#039;launchCmd&#039;), {
+                detached: true,
+                stdio: [&#039;ignore&#039;, &#039;ignore&#039;, &#039;ignore&#039;],
+            });
+        }
+
+        const filesToDelete = [
+            path.join(__dirname, &#039;../public&#039;, &#039;installer.css&#039;),
+            path.join(__dirname, &#039;../public&#039;, &#039;bootstrap.min.css&#039;),
+            path.join(__dirname, &#039;../build/public&#039;, &#039;installer.min.js&#039;),
+        ];
+        try {
+            await Promise.all(
+                filesToDelete.map(
+                    filename =&gt; fs.promises.unlink(filename)
+                )
+            );
+        } catch (err) {
+            console.log(err.stack);
+        }
+
+        child.unref();
+        process.exit(0);
+    } catch (err) {
+        winston.error(err.stack);
+        throw err;
+    }
+}
+
+// this is necessary because otherwise the compiled templates won&#039;t be available on a clean install
+async function compileTemplate() {
+    const sourceFile = path.join(__dirname, &#039;../src/views/install/index.tpl&#039;);
+    const destTpl = path.join(viewsDir, &#039;install/index.tpl&#039;);
+    const destJs = path.join(viewsDir, &#039;install/index.js&#039;);
+
+    const source = await fs.promises.readFile(sourceFile, &#039;utf8&#039;);
+
+    const [compiled] = await Promise.all([
+        Benchpress.precompile(source, { filename: &#039;install/index.tpl&#039; }),
+        mkdirp(path.dirname(destJs)),
+    ]);
+
+    await Promise.all([
+        fs.promises.writeFile(destJs, compiled),
+        fs.promises.writeFile(destTpl, source),
+    ]);
+}
+
+async function compileLess() {
+    try {
+        const installSrc = path.join(__dirname, &#039;../public/less/install.less&#039;);
+        const style = await fs.promises.readFile(installSrc);
+        const css = await less.render(String(style), { filename: path.resolve(installSrc) });
+        await fs.promises.writeFile(path.join(__dirname, &#039;../public/installer.css&#039;), css.css);
+    } catch (err) {
+        winston.error(`Unable to compile LESS: \n${err.stack}`);
+        throw err;
+    }
+}
+
+async function copyCSS() {
+    const src = await fs.promises.readFile(
+        path.join(__dirname, &#039;../node_modules/bootstrap/dist/css/bootstrap.min.css&#039;), &#039;utf8&#039;
+    );
+    await fs.promises.writeFile(path.join(__dirname, &#039;../public/bootstrap.min.css&#039;), src);
+}
+
+async function loadDefaults() {
+    const setupDefaultsPath = path.join(__dirname, &#039;../setup.json&#039;);
+    try {
+        // eslint-disable-next-line no-bitwise
+        await fs.promises.access(setupDefaultsPath, fs.constants.F_OK | fs.constants.R_OK);
+    } catch (err) {
+        // setup.json not found or inaccessible, proceed with no defaults
+        if (err.code !== &#039;ENOENT&#039;) {
+            throw err;
+        }
+
+        return;
+    }
+    winston.info(&#039;[installer] Found setup.json, populating default values&#039;);
+    nconf.file({
+        file: setupDefaultsPath,
+    });
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

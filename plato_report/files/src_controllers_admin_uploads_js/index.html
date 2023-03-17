@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/admin/uploads.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/admin/uploads.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.10</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">273</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">55.98</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.61</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const nconf = require(&#039;nconf&#039;);
+const fs = require(&#039;fs&#039;);
+
+const meta = require(&#039;../../meta&#039;);
+const posts = require(&#039;../../posts&#039;);
+const file = require(&#039;../../file&#039;);
+const image = require(&#039;../../image&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const pagination = require(&#039;../../pagination&#039;);
+
+const allowedImageTypes = [&#039;image/png&#039;, &#039;image/jpeg&#039;, &#039;image/pjpeg&#039;, &#039;image/jpg&#039;, &#039;image/gif&#039;, &#039;image/svg+xml&#039;];
+
+const uploadsController = module.exports;
+
+uploadsController.get = async function (req, res, next) {
+    const currentFolder = path.join(nconf.get(&#039;upload_path&#039;), req.query.dir || &#039;&#039;);
+    if (!currentFolder.startsWith(nconf.get(&#039;upload_path&#039;))) {
+        return next(new Error(&#039;[[error:invalid-path]]&#039;));
+    }
+    const itemsPerPage = 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    try {
+        let files = await fs.promises.readdir(currentFolder);
+        files = files.filter(filename =&gt; filename !== &#039;.gitignore&#039;);
+        const itemCount = files.length;
+        const start = Math.max(0, (page - 1) * itemsPerPage);
+        const stop = start + itemsPerPage;
+        files = files.slice(start, stop);
+
+        files = await filesToData(currentFolder, files);
+
+        // Float directories to the top
+        files.sort((a, b) =&gt; {
+            if (a.isDirectory &amp;&amp; !b.isDirectory) {
+                return -1;
+            } else if (!a.isDirectory &amp;&amp; b.isDirectory) {
+                return 1;
+            } else if (!a.isDirectory &amp;&amp; !b.isDirectory) {
+                return a.mtime &lt; b.mtime ? -1 : 1;
+            }
+
+            return 0;
+        });
+
+        // Add post usage info if in /files
+        if ([&#039;files&#039;, &#039;/files&#039;, &#039;/files/&#039;].includes(req.query.dir)) {
+            const usage = await posts.uploads.getUsage(files);
+            files.forEach((file, idx) =&gt; {
+                file.inPids = usage[idx].map(pid =&gt; parseInt(pid, 10));
+            });
+        }
+        res.render(&#039;admin/manage/uploads&#039;, {
+            currentFolder: currentFolder.replace(nconf.get(&#039;upload_path&#039;), &#039;&#039;),
+            showPids: files.length &amp;&amp; files[0].hasOwnProperty(&#039;inPids&#039;),
+            files: files,
+            breadcrumbs: buildBreadcrumbs(currentFolder),
+            pagination: pagination.create(page, Math.ceil(itemCount / itemsPerPage), req.query),
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+function buildBreadcrumbs(currentFolder) {
+    const crumbs = [];
+    const parts = currentFolder.replace(nconf.get(&#039;upload_path&#039;), &#039;&#039;).split(path.sep);
+    let currentPath = &#039;&#039;;
+    parts.forEach((part) =&gt; {
+        const dir = path.join(currentPath, part);
+        crumbs.push({
+            text: part || &#039;Uploads&#039;,
+            url: part ?
+                (`${nconf.get(&#039;relative_path&#039;)}/admin/manage/uploads?dir=${dir}`) :
+                `${nconf.get(&#039;relative_path&#039;)}/admin/manage/uploads`,
+        });
+        currentPath = dir;
+    });
+
+    return crumbs;
+}
+
+async function filesToData(currentDir, files) {
+    return await Promise.all(files.map(file =&gt; getFileData(currentDir, file)));
+}
+
+async function getFileData(currentDir, file) {
+    const pathToFile = path.join(currentDir, file);
+    const stat = await fs.promises.stat(pathToFile);
+    let filesInDir = [];
+    if (stat.isDirectory()) {
+        filesInDir = await fs.promises.readdir(pathToFile);
+    }
+    const url = `${nconf.get(&#039;upload_url&#039;) + currentDir.replace(nconf.get(&#039;upload_path&#039;), &#039;&#039;)}/${file}`;
+    return {
+        name: file,
+        path: pathToFile.replace(path.join(nconf.get(&#039;upload_path&#039;), &#039;/&#039;), &#039;&#039;),
+        url: url,
+        fileCount: Math.max(0, filesInDir.length - 1), // ignore .gitignore
+        size: stat.size,
+        sizeHumanReadable: `${(stat.size / 1024).toFixed(1)}KiB`,
+        isDirectory: stat.isDirectory(),
+        isFile: stat.isFile(),
+        mtime: stat.mtimeMs,
+    };
+}
+
+uploadsController.uploadCategoryPicture = async function (req, res, next) {
+    const uploadedFile = req.files.files[0];
+    let params = null;
+
+    try {
+        params = JSON.parse(req.body.params);
+    } catch (e) {
+        file.delete(uploadedFile.path);
+        return next(new Error(&#039;[[error:invalid-json]]&#039;));
+    }
+
+    if (validateUpload(res, uploadedFile, allowedImageTypes)) {
+        const filename = `category-${params.cid}${path.extname(uploadedFile.name)}`;
+        await uploadImage(filename, &#039;category&#039;, uploadedFile, req, res, next);
+    }
+};
+
+uploadsController.uploadFavicon = async function (req, res, next) {
+    const uploadedFile = req.files.files[0];
+    const allowedTypes = [&#039;image/x-icon&#039;, &#039;image/vnd.microsoft.icon&#039;];
+
+    if (validateUpload(res, uploadedFile, allowedTypes)) {
+        try {
+            const imageObj = await file.saveFileToLocal(&#039;favicon.ico&#039;, &#039;system&#039;, uploadedFile.path);
+            res.json([{ name: uploadedFile.name, url: imageObj.url }]);
+        } catch (err) {
+            next(err);
+        } finally {
+            file.delete(uploadedFile.path);
+        }
+    }
+};
+
+uploadsController.uploadTouchIcon = async function (req, res, next) {
+    const uploadedFile = req.files.files[0];
+    const allowedTypes = [&#039;image/png&#039;];
+    const sizes = [36, 48, 72, 96, 144, 192, 512];
+
+    if (validateUpload(res, uploadedFile, allowedTypes)) {
+        try {
+            const imageObj = await file.saveFileToLocal(&#039;touchicon-orig.png&#039;, &#039;system&#039;, uploadedFile.path);
+            // Resize the image into squares for use as touch icons at various DPIs
+            for (const size of sizes) {
+                /* eslint-disable no-await-in-loop */
+                await image.resizeImage({
+                    path: uploadedFile.path,
+                    target: path.join(nconf.get(&#039;upload_path&#039;), &#039;system&#039;, `touchicon-${size}.png`),
+                    width: size,
+                    height: size,
+                });
+            }
+            res.json([{ name: uploadedFile.name, url: imageObj.url }]);
+        } catch (err) {
+            next(err);
+        } finally {
+            file.delete(uploadedFile.path);
+        }
+    }
+};
+
+
+uploadsController.uploadMaskableIcon = async function (req, res, next) {
+    const uploadedFile = req.files.files[0];
+    const allowedTypes = [&#039;image/png&#039;];
+
+    if (validateUpload(res, uploadedFile, allowedTypes)) {
+        try {
+            const imageObj = await file.saveFileToLocal(&#039;maskableicon-orig.png&#039;, &#039;system&#039;, uploadedFile.path);
+            res.json([{ name: uploadedFile.name, url: imageObj.url }]);
+        } catch (err) {
+            next(err);
+        } finally {
+            file.delete(uploadedFile.path);
+        }
+    }
+};
+
+uploadsController.uploadLogo = async function (req, res, next) {
+    await upload(&#039;site-logo&#039;, req, res, next);
+};
+
+uploadsController.uploadFile = async function (req, res, next) {
+    const uploadedFile = req.files.files[0];
+    let params;
+    try {
+        params = JSON.parse(req.body.params);
+    } catch (e) {
+        file.delete(uploadedFile.path);
+        return next(new Error(&#039;[[error:invalid-json]]&#039;));
+    }
+
+    try {
+        const data = await file.saveFileToLocal(uploadedFile.name, params.folder, uploadedFile.path);
+        res.json([{ url: data.url }]);
+    } catch (err) {
+        next(err);
+    } finally {
+        file.delete(uploadedFile.path);
+    }
+};
+
+uploadsController.uploadDefaultAvatar = async function (req, res, next) {
+    await upload(&#039;avatar-default&#039;, req, res, next);
+};
+
+uploadsController.uploadOgImage = async function (req, res, next) {
+    await upload(&#039;og:image&#039;, req, res, next);
+};
+
+async function upload(name, req, res, next) {
+    const uploadedFile = req.files.files[0];
+
+    if (validateUpload(res, uploadedFile, allowedImageTypes)) {
+        const filename = name + path.extname(uploadedFile.name);
+        await uploadImage(filename, &#039;system&#039;, uploadedFile, req, res, next);
+    }
+}
+
+function validateUpload(res, uploadedFile, allowedTypes) {
+    if (!allowedTypes.includes(uploadedFile.type)) {
+        file.delete(uploadedFile.path);
+        res.json({ error: `[[error:invalid-image-type, ${allowedTypes.join(&#039;&amp;#44; &#039;)}]]` });
+        return false;
+    }
+
+    return true;
+}
+
+async function uploadImage(filename, folder, uploadedFile, req, res, next) {
+    let imageData;
+    try {
+        if (plugins.hooks.hasListeners(&#039;filter:uploadImage&#039;)) {
+            imageData = await plugins.hooks.fire(&#039;filter:uploadImage&#039;, { image: uploadedFile, uid: req.uid, folder: folder });
+        } else {
+            imageData = await file.saveFileToLocal(filename, folder, uploadedFile.path);
+        }
+
+        if (path.basename(filename, path.extname(filename)) === &#039;site-logo&#039; &amp;&amp; folder === &#039;system&#039;) {
+            const uploadPath = path.join(nconf.get(&#039;upload_path&#039;), folder, &#039;site-logo-x50.png&#039;);
+            await image.resizeImage({
+                path: uploadedFile.path,
+                target: uploadPath,
+                height: 50,
+            });
+            await meta.configs.set(&#039;brand:emailLogo&#039;, path.join(nconf.get(&#039;upload_url&#039;), &#039;system/site-logo-x50.png&#039;));
+            const size = await image.size(uploadedFile.path);
+            await meta.configs.setMultiple({
+                &#039;brand:logo:width&#039;: size.width,
+                &#039;brand:logo:height&#039;: size.height,
+            });
+        } else if (path.basename(filename, path.extname(filename)) === &#039;og:image&#039; &amp;&amp; folder === &#039;system&#039;) {
+            const size = await image.size(uploadedFile.path);
+            await meta.configs.setMultiple({
+                &#039;og:image:width&#039;: size.width,
+                &#039;og:image:height&#039;: size.height,
+            });
+        }
+        res.json([{ name: uploadedFile.name, url: imageData.url.startsWith(&#039;http&#039;) ? imageData.url : nconf.get(&#039;relative_path&#039;) + imageData.url }]);
+    } catch (err) {
+        next(err);
+    } finally {
+        file.delete(uploadedFile.path);
+    }
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

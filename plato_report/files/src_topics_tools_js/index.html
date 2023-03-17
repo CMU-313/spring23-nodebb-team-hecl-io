@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/tools.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/tools.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.05</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">385</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">70.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.65</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&quot;use strict&quot;;
+var __importDefault = (this &amp;&amp; this.__importDefault) || function (mod) {
+    return (mod &amp;&amp; mod.__esModule) ? mod : { &quot;default&quot;: mod };
+};
+const lodash_1 = __importDefault(require(&quot;lodash&quot;));
+const database_1 = __importDefault(require(&quot;../database&quot;));
+const _1 = __importDefault(require(&quot;.&quot;));
+const categories_1 = __importDefault(require(&quot;../categories&quot;));
+const user_1 = __importDefault(require(&quot;../user&quot;));
+const plugins_1 = __importDefault(require(&quot;../plugins&quot;));
+const privileges_1 = __importDefault(require(&quot;../privileges&quot;));
+const utils_1 = __importDefault(require(&quot;../utils&quot;));
+module.exports = function (Topics) {
+    const topicTools = {};
+    Topics.tools = topicTools;
+    async function toggleDelete(tid, uid, isDelete) {
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        // Scheduled topics can only be purged
+        if (topicData.scheduled) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const canDelete = await privileges_1.default.topics.canDelete(tid, uid);
+        const hook = isDelete ? &#039;delete&#039; : &#039;restore&#039;;
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const data = await plugins_1.default.hooks.fire(`filter:topic.${hook}`, { topicData: topicData, uid: uid, isDelete: isDelete, canDelete: canDelete, canRestore: canDelete });
+        if ((!data.canDelete &amp;&amp; data.isDelete) || (!data.canRestore &amp;&amp; !data.isDelete)) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        if (data.topicData.deleted &amp;&amp; data.isDelete) {
+            throw new Error(&#039;[[error:topic-already-deleted]]&#039;);
+        }
+        else if (!data.topicData.deleted &amp;&amp; !data.isDelete) {
+            throw new Error(&#039;[[error:topic-already-restored]]&#039;);
+        }
+        if (data.isDelete) {
+            await Topics.delete(data.topicData.tid, data.uid);
+        }
+        else {
+            await Topics.restore(data.topicData.tid);
+        }
+        const events = await Topics.events.log(tid, { type: isDelete ? &#039;delete&#039; : &#039;restore&#039;, uid });
+        data.topicData.deleted = data.isDelete ? 1 : 0;
+        if (data.isDelete) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            await plugins_1.default.hooks.fire(&#039;action:topic.delete&#039;, { topic: data.topicData, uid: data.uid });
+        }
+        else {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            await plugins_1.default.hooks.fire(&#039;action:topic.restore&#039;, { topic: data.topicData, uid: data.uid });
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const userData = await user_1.default.getUserFields(data.uid, [&#039;username&#039;, &#039;userslug&#039;]);
+        return {
+            tid: data.topicData.tid,
+            cid: data.topicData.cid,
+            isDelete: data.isDelete,
+            uid: data.uid,
+            user: userData,
+            events,
+        };
+    }
+    async function toggleLock(tid, uid, lock) {
+        const topicData = await Topics.getTopicFields(tid, [&#039;tid&#039;, &#039;uid&#039;, &#039;cid&#039;]);
+        if (!topicData || !topicData.cid) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const isAdminOrMod = await privileges_1.default.categories.isAdminOrMod(topicData.cid, uid);
+        if (!isAdminOrMod) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        await Topics.setTopicField(tid, &#039;locked&#039;, lock ? 1 : 0);
+        topicData.events = await Topics.events.log(tid, { type: lock ? &#039;lock&#039; : &#039;unlock&#039;, uid });
+        topicData.isLocked = lock; // deprecate in v2.0
+        topicData.locked = lock;
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await plugins_1.default.hooks.fire(&#039;action:topic.lock&#039;, { topic: lodash_1.default.clone(topicData), uid: uid });
+        return topicData;
+    }
+    async function toggleResolve(tid, uid, resolve) {
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        if (uid !== &#039;system&#039; &amp;&amp; !await privileges_1.default.topics.isAdminOrMod(tid, uid)) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        const promises = [
+            Topics.setTopicField(tid, &#039;resolved&#039;, resolve ? 1 : 0),
+            Topics.events.log(tid, { type: resolve ? &#039;resolve&#039; : &#039;unresolve&#039;, uid }),
+        ];
+        if (resolve) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetAdd(`cid:${topicData.cid}:tids:resolved`, Date.now(), tid));
+        }
+        else {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetRemove(`cid:${topicData.cid}:tids:resolved`, tid));
+        }
+        const results = await Promise.all(promises);
+        topicData.isResolved = resolve; // deprecate in v2.0
+        topicData.resolved = resolve;
+        topicData.events = results[1];
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await plugins_1.default.hooks.fire(&#039;action:topic.resolve&#039;, { topic: lodash_1.default.clone(topicData), uid });
+        return topicData;
+    }
+    async function togglePin(tid, uid, pin) {
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        if (topicData.scheduled) {
+            throw new Error(&#039;[[error:cant-pin-scheduled]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        if (uid !== &#039;system&#039; &amp;&amp; !await privileges_1.default.topics.isAdminOrMod(tid, uid)) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        const promises = [
+            Topics.setTopicField(tid, &#039;pinned&#039;, pin ? 1 : 0),
+            Topics.events.log(tid, { type: pin ? &#039;pin&#039; : &#039;unpin&#039;, uid }),
+        ];
+        if (pin) {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetAdd(`cid:${topicData.cid}:tids:pinned`, Date.now(), tid));
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetsRemove([
+                `cid:${topicData.cid}:tids`,
+                `cid:${topicData.cid}:tids:posts`,
+                `cid:${topicData.cid}:tids:votes`,
+                `cid:${topicData.cid}:tids:views`,
+            ], tid));
+        }
+        else {
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetRemove(`cid:${topicData.cid}:tids:pinned`, tid));
+            promises.push(Topics.deleteTopicField(tid, &#039;pinExpiry&#039;));
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            promises.push(database_1.default.sortedSetAddBulk([
+                [`cid:${topicData.cid}:tids`, topicData.lastposttime, tid],
+                [`cid:${topicData.cid}:tids:posts`, topicData.postcount, tid],
+                [`cid:${topicData.cid}:tids:votes`, parseInt(topicData.votes, 10) || 0, tid],
+                [`cid:${topicData.cid}:tids:views`, topicData.viewcount, tid],
+            ]));
+            topicData.pinExpiry = undefined;
+            topicData.pinExpiryISO = undefined;
+        }
+        const results = await Promise.all(promises);
+        topicData.isPinned = pin; // deprecate in v2.0
+        topicData.pinned = pin;
+        topicData.events = results[1];
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await plugins_1.default.hooks.fire(&#039;action:topic.pin&#039;, { topic: lodash_1.default.clone(topicData), uid });
+        return topicData;
+    }
+    topicTools.delete = async function (tid, uid) {
+        return await toggleDelete(tid, uid, true);
+    };
+    topicTools.restore = async function (tid, uid) {
+        return await toggleDelete(tid, uid, false);
+    };
+    topicTools.purge = async function (tid, uid) {
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const canPurge = await privileges_1.default.topics.canPurge(tid, uid);
+        if (!canPurge) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        await Topics.purgePostsAndTopic(tid, uid);
+        return { tid: tid, cid: topicData.cid, uid: uid };
+    };
+    topicTools.lock = async function (tid, uid) {
+        return await toggleLock(tid, uid, true);
+    };
+    topicTools.unlock = async function (tid, uid) {
+        return await toggleLock(tid, uid, false);
+    };
+    topicTools.pin = async function (tid, uid) {
+        return await togglePin(tid, uid, true);
+    };
+    topicTools.unpin = async function (tid, uid) {
+        return await togglePin(tid, uid, false);
+    };
+    topicTools.resolve = async function (tid, uid) {
+        return await toggleResolve(tid, uid, true);
+    };
+    topicTools.unresolve = async function (tid, uid) {
+        return await toggleResolve(tid, uid, false);
+    };
+    topicTools.setPinExpiry = async function (tid, expiry, uid) {
+        if (isNaN(parseInt(expiry, 10)) || expiry &lt;= Date.now()) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        const topicData = await Topics.getTopicFields(tid, [&#039;tid&#039;, &#039;uid&#039;, &#039;cid&#039;]);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const isAdminOrMod = await privileges_1.default.categories.isAdminOrMod(topicData.cid, uid);
+        if (!isAdminOrMod) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        await Topics.setTopicField(tid, &#039;pinExpiry&#039;, expiry);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await plugins_1.default.hooks.fire(&#039;action:topic.setPinExpiry&#039;, { topic: lodash_1.default.clone(topicData), uid: uid });
+    };
+    topicTools.checkPinExpiry = async function (tids) {
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const expiry = (await _1.default.getTopicsFields(tids, [&#039;pinExpiry&#039;])).map((obj) =&gt; obj.pinExpiry);
+        const now = Date.now();
+        tids = await Promise.all(tids.map(async (tid, idx) =&gt; {
+            if (expiry[idx] &amp;&amp; parseInt(expiry[idx], 10) &lt;= now) {
+                await togglePin(tid, &#039;system&#039;, false);
+                return null;
+            }
+            return tid;
+        }));
+        return tids.filter(Boolean);
+    };
+    topicTools.orderPinnedTopics = async function (uid, data) {
+        const { tid, order } = data;
+        const cid = await Topics.getTopicField(tid, &#039;cid&#039;);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        if (!cid || !tid || !utils_1.default.isNumber(order) || order &lt; 0) {
+            throw new Error(&#039;[[error:invalid-data]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const isAdminOrMod = await privileges_1.default.categories.isAdminOrMod(cid, uid);
+        if (!isAdminOrMod) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        const pinnedTids = await database_1.default.getSortedSetRange(`cid:${cid}:tids:pinned`, 0, -1);
+        const currentIndex = pinnedTids.indexOf(String(tid));
+        if (currentIndex === -1) {
+            return;
+        }
+        const newOrder = pinnedTids.length - order - 1;
+        // moves tid to index order in the array
+        if (pinnedTids.length &gt; 1) {
+            pinnedTids.splice(Math.max(0, newOrder), 0, pinnedTids.splice(currentIndex, 1)[0]);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await database_1.default.sortedSetAdd(`cid:${cid}:tids:pinned`, pinnedTids.map((tid, index) =&gt; index), pinnedTids);
+    };
+    topicTools.move = async function (tid, data) {
+        // const cid = parseInt(data.cid, 10);
+        const { cid } = data;
+        const topicData = await Topics.getTopicData(tid);
+        if (!topicData) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        if (cid === topicData.cid) {
+            throw new Error(&#039;[[error:cant-move-topic-to-same-category]]&#039;);
+        }
+        const tags = await Topics.getTopicTags(tid);
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await database_1.default.sortedSetsRemove([
+            `cid:${topicData.cid}:tids`,
+            `cid:${topicData.cid}:tids:pinned`,
+            `cid:${topicData.cid}:tids:posts`,
+            `cid:${topicData.cid}:tids:votes`,
+            `cid:${topicData.cid}:tids:views`,
+            `cid:${topicData.cid}:tids:lastposttime`,
+            `cid:${topicData.cid}:recent_tids`,
+            `cid:${topicData.cid}:uid:${topicData.uid}:tids`,
+            ...tags.map(tag =&gt; `cid:${topicData.cid}:tag:${tag}:topics`),
+        ], tid);
+        topicData.postcount = topicData.postcount || 0;
+        const votes = topicData.upvotes - topicData.downvotes;
+        const bulk = [
+            [`cid:${cid}:tids:lastposttime`, topicData.lastposttime, tid],
+            [`cid:${cid}:uid:${topicData.uid}:tids`, topicData.timestamp, tid],
+            ...tags.map(tag =&gt; [`cid:${cid}:tag:${tag}:topics`, topicData.timestamp, tid]),
+        ];
+        if (topicData.pinned) {
+            bulk.push([`cid:${cid}:tids:pinned`, Date.now(), tid]);
+        }
+        else {
+            bulk.push([`cid:${cid}:tids`, topicData.lastposttime, tid]);
+            bulk.push([`cid:${cid}:tids:posts`, topicData.postcount, tid]);
+            bulk.push([`cid:${cid}:tids:votes`, votes, tid]);
+            bulk.push([`cid:${cid}:tids:views`, topicData.viewcount, tid]);
+        }
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await database_1.default.sortedSetAddBulk(bulk);
+        const oldCid = topicData.cid;
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await categories_1.default.moveRecentReplies(tid, oldCid, cid);
+        await Promise.all([
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            categories_1.default.incrementCategoryFieldBy(oldCid, &#039;topic_count&#039;, -1),
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            categories_1.default.incrementCategoryFieldBy(cid, &#039;topic_count&#039;, 1),
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            categories_1.default.updateRecentTidForCid(cid),
+            // The next line calls a function in a module that has not been updated to TS yet
+            // eslint-disable-next-line max-len
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+            categories_1.default.updateRecentTidForCid(oldCid),
+            Topics.setTopicFields(tid, {
+                cid: cid,
+                oldCid: oldCid,
+            }),
+            Topics.updateCategoryTagsCount([oldCid, cid], tags),
+            Topics.events.log(tid, { type: &#039;move&#039;, uid: data.uid, fromCid: oldCid }),
+        ]);
+        const hookData = lodash_1.default.clone(data);
+        hookData.fromCid = oldCid;
+        hookData.toCid = cid;
+        hookData.tid = tid;
+        // The next line calls a function in a module that has not been updated to TS yet
+        // eslint-disable-next-line max-len
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+        await plugins_1.default.hooks.fire(&#039;action:topic.move&#039;, hookData);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

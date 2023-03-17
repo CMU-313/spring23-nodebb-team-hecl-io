@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/thumbs.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/thumbs.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.98</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">161</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">43.10</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.12</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const nconf = require(&#039;nconf&#039;);
+const path = require(&#039;path&#039;);
+const validator = require(&#039;validator&#039;);
+
+const db = require(&#039;../database&#039;);
+const file = require(&#039;../file&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const posts = require(&#039;../posts&#039;);
+const meta = require(&#039;../meta&#039;);
+const cache = require(&#039;../cache&#039;);
+
+const Thumbs = module.exports;
+
+Thumbs.exists = async function (id, path) {
+    const isDraft = validator.isUUID(String(id));
+    const set = `${isDraft ? &#039;draft&#039; : &#039;topic&#039;}:${id}:thumbs`;
+
+    return db.isSortedSetMember(set, path);
+};
+
+Thumbs.load = async function (topicData) {
+    const topicsWithThumbs = topicData.filter(t =&gt; t &amp;&amp; parseInt(t.numThumbs, 10) &gt; 0);
+    const tidsWithThumbs = topicsWithThumbs.map(t =&gt; t.tid);
+    const thumbs = await Thumbs.get(tidsWithThumbs);
+    const tidToThumbs = _.zipObject(tidsWithThumbs, thumbs);
+    return topicData.map(t =&gt; (t &amp;&amp; t.tid ? (tidToThumbs[t.tid] || []) : []));
+};
+
+Thumbs.get = async function (tids) {
+    // Allow singular or plural usage
+    let singular = false;
+    if (!Array.isArray(tids)) {
+        tids = [tids];
+        singular = true;
+    }
+
+    if (!meta.config.allowTopicsThumbnail || !tids.length) {
+        return singular ? [] : tids.map(() =&gt; []);
+    }
+
+    const hasTimestampPrefix = /^\d+-/;
+    const upload_url = nconf.get(&#039;relative_path&#039;) + nconf.get(&#039;upload_url&#039;);
+    const sets = tids.map(tid =&gt; `${validator.isUUID(String(tid)) ? &#039;draft&#039; : &#039;topic&#039;}:${tid}:thumbs`);
+    const thumbs = await Promise.all(sets.map(getThumbs));
+    let response = thumbs.map((thumbSet, idx) =&gt; thumbSet.map(thumb =&gt; ({
+        id: tids[idx],
+        name: (() =&gt; {
+            const name = path.basename(thumb);
+            return hasTimestampPrefix.test(name) ? name.slice(14) : name;
+        })(),
+        url: thumb.startsWith(&#039;http&#039;) ? thumb : path.posix.join(upload_url, thumb),
+    })));
+
+    ({ thumbs: response } = await plugins.hooks.fire(&#039;filter:topics.getThumbs&#039;, { tids, thumbs: response }));
+    return singular ? response.pop() : response;
+};
+
+async function getThumbs(set) {
+    const cached = cache.get(set);
+    if (cached !== undefined) {
+        return cached.slice();
+    }
+    const thumbs = await db.getSortedSetRange(set, 0, -1);
+    cache.set(set, thumbs);
+    return thumbs.slice();
+}
+
+Thumbs.associate = async function ({ id, path, score }) {
+    // Associates a newly uploaded file as a thumb to the passed-in draft or topic
+    const isDraft = validator.isUUID(String(id));
+    const isLocal = !path.startsWith(&#039;http&#039;);
+    const set = `${isDraft ? &#039;draft&#039; : &#039;topic&#039;}:${id}:thumbs`;
+    const numThumbs = await db.sortedSetCard(set);
+
+    // Normalize the path to allow for changes in upload_path (and so upload_url can be appended if needed)
+    if (isLocal) {
+        path = path.replace(nconf.get(&#039;upload_path&#039;), &#039;&#039;);
+    }
+    const topics = require(&#039;.&#039;);
+    await db.sortedSetAdd(set, isFinite(score) ? score : numThumbs, path);
+    if (!isDraft) {
+        const numThumbs = await db.sortedSetCard(set);
+        await topics.setTopicField(id, &#039;numThumbs&#039;, numThumbs);
+    }
+    cache.del(set);
+
+    // Associate thumbnails with the main pid (only on local upload)
+    if (!isDraft &amp;&amp; isLocal) {
+        const mainPid = (await topics.getMainPids([id]))[0];
+        await posts.uploads.associate(mainPid, path.slice(1));
+    }
+};
+
+Thumbs.migrate = async function (uuid, id) {
+    // Converts the draft thumb zset to the topic zset (combines thumbs if applicable)
+    const set = `draft:${uuid}:thumbs`;
+    const thumbs = await db.getSortedSetRangeWithScores(set, 0, -1);
+    await Promise.all(thumbs.map(async thumb =&gt; await Thumbs.associate({
+        id,
+        path: thumb.value,
+        score: thumb.score,
+    })));
+    await db.delete(set);
+    cache.del(set);
+};
+
+Thumbs.delete = async function (id, relativePaths) {
+    const isDraft = validator.isUUID(String(id));
+    const set = `${isDraft ? &#039;draft&#039; : &#039;topic&#039;}:${id}:thumbs`;
+
+    if (typeof relativePaths === &#039;string&#039;) {
+        relativePaths = [relativePaths];
+    } else if (!Array.isArray(relativePaths)) {
+        throw new Error(&#039;[[error:invalid-data]]&#039;);
+    }
+
+    const absolutePaths = relativePaths.map(relativePath =&gt; path.join(nconf.get(&#039;upload_path&#039;), relativePath));
+    const [associated, existsOnDisk] = await Promise.all([
+        db.isSortedSetMembers(set, relativePaths),
+        Promise.all(absolutePaths.map(async absolutePath =&gt; file.exists(absolutePath))),
+    ]);
+
+    const toRemove = [];
+    const toDelete = [];
+    relativePaths.forEach((relativePath, idx) =&gt; {
+        if (associated[idx]) {
+            toRemove.push(relativePath);
+        }
+
+        if (existsOnDisk[idx]) {
+            toDelete.push(absolutePaths[idx]);
+        }
+    });
+
+    await db.sortedSetRemove(set, toRemove);
+
+    if (isDraft &amp;&amp; toDelete.length) { // drafts only; post upload dissociation handles disk deletion for topics
+        await Promise.all(toDelete.map(async absolutePath =&gt; file.delete(absolutePath)));
+    }
+
+    if (toRemove.length &amp;&amp; !isDraft) {
+        const topics = require(&#039;.&#039;);
+        const mainPid = (await topics.getMainPids([id]))[0];
+
+        await Promise.all([
+            db.incrObjectFieldBy(`topic:${id}`, &#039;numThumbs&#039;, -toRemove.length),
+            Promise.all(toRemove.map(async relativePath =&gt; posts.uploads.dissociate(mainPid, relativePath.slice(1)))),
+        ]);
+    }
+};
+
+Thumbs.deleteAll = async (id) =&gt; {
+    const isDraft = validator.isUUID(String(id));
+    const set = `${isDraft ? &#039;draft&#039; : &#039;topic&#039;}:${id}:thumbs`;
+
+    const thumbs = await db.getSortedSetRange(set, 0, -1);
+    await Thumbs.delete(id, thumbs);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/post-queue.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/post-queue.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.75</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">185</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">25.90</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.04</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/post-queue&#039;, [
+    &#039;categoryFilter&#039;, &#039;categorySelector&#039;, &#039;api&#039;, &#039;alerts&#039;, &#039;bootbox&#039;,
+], function (categoryFilter, categorySelector, api, alerts, bootbox) {
+    const PostQueue = {};
+
+    PostQueue.init = function () {
+        $(&#039;[data-toggle=&quot;tooltip&quot;]&#039;).tooltip();
+
+        categoryFilter.init($(&#039;[component=&quot;category/dropdown&quot;]&#039;), {
+            privilege: &#039;moderate&#039;,
+        });
+
+        handleBulkActions();
+
+        $(&#039;.posts-list&#039;).on(&#039;click&#039;, &#039;[data-action]&#039;, async function () {
+            function getMessage() {
+                return new Promise((resolve) =&gt; {
+                    const modal = bootbox.dialog({
+                        title: &#039;[[post-queue:notify-user]]&#039;,
+                        message: &#039;&lt;textarea class=&quot;form-control&quot;&gt;&lt;/textarea&gt;&#039;,
+                        buttons: {
+                            OK: {
+                                label: &#039;[[modules:bootbox.send]]&#039;,
+                                callback: function () {
+                                    const val = modal.find(&#039;textarea&#039;).val();
+                                    if (val) {
+                                        resolve(val);
+                                    }
+                                },
+                            },
+                        },
+                    });
+                });
+            }
+
+            const parent = $(this).parents(&#039;[data-id]&#039;);
+            const action = $(this).attr(&#039;data-action&#039;);
+            const id = parent.attr(&#039;data-id&#039;);
+            const listContainer = parent.get(0).parentNode;
+
+            if ((![&#039;accept&#039;, &#039;reject&#039;, &#039;notify&#039;].includes(action)) || (action === &#039;reject&#039; &amp;&amp; !await confirmReject(&#039;[[post-queue:confirm-reject]]&#039;))) {
+                return;
+            }
+
+            socket.emit(&#039;posts.&#039; + action, {
+                id: id,
+                message: action === &#039;notify&#039; ? await getMessage() : undefined,
+            }, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                if (action === &#039;accept&#039; || action === &#039;reject&#039;) {
+                    parent.remove();
+                }
+
+                if (listContainer.childElementCount === 0) {
+                    if (ajaxify.data.singlePost) {
+                        ajaxify.go(&#039;/post-queue&#039; + window.location.search);
+                    } else {
+                        ajaxify.refresh();
+                    }
+                }
+            });
+            return false;
+        });
+
+        handleContentEdit(&#039;.post-content&#039;, &#039;.post-content-editable&#039;, &#039;textarea&#039;);
+        handleContentEdit(&#039;.topic-title&#039;, &#039;.topic-title-editable&#039;, &#039;input&#039;);
+
+        $(&#039;.posts-list&#039;).on(&#039;click&#039;, &#039;.topic-category[data-editable]&#039;, function () {
+            const $this = $(this);
+            const id = $this.parents(&#039;[data-id]&#039;).attr(&#039;data-id&#039;);
+            categorySelector.modal({
+                onSubmit: function (selectedCategory) {
+                    Promise.all([
+                        api.get(`/categories/${selectedCategory.cid}`, {}),
+                        socket.emit(&#039;posts.editQueuedContent&#039;, {
+                            id: id,
+                            cid: selectedCategory.cid,
+                        }),
+                    ]).then(function (result) {
+                        const category = result[0];
+                        app.parseAndTranslate(&#039;post-queue&#039;, &#039;posts&#039;, {
+                            posts: [{
+                                category: category,
+                            }],
+                        }, function (html) {
+                            if ($this.find(&#039;.category-text&#039;).length) {
+                                $this.find(&#039;.category-text&#039;).text(html.find(&#039;.topic-category .category-text&#039;).text());
+                            } else {
+                                // for backwards compatibility, remove in 1.16.0
+                                $this.replaceWith(html.find(&#039;.topic-category&#039;));
+                            }
+                        });
+                    }).catch(alerts.error);
+                },
+            });
+            return false;
+        });
+
+        $(&#039;[component=&quot;post/content&quot;] img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+    };
+
+    function confirmReject(msg) {
+        return new Promise((resolve) =&gt; {
+            bootbox.confirm(msg, resolve);
+        });
+    }
+
+    function handleContentEdit(displayClass, editableClass, inputSelector) {
+        $(&#039;.posts-list&#039;).on(&#039;click&#039;, displayClass, function () {
+            const el = $(this);
+            const inputEl = el.parent().find(editableClass);
+            if (inputEl.length) {
+                el.addClass(&#039;hidden&#039;);
+                inputEl.removeClass(&#039;hidden&#039;).find(inputSelector).focus();
+            }
+        });
+
+        $(&#039;.posts-list&#039;).on(&#039;blur&#039;, editableClass + &#039; &#039; + inputSelector, function () {
+            const textarea = $(this);
+            const preview = textarea.parent().parent().find(displayClass);
+            const id = textarea.parents(&#039;[data-id]&#039;).attr(&#039;data-id&#039;);
+            const titleEdit = displayClass === &#039;.topic-title&#039;;
+
+            socket.emit(&#039;posts.editQueuedContent&#039;, {
+                id: id,
+                title: titleEdit ? textarea.val() : undefined,
+                content: titleEdit ? undefined : textarea.val(),
+            }, function (err, data) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                if (titleEdit) {
+                    if (preview.find(&#039;.title-text&#039;).length) {
+                        preview.find(&#039;.title-text&#039;).text(data.postData.title);
+                    } else {
+                        // for backwards compatibility, remove in 1.16.0
+                        preview.html(data.postData.title);
+                    }
+                } else {
+                    preview.html(data.postData.content);
+                }
+
+                textarea.parent().addClass(&#039;hidden&#039;);
+                preview.removeClass(&#039;hidden&#039;);
+            });
+        });
+    }
+
+    function handleBulkActions() {
+        $(&#039;[component=&quot;post-queue/bulk-actions&quot;]&#039;).on(&#039;click&#039;, &#039;[data-action]&#039;, async function () {
+            const bulkAction = $(this).attr(&#039;data-action&#039;);
+            let queueEls = $(&#039;.posts-list [data-id]&#039;);
+            if (bulkAction === &#039;accept-selected&#039; || bulkAction === &#039;reject-selected&#039;) {
+                queueEls = queueEls.filter(
+                    (i, el) =&gt; $(el).find(&#039;input[type=&quot;checkbox&quot;]&#039;).is(&#039;:checked&#039;)
+                );
+            }
+            const ids = queueEls.map((i, el) =&gt; $(el).attr(&#039;data-id&#039;)).get();
+            const showConfirm = bulkAction === &#039;reject-all&#039; || bulkAction === &#039;reject-selected&#039;;
+            if (!ids.length || (showConfirm &amp;&amp; !(await confirmReject(`[[post-queue:${bulkAction}-confirm, ${ids.length}]]`)))) {
+                return;
+            }
+            const action = bulkAction.split(&#039;-&#039;)[0];
+            const promises = ids.map(id =&gt; socket.emit(&#039;posts.&#039; + action, { id: id }));
+
+            Promise.allSettled(promises).then(function (results) {
+                const fulfilled = results.filter(res =&gt; res.status === &#039;fulfilled&#039;).length;
+                const errors = results.filter(res =&gt; res.status === &#039;rejected&#039;);
+                if (fulfilled) {
+                    alerts.success(`[[post-queue:bulk-${action}-success, ${fulfilled}]]`);
+                    ajaxify.refresh();
+                }
+
+                errors.forEach(res =&gt; alerts.error(res.reason));
+            });
+        });
+    }
+
+    return PostQueue;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

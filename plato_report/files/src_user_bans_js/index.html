@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/bans.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/bans.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">68.90</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">143</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">39.68</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.61</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+
+const meta = require(&#039;../meta&#039;);
+const emailer = require(&#039;../emailer&#039;);
+const db = require(&#039;../database&#039;);
+const groups = require(&#039;../groups&#039;);
+const privileges = require(&#039;../privileges&#039;);
+
+module.exports = function (User) {
+    User.bans = {};
+
+    User.bans.ban = async function (uid, until, reason) {
+        // &quot;until&quot; (optional) is unix timestamp in milliseconds
+        // &quot;reason&quot; (optional) is a string
+        until = until || 0;
+        reason = reason || &#039;&#039;;
+
+        const now = Date.now();
+
+        until = parseInt(until, 10);
+        if (isNaN(until)) {
+            throw new Error(&#039;[[error:ban-expiry-missing]]&#039;);
+        }
+
+        const banKey = `uid:${uid}:ban:${now}`;
+        const banData = {
+            uid: uid,
+            timestamp: now,
+            expire: until &gt; now ? until : 0,
+        };
+        if (reason) {
+            banData.reason = reason;
+        }
+
+        // Leaving all other system groups to have privileges constrained to the &quot;banned-users&quot; group
+        const systemGroups = groups.systemGroups.filter(group =&gt; group !== groups.BANNED_USERS);
+        await groups.leave(systemGroups, uid);
+        await groups.join(groups.BANNED_USERS, uid);
+        await db.sortedSetAdd(&#039;users:banned&#039;, now, uid);
+        await db.sortedSetAdd(`uid:${uid}:bans:timestamp`, now, banKey);
+        await db.setObject(banKey, banData);
+        await User.setUserField(uid, &#039;banned:expire&#039;, banData.expire);
+        if (until &gt; now) {
+            await db.sortedSetAdd(&#039;users:banned:expire&#039;, until, uid);
+        } else {
+            await db.sortedSetRemove(&#039;users:banned:expire&#039;, uid);
+        }
+
+        // Email notification of ban
+        const username = await User.getUserField(uid, &#039;username&#039;);
+        const siteTitle = meta.config.title || &#039;NodeBB&#039;;
+
+        const data = {
+            subject: `[[email:banned.subject, ${siteTitle}]]`,
+            username: username,
+            until: until ? (new Date(until)).toUTCString().replace(/,/g, &#039;\\,&#039;) : false,
+            reason: reason,
+        };
+        await emailer.send(&#039;banned&#039;, uid, data).catch(err =&gt; winston.error(`[emailer.send] ${err.stack}`));
+
+        return banData;
+    };
+
+    User.bans.unban = async function (uids) {
+        uids = Array.isArray(uids) ? uids : [uids];
+        const userData = await User.getUsersFields(uids, [&#039;email:confirmed&#039;]);
+
+        await db.setObject(uids.map(uid =&gt; `user:${uid}`), { &#039;banned:expire&#039;: 0 });
+
+        /* eslint-disable no-await-in-loop */
+        for (const user of userData) {
+            const systemGroupsToJoin = [
+                &#039;registered-users&#039;,
+                (parseInt(user[&#039;email:confirmed&#039;], 10) === 1 ? &#039;verified-users&#039; : &#039;unverified-users&#039;),
+            ];
+            await groups.leave(groups.BANNED_USERS, user.uid);
+            // An unbanned user would lost its previous &quot;Global Moderator&quot; status
+            await groups.join(systemGroupsToJoin, user.uid);
+        }
+
+        await db.sortedSetRemove([&#039;users:banned&#039;, &#039;users:banned:expire&#039;], uids);
+    };
+
+    User.bans.isBanned = async function (uids) {
+        const isArray = Array.isArray(uids);
+        uids = isArray ? uids : [uids];
+        const result = await User.bans.unbanIfExpired(uids);
+        return isArray ? result.map(r =&gt; r.banned) : result[0].banned;
+    };
+
+    User.bans.canLoginIfBanned = async function (uid) {
+        let canLogin = true;
+
+        const { banned } = (await User.bans.unbanIfExpired([uid]))[0];
+        // Group privilege overshadows individual one
+        if (banned) {
+            canLogin = await privileges.global.canGroup(&#039;local:login&#039;, groups.BANNED_USERS);
+        }
+        if (banned &amp;&amp; !canLogin) {
+            // Checking a single privilege of user
+            canLogin = await groups.isMember(uid, &#039;cid:0:privileges:local:login&#039;);
+        }
+
+        return canLogin;
+    };
+
+    User.bans.unbanIfExpired = async function (uids) {
+        // loading user data will unban if it has expired -barisu
+        const userData = await User.getUsersFields(uids, [&#039;banned:expire&#039;]);
+        return User.bans.calcExpiredFromUserData(userData);
+    };
+
+    User.bans.calcExpiredFromUserData = async function (userData) {
+        const isArray = Array.isArray(userData);
+        userData = isArray ? userData : [userData];
+        const banned = await groups.isMembers(userData.map(u =&gt; u.uid), groups.BANNED_USERS);
+        userData = userData.map((userData, index) =&gt; ({
+            banned: banned[index],
+            &#039;banned:expire&#039;: userData &amp;&amp; userData[&#039;banned:expire&#039;],
+            banExpired: userData &amp;&amp; userData[&#039;banned:expire&#039;] &lt;= Date.now() &amp;&amp; userData[&#039;banned:expire&#039;] !== 0,
+        }));
+        return isArray ? userData : userData[0];
+    };
+
+    User.bans.filterBanned = async function (uids) {
+        const isBanned = await User.bans.isBanned(uids);
+        return uids.filter((uid, index) =&gt; !isBanned[index]);
+    };
+
+    User.bans.getReason = async function (uid) {
+        if (parseInt(uid, 10) &lt;= 0) {
+            return &#039;&#039;;
+        }
+        const keys = await db.getSortedSetRevRange(`uid:${uid}:bans:timestamp`, 0, 0);
+        if (!keys.length) {
+            return &#039;&#039;;
+        }
+        const banObj = await db.getObject(keys[0]);
+        return banObj &amp;&amp; banObj.reason ? banObj.reason : &#039;&#039;;
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

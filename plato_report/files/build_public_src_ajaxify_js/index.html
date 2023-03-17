@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/ajaxify.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/ajaxify.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">594</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">62.99</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">7.48</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const hooks = require(&#039;./modules/hooks&#039;);
+const { render } = require(&#039;./widgets&#039;);
+
+window.ajaxify = window.ajaxify || {};
+ajaxify.widgets = { render: render };
+(function () {
+    let apiXHR = null;
+    let ajaxifyTimer;
+
+    let retry = true;
+    let previousBodyClass = &#039;&#039;;
+
+    ajaxify.count = 0;
+    ajaxify.currentPage = null;
+
+    ajaxify.go = function (url, callback, quiet) {
+        // Automatically reconnect to socket and re-ajaxify on success
+        if (!socket.connected) {
+            app.reconnect();
+
+            if (ajaxify.reconnectAction) {
+                $(window).off(&#039;action:reconnected&#039;, ajaxify.reconnectAction);
+            }
+            ajaxify.reconnectAction = function (e) {
+                ajaxify.go(url, callback, quiet);
+                $(window).off(e);
+            };
+            $(window).on(&#039;action:reconnected&#039;, ajaxify.reconnectAction);
+        }
+
+        // Abort subsequent requests if clicked multiple times within a short window of time
+        if (ajaxifyTimer &amp;&amp; (Date.now() - ajaxifyTimer) &lt; 500) {
+            return true;
+        }
+        ajaxifyTimer = Date.now();
+
+        if (ajaxify.handleRedirects(url)) {
+            return true;
+        }
+
+        if (!quiet &amp;&amp; url === ajaxify.currentPage + window.location.search + window.location.hash) {
+            quiet = true;
+        }
+
+        ajaxify.cleanup(url, ajaxify.data.template.name);
+
+        if ($(&#039;#content&#039;).hasClass(&#039;ajaxifying&#039;) &amp;&amp; apiXHR) {
+            apiXHR.abort();
+        }
+
+        app.previousUrl = ![&#039;reset&#039;].includes(ajaxify.currentPage) ?
+            window.location.pathname.slice(config.relative_path.length) + window.location.search :
+            app.previousUrl;
+
+        url = ajaxify.start(url);
+
+        // If any listeners alter url and set it to an empty string, abort the ajaxification
+        if (url === null) {
+            hooks.fire(&#039;action:ajaxify.end&#039;, { url: url, tpl_url: ajaxify.data.template.name, title: ajaxify.data.title });
+            return false;
+        }
+
+        previousBodyClass = ajaxify.data.bodyClass;
+        $(&#039;#footer, #content&#039;).removeClass(&#039;hide&#039;).addClass(&#039;ajaxifying&#039;);
+
+        ajaxify.loadData(url, function (err, data) {
+            if (!err || (
+                err &amp;&amp;
+                err.data &amp;&amp;
+                (parseInt(err.data.status, 10) !== 302 &amp;&amp; parseInt(err.data.status, 10) !== 308)
+            )) {
+                ajaxify.updateHistory(url, quiet);
+            }
+
+            if (err) {
+                return onAjaxError(err, url, callback, quiet);
+            }
+
+            retry = true;
+
+            renderTemplate(url, data.templateToRender || data.template.name, data, callback);
+        });
+
+        return true;
+    };
+
+    // this function is called just once from footer on page load
+    ajaxify.coldLoad = function () {
+        const url = ajaxify.start(window.location.pathname.slice(1) + window.location.search + window.location.hash);
+        ajaxify.updateHistory(url, true);
+        ajaxify.end(url, ajaxify.data.template.name);
+        hooks.fire(&#039;action:ajaxify.coldLoad&#039;);
+    };
+
+    ajaxify.isCold = function () {
+        return ajaxify.count &lt;= 1;
+    };
+
+    ajaxify.handleRedirects = function (url) {
+        url = ajaxify.removeRelativePath(url.replace(/^\/|\/$/g, &#039;&#039;)).toLowerCase();
+        const isClientToAdmin = url.startsWith(&#039;admin&#039;) &amp;&amp; window.location.pathname.indexOf(config.relative_path + &#039;/admin&#039;) !== 0;
+        const isAdminToClient = !url.startsWith(&#039;admin&#039;) &amp;&amp; window.location.pathname.indexOf(config.relative_path + &#039;/admin&#039;) === 0;
+
+        if (isClientToAdmin || isAdminToClient) {
+            window.open(config.relative_path + &#039;/&#039; + url, &#039;_top&#039;);
+            return true;
+        }
+        return false;
+    };
+
+    ajaxify.start = function (url) {
+        url = ajaxify.removeRelativePath(url.replace(/^\/|\/$/g, &#039;&#039;));
+
+        const payload = {
+            url: url,
+        };
+
+        hooks.logs.collect();
+        hooks.fire(&#039;action:ajaxify.start&#039;, payload);
+
+        ajaxify.count += 1;
+
+        return payload.url;
+    };
+
+    ajaxify.updateHistory = function (url, quiet) {
+        ajaxify.currentPage = url.split(/[?#]/)[0];
+        if (window.history &amp;&amp; window.history.pushState) {
+            window.history[!quiet ? &#039;pushState&#039; : &#039;replaceState&#039;]({
+                url: url,
+            }, url, config.relative_path + &#039;/&#039; + url);
+        }
+    };
+
+    function onAjaxError(err, url, callback, quiet) {
+        const data = err.data;
+        const textStatus = err.textStatus;
+
+        if (data) {
+            let status = parseInt(data.status, 10);
+            if ([400, 403, 404, 500, 502, 504].includes(status)) {
+                if (status === 502 &amp;&amp; retry) {
+                    retry = false;
+                    ajaxifyTimer = undefined;
+                    return ajaxify.go(url, callback, quiet);
+                }
+                if (status === 502) {
+                    status = 500;
+                }
+                if (data.responseJSON) {
+                    data.responseJSON.config = config;
+                }
+
+                $(&#039;#footer, #content&#039;).removeClass(&#039;hide&#039;).addClass(&#039;ajaxifying&#039;);
+                return renderTemplate(url, status.toString(), data.responseJSON || {}, callback);
+            } else if (status === 401) {
+                require([&#039;alerts&#039;], function (alerts) {
+                    alerts.error(&#039;[[global:please_log_in]]&#039;);
+                });
+                app.previousUrl = url;
+                window.location.href = config.relative_path + &#039;/login&#039;;
+            } else if (status === 302 || status === 308) {
+                if (data.responseJSON &amp;&amp; data.responseJSON.external) {
+                    // this is used by sso plugins to redirect to the auth route
+                    // cant use ajaxify.go for /auth/sso routes
+                    window.location.href = data.responseJSON.external;
+                } else if (typeof data.responseJSON === &#039;string&#039;) {
+                    ajaxifyTimer = undefined;
+                    if (data.responseJSON.startsWith(&#039;http://&#039;) || data.responseJSON.startsWith(&#039;https://&#039;)) {
+                        window.location.href = data.responseJSON;
+                    } else {
+                        ajaxify.go(data.responseJSON.slice(1), callback, quiet);
+                    }
+                }
+            }
+        } else if (textStatus !== &#039;abort&#039;) {
+            require([&#039;alerts&#039;], function (alerts) {
+                alerts.error(data.responseJSON.error);
+            });
+        }
+    }
+
+    function renderTemplate(url, tpl_url, data, callback) {
+        hooks.fire(&#039;action:ajaxify.loadingTemplates&#039;, {});
+        require([&#039;translator&#039;, &#039;benchpress&#039;], function (translator, Benchpress) {
+            Benchpress.render(tpl_url, data)
+                .then(rendered =&gt; translator.translate(rendered))
+                .then(function (translated) {
+                    translated = translator.unescape(translated);
+                    $(&#039;body&#039;).removeClass(previousBodyClass).addClass(data.bodyClass);
+                    $(&#039;#content&#039;).html(translated);
+
+                    ajaxify.end(url, tpl_url);
+
+                    if (typeof callback === &#039;function&#039;) {
+                        callback();
+                    }
+
+                    $(&#039;#content, #footer&#039;).removeClass(&#039;ajaxifying&#039;);
+
+                    // Only executed on ajaxify. Otherwise these&#039;d be in ajaxify.end()
+                    updateTitle(data.title);
+                    updateTags();
+                });
+        });
+    }
+
+    function updateTitle(title) {
+        if (!title) {
+            return;
+        }
+        require([&#039;translator&#039;], function (translator) {
+            title = config.titleLayout.replace(/&amp;#123;/g, &#039;{&#039;).replace(/&amp;#125;/g, &#039;}&#039;)
+                .replace(&#039;{pageTitle}&#039;, function () { return title; })
+                .replace(&#039;{browserTitle}&#039;, function () { return config.browserTitle; });
+
+            // Allow translation strings in title on ajaxify (#5927)
+            title = translator.unescape(title);
+            const data = { title: title };
+            hooks.fire(&#039;action:ajaxify.updateTitle&#039;, data);
+            translator.translate(data.title, function (translated) {
+                window.document.title = $(&#039;&lt;div&gt;&lt;/div&gt;&#039;).html(translated).text();
+            });
+        });
+    }
+
+    function updateTags() {
+        const metaWhitelist = [&#039;title&#039;, &#039;description&#039;, /og:.+/, /article:.+/, &#039;robots&#039;].map(function (val) {
+            return new RegExp(val);
+        });
+        const linkWhitelist = [&#039;canonical&#039;, &#039;alternate&#039;, &#039;up&#039;];
+
+        // Delete the old meta tags
+        Array.prototype.slice
+            .call(document.querySelectorAll(&#039;head meta&#039;))
+            .filter(function (el) {
+                const name = el.getAttribute(&#039;property&#039;) || el.getAttribute(&#039;name&#039;);
+                return metaWhitelist.some(function (exp) {
+                    return !!exp.test(name);
+                });
+            })
+            .forEach(function (el) {
+                document.head.removeChild(el);
+            });
+        require([&#039;translator&#039;], function (translator) {
+            // Add new meta tags
+            ajaxify.data._header.tags.meta
+                .filter(function (tagObj) {
+                    const name = tagObj.name || tagObj.property;
+                    return metaWhitelist.some(function (exp) {
+                        return !!exp.test(name);
+                    });
+                }).forEach(async function (tagObj) {
+                    if (tagObj.content) {
+                        tagObj.content = await translator.translate(tagObj.content);
+                    }
+                    const metaEl = document.createElement(&#039;meta&#039;);
+                    Object.keys(tagObj).forEach(function (prop) {
+                        metaEl.setAttribute(prop, tagObj[prop]);
+                    });
+                    document.head.appendChild(metaEl);
+                });
+        });
+
+        // Delete the old link tags
+        Array.prototype.slice
+            .call(document.querySelectorAll(&#039;head link&#039;))
+            .filter(function (el) {
+                const name = el.getAttribute(&#039;rel&#039;);
+                return linkWhitelist.some(function (item) {
+                    return item === name;
+                });
+            })
+            .forEach(function (el) {
+                document.head.removeChild(el);
+            });
+
+        // Add new link tags
+        ajaxify.data._header.tags.link
+            .filter(function (tagObj) {
+                return linkWhitelist.some(function (item) {
+                    return item === tagObj.rel;
+                });
+            })
+            .forEach(function (tagObj) {
+                const linkEl = document.createElement(&#039;link&#039;);
+                Object.keys(tagObj).forEach(function (prop) {
+                    linkEl.setAttribute(prop, tagObj[prop]);
+                });
+                document.head.appendChild(linkEl);
+            });
+    }
+
+    ajaxify.end = function (url, tpl_url) {
+        // Scroll back to top of page
+        if (!ajaxify.isCold()) {
+            window.scrollTo(0, 0);
+        }
+        ajaxify.loadScript(tpl_url, function done() {
+            hooks.fire(&#039;action:ajaxify.end&#039;, { url: url, tpl_url: tpl_url, title: ajaxify.data.title });
+            hooks.logs.flush();
+        });
+        ajaxify.widgets.render(tpl_url);
+
+        hooks.fire(&#039;action:ajaxify.contentLoaded&#039;, { url: url, tpl: tpl_url });
+
+        app.processPage();
+    };
+
+    ajaxify.parseData = () =&gt; {
+        const dataEl = document.getElementById(&#039;ajaxify-data&#039;);
+        if (dataEl) {
+            try {
+                ajaxify.data = JSON.parse(dataEl.textContent);
+            } catch (e) {
+                console.error(e);
+                ajaxify.data = {};
+            } finally {
+                dataEl.remove();
+            }
+        }
+    };
+
+    ajaxify.removeRelativePath = function (url) {
+        if (url.startsWith(config.relative_path.slice(1))) {
+            url = url.slice(config.relative_path.length);
+        }
+        return url;
+    };
+
+    ajaxify.refresh = function (callback) {
+        ajaxify.go(ajaxify.currentPage + window.location.search + window.location.hash, callback, true);
+    };
+
+    ajaxify.loadScript = function (tpl_url, callback) {
+        let location = !app.inAdmin ? &#039;forum/&#039; : &#039;&#039;;
+
+        if (tpl_url.startsWith(&#039;admin&#039;)) {
+            location = &#039;&#039;;
+        }
+        const data = {
+            tpl_url: tpl_url,
+            scripts: [location + tpl_url],
+        };
+
+        // Hint: useful if you want to load a module on a specific page (append module name to `scripts`)
+        hooks.fire(&#039;action:script.load&#039;, data);
+        hooks.fire(&#039;filter:script.load&#039;, data).then((data) =&gt; {
+            // Require and parse modules
+            let outstanding = data.scripts.length;
+
+            const scripts = data.scripts.map(function (script) {
+                if (typeof script === &#039;function&#039;) {
+                    return function (next) {
+                        script();
+                        next();
+                    };
+                }
+                if (typeof script === &#039;string&#039;) {
+                    return async function (next) {
+                        const module = await app.require(script);
+                        // Hint: useful if you want to override a loaded library (e.g. replace core client-side logic),
+                        // or call a method other than .init()
+                        hooks.fire(&#039;static:script.init&#039;, { tpl_url, name: script, module }).then(() =&gt; {
+                            if (module &amp;&amp; module.init) {
+                                module.init();
+                            }
+                            next();
+                        });
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+
+            if (scripts.length) {
+                scripts.forEach(function (fn) {
+                    fn(function () {
+                        outstanding -= 1;
+                        if (outstanding === 0) {
+                            callback();
+                        }
+                    });
+                });
+            } else {
+                callback();
+            }
+        });
+    };
+
+    ajaxify.loadData = function (url, callback) {
+        url = ajaxify.removeRelativePath(url);
+
+        hooks.fire(&#039;action:ajaxify.loadingData&#039;, { url: url });
+
+        apiXHR = $.ajax({
+            url: config.relative_path + &#039;/api/&#039; + url,
+            cache: false,
+            headers: {
+                &#039;X-Return-To&#039;: app.previousUrl,
+            },
+            success: function (data, textStatus, xhr) {
+                if (!data) {
+                    return;
+                }
+
+                if (xhr.getResponseHeader(&#039;X-Redirect&#039;)) {
+                    return callback({
+                        data: {
+                            status: 302,
+                            responseJSON: data,
+                        },
+                        textStatus: &#039;error&#039;,
+                    });
+                }
+
+                ajaxify.data = data;
+                data.config = config;
+
+                hooks.fire(&#039;action:ajaxify.dataLoaded&#039;, { url: url, data: data });
+
+                callback(null, data);
+            },
+            error: function (data, textStatus) {
+                if (data.status === 0 &amp;&amp; textStatus === &#039;error&#039;) {
+                    data.status = 500;
+                    data.responseJSON = data.responseJSON || {};
+                    data.responseJSON.error = &#039;[[error:no-connection]]&#039;;
+                }
+                callback({
+                    data: data,
+                    textStatus: textStatus,
+                });
+            },
+        });
+    };
+
+    ajaxify.loadTemplate = function (template, callback) {
+        $.ajax({
+            url: `${config.asset_base_url}/templates/${template}.js`,
+            cache: false,
+            dataType: &#039;text&#039;,
+            success: function (script) {
+                // eslint-disable-next-line no-new-func
+                const renderFunction = new Function(&#039;module&#039;, script);
+                const moduleObj = { exports: {} };
+                renderFunction(moduleObj);
+                callback(moduleObj.exports);
+            },
+        }).fail(function () {
+            console.error(&#039;Unable to load template: &#039; + template);
+            callback(new Error(&#039;[[error:unable-to-load-template]]&#039;));
+        });
+    };
+
+    ajaxify.cleanup = (url, tpl_url) =&gt; {
+        app.leaveCurrentRoom();
+        $(window).off(&#039;scroll&#039;);
+        hooks.fire(&#039;action:ajaxify.cleanup&#039;, { url, tpl_url });
+    };
+
+    require([&#039;translator&#039;, &#039;benchpress&#039;], function (translator, Benchpress) {
+        translator.translate(&#039;[[error:no-connection]]&#039;);
+        translator.translate(&#039;[[error:socket-reconnect-failed]]&#039;);
+        translator.translate(`[[global:reconnecting-message, ${config.siteTitle}]]`);
+        Benchpress.registerLoader(ajaxify.loadTemplate);
+        Benchpress.setGlobal(&#039;config&#039;, config);
+        Benchpress.render(&#039;500&#039;, {}); // loads and caches the 500.tpl
+    });
+}());
+
+$(document).ready(function () {
+    $(window).on(&#039;popstate&#039;, function (ev) {
+        ev = ev.originalEvent;
+
+        if (ev !== null &amp;&amp; ev.state) {
+            if (ev.state.url === null &amp;&amp; ev.state.returnPath !== undefined) {
+                window.history.replaceState({
+                    url: ev.state.returnPath,
+                }, ev.state.returnPath, config.relative_path + &#039;/&#039; + ev.state.returnPath);
+            } else if (ev.state.url !== undefined) {
+                ajaxify.go(ev.state.url, function () {
+                    hooks.fire(&#039;action:popstate&#039;, { url: ev.state.url });
+                }, true);
+            }
+        }
+    });
+
+    function ajaxifyAnchors() {
+        function hrefEmpty(href) {
+            // eslint-disable-next-line no-script-url
+            return href === undefined || href === &#039;&#039; || href === &#039;javascript:;&#039;;
+        }
+        const location = document.location || window.location;
+        const rootUrl = location.protocol + &#039;//&#039; + (location.hostname || location.host) + (location.port ? &#039;:&#039; + location.port : &#039;&#039;);
+        const contentEl = document.getElementById(&#039;content&#039;);
+
+        // Enhancing all anchors to ajaxify...
+        $(document.body).on(&#039;click&#039;, &#039;a&#039;, function (e) {
+            const _self = this;
+            if (this.target !== &#039;&#039; || (this.protocol !== &#039;http:&#039; &amp;&amp; this.protocol !== &#039;https:&#039;)) {
+                return;
+            }
+
+            const $this = $(this);
+            const href = $this.attr(&#039;href&#039;);
+            const internalLink = utils.isInternalURI(this, window.location, config.relative_path);
+
+            const rootAndPath = new RegExp(`^${rootUrl}${config.relative_path}/?`);
+            const process = function () {
+                if (!e.ctrlKey &amp;&amp; !e.shiftKey &amp;&amp; !e.metaKey &amp;&amp; e.which === 1) {
+                    if (internalLink) {
+                        const pathname = this.href.replace(rootAndPath, &#039;&#039;);
+
+                        // Special handling for urls with hashes
+                        if (window.location.pathname === this.pathname &amp;&amp; this.hash.length) {
+                            window.location.hash = this.hash;
+                        } else if (ajaxify.go(pathname)) {
+                            e.preventDefault();
+                        }
+                    } else if (window.location.pathname !== config.relative_path + &#039;/outgoing&#039;) {
+                        if (config.openOutgoingLinksInNewTab &amp;&amp; $.contains(contentEl, this)) {
+                            const externalTab = window.open();
+                            externalTab.opener = null;
+                            externalTab.location = this.href;
+                            e.preventDefault();
+                        } else if (config.useOutgoingLinksPage) {
+                            const safeUrls = config.outgoingLinksWhitelist.trim().split(/[\s,]+/g).filter(Boolean);
+                            const href = this.href;
+                            if (!safeUrls.length ||
+                                !safeUrls.some(function (url) { return href.indexOf(url) !== -1; })) {
+                                ajaxify.go(&#039;outgoing?url=&#039; + encodeURIComponent(href));
+                                e.preventDefault();
+                            }
+                        }
+                    }
+                }
+            };
+
+            if ($this.attr(&#039;data-ajaxify&#039;) === &#039;false&#039;) {
+                if (!internalLink) {
+                    return;
+                }
+                return e.preventDefault();
+            }
+
+            // Default behaviour for rss feeds
+            if (internalLink &amp;&amp; href &amp;&amp; href.endsWith(&#039;.rss&#039;)) {
+                return;
+            }
+
+            // Default behaviour for sitemap
+            if (internalLink &amp;&amp; href &amp;&amp; String(_self.pathname).startsWith(config.relative_path + &#039;/sitemap&#039;) &amp;&amp; href.endsWith(&#039;.xml&#039;)) {
+                return;
+            }
+
+            // Default behaviour for uploads and direct links to API urls
+            if (internalLink &amp;&amp; [&#039;/uploads&#039;, &#039;/assets/&#039;, &#039;/api/&#039;].some(function (prefix) {
+                return String(_self.pathname).startsWith(config.relative_path + prefix);
+            })) {
+                return;
+            }
+
+            // eslint-disable-next-line no-script-url
+            if (hrefEmpty(this.href) || this.protocol === &#039;javascript:&#039; || href === &#039;#&#039; || href === &#039;&#039;) {
+                return e.preventDefault();
+            }
+
+            if (app.flags &amp;&amp; app.flags.hasOwnProperty(&#039;_unsaved&#039;) &amp;&amp; app.flags._unsaved === true) {
+                if (e.ctrlKey) {
+                    return;
+                }
+
+                require([&#039;bootbox&#039;], function (bootbox) {
+                    bootbox.confirm(&#039;[[global:unsaved-changes]]&#039;, function (navigate) {
+                        if (navigate) {
+                            app.flags._unsaved = false;
+                            process.call(_self);
+                        }
+                    });
+                });
+                return e.preventDefault();
+            }
+
+            process.call(_self);
+        });
+    }
+
+    if (window.history &amp;&amp; window.history.pushState) {
+        // Progressive Enhancement, ajaxify available only to modern browsers
+        ajaxifyAnchors();
+    }
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

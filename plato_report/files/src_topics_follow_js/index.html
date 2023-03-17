@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/topics/follow.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/topics/follow.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.73</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">176</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">49.67</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.79</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const db = require(&#039;../database&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+module.exports = function (Topics) {
+    Topics.toggleFollow = async function (tid, uid) {
+        const exists = await Topics.exists(tid);
+        if (!exists) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        const isFollowing = await Topics.isFollowing([tid], uid);
+        if (isFollowing[0]) {
+            await Topics.unfollow(tid, uid);
+        } else {
+            await Topics.follow(tid, uid);
+        }
+        return !isFollowing[0];
+    };
+
+    Topics.follow = async function (tid, uid) {
+        await setWatching(follow, unignore, &#039;action:topic.follow&#039;, tid, uid);
+    };
+
+    Topics.unfollow = async function (tid, uid) {
+        await setWatching(unfollow, unignore, &#039;action:topic.unfollow&#039;, tid, uid);
+    };
+
+    Topics.ignore = async function (tid, uid) {
+        await setWatching(ignore, unfollow, &#039;action:topic.ignore&#039;, tid, uid);
+    };
+
+    async function setWatching(method1, method2, hook, tid, uid) {
+        if (!(parseInt(uid, 10) &gt; 0)) {
+            throw new Error(&#039;[[error:not-logged-in]]&#039;);
+        }
+        const exists = await Topics.exists(tid);
+        if (!exists) {
+            throw new Error(&#039;[[error:no-topic]]&#039;);
+        }
+        await method1(tid, uid);
+        await method2(tid, uid);
+        plugins.hooks.fire(hook, { uid: uid, tid: tid });
+    }
+
+    async function follow(tid, uid) {
+        await addToSets(`tid:${tid}:followers`, `uid:${uid}:followed_tids`, tid, uid);
+    }
+
+    async function unfollow(tid, uid) {
+        await removeFromSets(`tid:${tid}:followers`, `uid:${uid}:followed_tids`, tid, uid);
+    }
+
+    async function ignore(tid, uid) {
+        await addToSets(`tid:${tid}:ignorers`, `uid:${uid}:ignored_tids`, tid, uid);
+    }
+
+    async function unignore(tid, uid) {
+        await removeFromSets(`tid:${tid}:ignorers`, `uid:${uid}:ignored_tids`, tid, uid);
+    }
+
+    async function addToSets(set1, set2, tid, uid) {
+        await db.setAdd(set1, uid);
+        await db.sortedSetAdd(set2, Date.now(), tid);
+    }
+
+    async function removeFromSets(set1, set2, tid, uid) {
+        await db.setRemove(set1, uid);
+        await db.sortedSetRemove(set2, tid);
+    }
+
+    Topics.isFollowing = async function (tids, uid) {
+        return await isIgnoringOrFollowing(&#039;followers&#039;, tids, uid);
+    };
+
+    Topics.isIgnoring = async function (tids, uid) {
+        return await isIgnoringOrFollowing(&#039;ignorers&#039;, tids, uid);
+    };
+
+    Topics.getFollowData = async function (tids, uid) {
+        if (!Array.isArray(tids)) {
+            return;
+        }
+        if (parseInt(uid, 10) &lt;= 0) {
+            return tids.map(() =&gt; ({ following: false, ignoring: false }));
+        }
+        const keys = [];
+        tids.forEach(tid =&gt; keys.push(`tid:${tid}:followers`, `tid:${tid}:ignorers`));
+
+        const data = await db.isMemberOfSets(keys, uid);
+
+        const followData = [];
+        for (let i = 0; i &lt; data.length; i += 2) {
+            followData.push({
+                following: data[i],
+                ignoring: data[i + 1],
+            });
+        }
+        return followData;
+    };
+
+    async function isIgnoringOrFollowing(set, tids, uid) {
+        if (!Array.isArray(tids)) {
+            return;
+        }
+        if (parseInt(uid, 10) &lt;= 0) {
+            return tids.map(() =&gt; false);
+        }
+        const keys = tids.map(tid =&gt; `tid:${tid}:${set}`);
+        return await db.isMemberOfSets(keys, uid);
+    }
+
+    Topics.getFollowers = async function (tid) {
+        return await db.getSetMembers(`tid:${tid}:followers`);
+    };
+
+    Topics.getIgnorers = async function (tid) {
+        return await db.getSetMembers(`tid:${tid}:ignorers`);
+    };
+
+    Topics.filterIgnoringUids = async function (tid, uids) {
+        const isIgnoring = await db.isSetMembers(`tid:${tid}:ignorers`, uids);
+        const readingUids = uids.filter((uid, index) =&gt; uid &amp;&amp; !isIgnoring[index]);
+        return readingUids;
+    };
+
+    Topics.filterWatchedTids = async function (tids, uid) {
+        if (parseInt(uid, 10) &lt;= 0) {
+            return [];
+        }
+        const scores = await db.sortedSetScores(`uid:${uid}:followed_tids`, tids);
+        return tids.filter((tid, index) =&gt; tid &amp;&amp; !!scores[index]);
+    };
+
+    Topics.filterNotIgnoredTids = async function (tids, uid) {
+        if (parseInt(uid, 10) &lt;= 0) {
+            return tids;
+        }
+        const scores = await db.sortedSetScores(`uid:${uid}:ignored_tids`, tids);
+        return tids.filter((tid, index) =&gt; tid &amp;&amp; !scores[index]);
+    };
+
+    Topics.notifyFollowers = async function (postData, exceptUid, notifData) {
+        notifData = notifData || {};
+        let followers = await Topics.getFollowers(postData.topic.tid);
+        const index = followers.indexOf(String(exceptUid));
+        if (index !== -1) {
+            followers.splice(index, 1);
+        }
+
+        followers = await privileges.topics.filterUids(&#039;topics:read&#039;, postData.topic.tid, followers);
+        if (!followers.length) {
+            return;
+        }
+
+        let { title } = postData.topic;
+        if (title) {
+            title = utils.decodeHTMLEntities(title);
+        }
+
+        const notification = await notifications.create({
+            subject: title,
+            bodyLong: postData.content,
+            pid: postData.pid,
+            path: `/post/${postData.pid}`,
+            tid: postData.topic.tid,
+            from: exceptUid,
+            topicTitle: title,
+            ...notifData,
+        });
+        notifications.push(notification, followers);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

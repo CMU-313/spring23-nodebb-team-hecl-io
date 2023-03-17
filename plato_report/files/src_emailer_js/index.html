@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/emailer.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/emailer.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">60.87</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">368</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.30</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.30</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const nconf = require(&#039;nconf&#039;);
+const Benchpress = require(&#039;benchpressjs&#039;);
+const nodemailer = require(&#039;nodemailer&#039;);
+const wellKnownServices = require(&#039;nodemailer/lib/well-known/services&#039;);
+const { htmlToText } = require(&#039;html-to-text&#039;);
+const url = require(&#039;url&#039;);
+const path = require(&#039;path&#039;);
+const fs = require(&#039;fs&#039;);
+const _ = require(&#039;lodash&#039;);
+const jwt = require(&#039;jsonwebtoken&#039;);
+
+const User = require(&#039;./user&#039;);
+const Plugins = require(&#039;./plugins&#039;);
+const meta = require(&#039;./meta&#039;);
+const translator = require(&#039;./translator&#039;);
+const pubsub = require(&#039;./pubsub&#039;);
+const file = require(&#039;./file&#039;);
+
+const viewsDir = nconf.get(&#039;views_dir&#039;);
+const Emailer = module.exports;
+
+let prevConfig;
+let app;
+
+Emailer.fallbackNotFound = false;
+
+Emailer.transports = {
+    sendmail: nodemailer.createTransport({
+        sendmail: true,
+        newline: &#039;unix&#039;,
+    }),
+    smtp: undefined,
+};
+
+Emailer.listServices = () =&gt; Object.keys(wellKnownServices);
+Emailer._defaultPayload = {};
+
+const smtpSettingsChanged = (config) =&gt; {
+    const settings = [
+        &#039;email:smtpTransport:enabled&#039;,
+        &#039;email:smtpTransport:pool&#039;,
+        &#039;email:smtpTransport:user&#039;,
+        &#039;email:smtpTransport:pass&#039;,
+        &#039;email:smtpTransport:service&#039;,
+        &#039;email:smtpTransport:port&#039;,
+        &#039;email:smtpTransport:host&#039;,
+        &#039;email:smtpTransport:security&#039;,
+    ];
+    // config only has these properties if settings are saved on /admin/settings/email
+    return settings.some(key =&gt; config.hasOwnProperty(key) &amp;&amp; config[key] !== prevConfig[key]);
+};
+
+const getHostname = () =&gt; {
+    const configUrl = nconf.get(&#039;url&#039;);
+    const parsed = url.parse(configUrl);
+    return parsed.hostname;
+};
+
+const buildCustomTemplates = async (config) =&gt; {
+    try {
+        // If the new config contains any email override values, re-compile those templates
+        const toBuild = Object
+            .keys(config)
+            .filter(prop =&gt; prop.startsWith(&#039;email:custom:&#039;))
+            .map(key =&gt; key.split(&#039;:&#039;)[2]);
+
+        if (!toBuild.length) {
+            return;
+        }
+
+        const [templates, allPaths] = await Promise.all([
+            Emailer.getTemplates(config),
+            file.walk(viewsDir),
+        ]);
+
+        const templatesToBuild = templates.filter(template =&gt; toBuild.includes(template.path));
+        const paths = _.fromPairs(allPaths.map((p) =&gt; {
+            const relative = path.relative(viewsDir, p).replace(/\\/g, &#039;/&#039;);
+            return [relative, p];
+        }));
+
+        await Promise.all(templatesToBuild.map(async (template) =&gt; {
+            const source = await meta.templates.processImports(paths, template.path, template.text);
+            const compiled = await Benchpress.precompile(source, { filename: template.path });
+            await fs.promises.writeFile(template.fullpath.replace(/\.tpl$/, &#039;.js&#039;), compiled);
+        }));
+
+        Benchpress.flush();
+        winston.verbose(&#039;[emailer] Built custom email templates&#039;);
+    } catch (err) {
+        winston.error(`[emailer] Failed to build custom email templates\n${err.stack}`);
+    }
+};
+
+Emailer.getTemplates = async (config) =&gt; {
+    const emailsPath = path.join(viewsDir, &#039;emails&#039;);
+    let emails = await file.walk(emailsPath);
+    emails = emails.filter(email =&gt; !email.endsWith(&#039;.js&#039;));
+
+    const templates = await Promise.all(emails.map(async (email) =&gt; {
+        const path = email.replace(emailsPath, &#039;&#039;).slice(1).replace(&#039;.tpl&#039;, &#039;&#039;);
+        const original = await fs.promises.readFile(email, &#039;utf8&#039;);
+
+        return {
+            path: path,
+            fullpath: email,
+            text: config[`email:custom:${path}`] || original,
+            original: original,
+            isCustom: !!config[`email:custom:${path}`],
+        };
+    }));
+    return templates;
+};
+
+Emailer.setupFallbackTransport = (config) =&gt; {
+    winston.verbose(&#039;[emailer] Setting up fallback transport&#039;);
+    // Enable SMTP transport if enabled in ACP
+    if (parseInt(config[&#039;email:smtpTransport:enabled&#039;], 10) === 1) {
+        const smtpOptions = {
+            name: getHostname(),
+            pool: config[&#039;email:smtpTransport:pool&#039;],
+        };
+
+        if (config[&#039;email:smtpTransport:user&#039;] || config[&#039;email:smtpTransport:pass&#039;]) {
+            smtpOptions.auth = {
+                user: config[&#039;email:smtpTransport:user&#039;],
+                pass: config[&#039;email:smtpTransport:pass&#039;],
+            };
+        }
+
+        if (config[&#039;email:smtpTransport:service&#039;] === &#039;nodebb-custom-smtp&#039;) {
+            smtpOptions.port = config[&#039;email:smtpTransport:port&#039;];
+            smtpOptions.host = config[&#039;email:smtpTransport:host&#039;];
+
+            if (config[&#039;email:smtpTransport:security&#039;] === &#039;NONE&#039;) {
+                smtpOptions.secure = false;
+                smtpOptions.requireTLS = false;
+                smtpOptions.ignoreTLS = true;
+            } else if (config[&#039;email:smtpTransport:security&#039;] === &#039;STARTTLS&#039;) {
+                smtpOptions.secure = false;
+                smtpOptions.requireTLS = true;
+                smtpOptions.ignoreTLS = false;
+            } else {
+                // meta.config[&#039;email:smtpTransport:security&#039;] === &#039;ENCRYPTED&#039; or undefined
+                smtpOptions.secure = true;
+                smtpOptions.requireTLS = true;
+                smtpOptions.ignoreTLS = false;
+            }
+        } else {
+            smtpOptions.service = String(config[&#039;email:smtpTransport:service&#039;]);
+        }
+
+        Emailer.transports.smtp = nodemailer.createTransport(smtpOptions);
+        Emailer.fallbackTransport = Emailer.transports.smtp;
+    } else {
+        Emailer.fallbackTransport = Emailer.transports.sendmail;
+    }
+};
+
+Emailer.registerApp = (expressApp) =&gt; {
+    app = expressApp;
+
+    let logo = null;
+    if (meta.config.hasOwnProperty(&#039;brand:emailLogo&#039;)) {
+        logo = (!meta.config[&#039;brand:emailLogo&#039;].startsWith(&#039;http&#039;) ? nconf.get(&#039;url&#039;) : &#039;&#039;) + meta.config[&#039;brand:emailLogo&#039;];
+    }
+
+    Emailer._defaultPayload = {
+        url: nconf.get(&#039;url&#039;),
+        site_title: meta.config.title || &#039;NodeBB&#039;,
+        logo: {
+            src: logo,
+            height: meta.config[&#039;brand:emailLogo:height&#039;],
+            width: meta.config[&#039;brand:emailLogo:width&#039;],
+        },
+    };
+
+    Emailer.setupFallbackTransport(meta.config);
+    buildCustomTemplates(meta.config);
+
+    // need to shallow clone the config object
+    // otherwise prevConfig holds reference to meta.config object,
+    // which is updated before the pubsub handler is called
+    prevConfig = { ...meta.config };
+
+    pubsub.on(&#039;config:update&#039;, (config) =&gt; {
+        // config object only contains properties for the specific acp settings page
+        // not the entire meta.config object
+        if (config) {
+            // Update default payload if new logo is uploaded
+            if (config.hasOwnProperty(&#039;brand:emailLogo&#039;)) {
+                Emailer._defaultPayload.logo.src = config[&#039;brand:emailLogo&#039;];
+            }
+            if (config.hasOwnProperty(&#039;brand:emailLogo:height&#039;)) {
+                Emailer._defaultPayload.logo.height = config[&#039;brand:emailLogo:height&#039;];
+            }
+            if (config.hasOwnProperty(&#039;brand:emailLogo:width&#039;)) {
+                Emailer._defaultPayload.logo.width = config[&#039;brand:emailLogo:width&#039;];
+            }
+
+            if (smtpSettingsChanged(config)) {
+                Emailer.setupFallbackTransport(config);
+            }
+            buildCustomTemplates(config);
+
+            prevConfig = { ...prevConfig, ...config };
+        }
+    });
+
+    return Emailer;
+};
+
+Emailer.send = async (template, uid, params) =&gt; {
+    if (!app) {
+        throw Error(&#039;[emailer] App not ready!&#039;);
+    }
+
+    let userData = await User.getUserFields(uid, [&#039;email&#039;, &#039;username&#039;, &#039;email:confirmed&#039;, &#039;banned&#039;]);
+
+    // &#039;welcome&#039; and &#039;verify-email&#039; explicitly used passed-in email address
+    if ([&#039;welcome&#039;, &#039;verify-email&#039;].includes(template)) {
+        userData.email = params.email;
+    }
+
+    ({ template, userData, params } = await Plugins.hooks.fire(&#039;filter:email.prepare&#039;, { template, uid, userData, params }));
+
+    if (!meta.config.sendEmailToBanned &amp;&amp; template !== &#039;banned&#039;) {
+        if (userData.banned) {
+            winston.warn(`[emailer/send] User ${userData.username} (uid: ${uid}) is banned; not sending email due to system config.`);
+            return;
+        }
+    }
+
+    if (!userData || !userData.email) {
+        if (process.env.NODE_ENV === &#039;development&#039;) {
+            winston.warn(`uid : ${uid} has no email, not sending &quot;${template}&quot; email.`);
+        }
+        return;
+    }
+
+    const allowedTpls = [&#039;verify-email&#039;, &#039;welcome&#039;, &#039;registration_accepted&#039;, &#039;reset&#039;, &#039;reset_notify&#039;];
+    if (!meta.config.includeUnverifiedEmails &amp;&amp; !userData[&#039;email:confirmed&#039;] &amp;&amp; !allowedTpls.includes(template)) {
+        if (process.env.NODE_ENV === &#039;development&#039;) {
+            winston.warn(`uid : ${uid} (${userData.email}) has not confirmed email, not sending &quot;${template}&quot; email.`);
+        }
+        return;
+    }
+    const userSettings = await User.getSettings(uid);
+    // Combined passed-in payload with default values
+    params = { ...Emailer._defaultPayload, ...params };
+    params.uid = uid;
+    params.username = userData.username;
+    params.rtl = await translator.translate(&#039;[[language:dir]]&#039;, userSettings.userLang) === &#039;rtl&#039;;
+
+    const result = await Plugins.hooks.fire(&#039;filter:email.cancel&#039;, {
+        cancel: false, // set to true in plugin to cancel sending email
+        template: template,
+        params: params,
+    });
+
+    if (result.cancel) {
+        return;
+    }
+    await Emailer.sendToEmail(template, userData.email, userSettings.userLang, params);
+};
+
+Emailer.sendToEmail = async (template, email, language, params) =&gt; {
+    const lang = language || meta.config.defaultLang || &#039;en-GB&#039;;
+    const unsubscribable = [&#039;digest&#039;, &#039;notification&#039;];
+
+    // Digests and notifications can be one-click unsubbed
+    let payload = {
+        template: template,
+        uid: params.uid,
+    };
+
+    if (unsubscribable.includes(template)) {
+        if (template === &#039;notification&#039;) {
+            payload.type = params.notification.type;
+        }
+        payload = jwt.sign(payload, nconf.get(&#039;secret&#039;), {
+            expiresIn: &#039;30d&#039;,
+        });
+
+        const unsubUrl = [nconf.get(&#039;url&#039;), &#039;email&#039;, &#039;unsubscribe&#039;, payload].join(&#039;/&#039;);
+        params.headers = {
+            &#039;List-Id&#039;: `&lt;${[template, params.uid, getHostname()].join(&#039;.&#039;)}&gt;`,
+            &#039;List-Unsubscribe&#039;: `&lt;${unsubUrl}&gt;`,
+            &#039;List-Unsubscribe-Post&#039;: &#039;List-Unsubscribe=One-Click&#039;,
+            ...params.headers,
+        };
+        params.unsubUrl = unsubUrl;
+    }
+
+    const result = await Plugins.hooks.fire(&#039;filter:email.params&#039;, {
+        template: template,
+        email: email,
+        language: lang,
+        params: params,
+    });
+
+    template = result.template;
+    email = result.email;
+    params = result.params;
+
+    const [html, subject] = await Promise.all([
+        Emailer.renderAndTranslate(template, params, result.language),
+        translator.translate(params.subject, result.language),
+    ]);
+
+    const data = await Plugins.hooks.fire(&#039;filter:email.modify&#039;, {
+        _raw: params,
+        to: email,
+        from: meta.config[&#039;email:from&#039;] || `no-reply@${getHostname()}`,
+        from_name: meta.config[&#039;email:from_name&#039;] || &#039;NodeBB&#039;,
+        subject: `[${meta.config.title}] ${_.unescape(subject)}`,
+        html: html,
+        plaintext: htmlToText(html, {
+            tags: { img: { format: &#039;skip&#039; } },
+        }),
+        template: template,
+        uid: params.uid,
+        pid: params.pid,
+        fromUid: params.fromUid,
+        headers: params.headers,
+        rtl: params.rtl,
+    });
+    const usingFallback = !Plugins.hooks.hasListeners(&#039;filter:email.send&#039;) &amp;&amp;
+        !Plugins.hooks.hasListeners(&#039;static:email.send&#039;);
+    try {
+        if (Plugins.hooks.hasListeners(&#039;filter:email.send&#039;)) {
+            // Deprecated, remove in v1.19.0
+            await Plugins.hooks.fire(&#039;filter:email.send&#039;, data);
+        } else if (Plugins.hooks.hasListeners(&#039;static:email.send&#039;)) {
+            await Plugins.hooks.fire(&#039;static:email.send&#039;, data);
+        } else {
+            await Emailer.sendViaFallback(data);
+        }
+    } catch (err) {
+        if (err.code === &#039;ENOENT&#039; &amp;&amp; usingFallback) {
+            Emailer.fallbackNotFound = true;
+            throw new Error(&#039;[[error:sendmail-not-found]]&#039;);
+        } else {
+            throw err;
+        }
+    }
+};
+
+Emailer.sendViaFallback = async (data) =&gt; {
+    // Some minor alterations to the data to conform to nodemailer standard
+    data.text = data.plaintext;
+    delete data.plaintext;
+
+    // NodeMailer uses a combined &quot;from&quot;
+    data.from = `${data.from_name}&lt;${data.from}&gt;`;
+    delete data.from_name;
+    await Emailer.fallbackTransport.sendMail(data);
+};
+
+Emailer.renderAndTranslate = async (template, params, lang) =&gt; {
+    const html = await app.renderAsync(`emails/${template}`, params);
+    return await translator.translate(html, lang);
+};
+
+require(&#039;./promisify&#039;)(Emailer, [&#039;transports&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

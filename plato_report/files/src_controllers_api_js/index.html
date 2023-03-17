@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/api.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/api.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">46.09</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">131</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.45</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const meta = require(&#039;../meta&#039;);
+const user = require(&#039;../user&#039;);
+const categories = require(&#039;../categories&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const translator = require(&#039;../translator&#039;);
+const languages = require(&#039;../languages&#039;);
+
+const apiController = module.exports;
+
+const relative_path = nconf.get(&#039;relative_path&#039;);
+const upload_url = nconf.get(&#039;upload_url&#039;);
+const asset_base_url = nconf.get(&#039;asset_base_url&#039;);
+const socketioTransports = nconf.get(&#039;socket.io:transports&#039;) || [&#039;polling&#039;, &#039;websocket&#039;];
+const socketioOrigins = nconf.get(&#039;socket.io:origins&#039;);
+const websocketAddress = nconf.get(&#039;socket.io:address&#039;) || &#039;&#039;;
+
+apiController.loadConfig = async function (req) {
+    const config = {
+        relative_path,
+        upload_url,
+        asset_base_url,
+        assetBaseUrl: asset_base_url, // deprecate in 1.20.x
+        siteTitle: validator.escape(String(meta.config.title || meta.config.browserTitle || &#039;NodeBB&#039;)),
+        browserTitle: validator.escape(String(meta.config.browserTitle || meta.config.title || &#039;NodeBB&#039;)),
+        titleLayout: (meta.config.titleLayout || &#039;{pageTitle} | {browserTitle}&#039;).replace(/{/g, &#039;&amp;#123;&#039;).replace(/}/g, &#039;&amp;#125;&#039;),
+        showSiteTitle: meta.config.showSiteTitle === 1,
+        maintenanceMode: meta.config.maintenanceMode === 1,
+        minimumTitleLength: meta.config.minimumTitleLength,
+        maximumTitleLength: meta.config.maximumTitleLength,
+        minimumPostLength: meta.config.minimumPostLength,
+        maximumPostLength: meta.config.maximumPostLength,
+        minimumTagsPerTopic: meta.config.minimumTagsPerTopic || 0,
+        maximumTagsPerTopic: meta.config.maximumTagsPerTopic || 5,
+        minimumTagLength: meta.config.minimumTagLength || 3,
+        maximumTagLength: meta.config.maximumTagLength || 15,
+        undoTimeout: meta.config.undoTimeout || 0,
+        useOutgoingLinksPage: meta.config.useOutgoingLinksPage === 1,
+        outgoingLinksWhitelist: meta.config.useOutgoingLinksPage === 1 ? meta.config[&#039;outgoingLinks:whitelist&#039;] : undefined,
+        allowGuestHandles: meta.config.allowGuestHandles === 1,
+        allowTopicsThumbnail: meta.config.allowTopicsThumbnail === 1,
+        usePagination: meta.config.usePagination === 1,
+        disableChat: meta.config.disableChat === 1,
+        disableChatMessageEditing: meta.config.disableChatMessageEditing === 1,
+        maximumChatMessageLength: meta.config.maximumChatMessageLength || 1000,
+        socketioTransports,
+        socketioOrigins,
+        websocketAddress,
+        maxReconnectionAttempts: meta.config.maxReconnectionAttempts,
+        reconnectionDelay: meta.config.reconnectionDelay,
+        topicsPerPage: meta.config.topicsPerPage || 20,
+        postsPerPage: meta.config.postsPerPage || 20,
+        maximumFileSize: meta.config.maximumFileSize,
+        &#039;theme:id&#039;: meta.config[&#039;theme:id&#039;],
+        &#039;theme:src&#039;: meta.config[&#039;theme:src&#039;],
+        defaultLang: meta.config.defaultLang || &#039;en-GB&#039;,
+        userLang: req.query.lang ? validator.escape(String(req.query.lang)) : (meta.config.defaultLang || &#039;en-GB&#039;),
+        loggedIn: !!req.user,
+        uid: req.uid,
+        &#039;cache-buster&#039;: meta.config[&#039;cache-buster&#039;] || &#039;&#039;,
+        topicPostSort: meta.config.topicPostSort || &#039;oldest_to_newest&#039;,
+        categoryTopicSort: meta.config.categoryTopicSort || &#039;newest_to_oldest&#039;,
+        csrf_token: req.uid &gt;= 0 &amp;&amp; req.csrfToken &amp;&amp; req.csrfToken(),
+        searchEnabled: plugins.hooks.hasListeners(&#039;filter:search.query&#039;),
+        searchDefaultInQuick: meta.config.searchDefaultInQuick || &#039;titles&#039;,
+        bootswatchSkin: meta.config.bootswatchSkin || &#039;&#039;,
+        enablePostHistory: meta.config.enablePostHistory === 1,
+        timeagoCutoff: meta.config.timeagoCutoff !== &#039;&#039; ? Math.max(0, parseInt(meta.config.timeagoCutoff, 10)) : meta.config.timeagoCutoff,
+        timeagoCodes: languages.timeagoCodes,
+        cookies: {
+            enabled: meta.config.cookieConsentEnabled === 1,
+            message: translator.escape(validator.escape(meta.config.cookieConsentMessage || &#039;[[global:cookies.message]]&#039;)).replace(/\\/g, &#039;\\\\&#039;),
+            dismiss: translator.escape(validator.escape(meta.config.cookieConsentDismiss || &#039;[[global:cookies.accept]]&#039;)).replace(/\\/g, &#039;\\\\&#039;),
+            link: translator.escape(validator.escape(meta.config.cookieConsentLink || &#039;[[global:cookies.learn_more]]&#039;)).replace(/\\/g, &#039;\\\\&#039;),
+            link_url: translator.escape(validator.escape(meta.config.cookieConsentLinkUrl || &#039;https://www.cookiesandyou.com&#039;)).replace(/\\/g, &#039;\\\\&#039;),
+        },
+        thumbs: {
+            size: meta.config.topicThumbSize,
+        },
+        iconBackgrounds: await user.getIconBackgrounds(req.uid),
+        emailPrompt: meta.config.emailPrompt,
+        useragent: req.useragent,
+    };
+
+    let settings = config;
+    let isAdminOrGlobalMod;
+    if (req.loggedIn) {
+        ([settings, isAdminOrGlobalMod] = await Promise.all([
+            user.getSettings(req.uid),
+            user.isAdminOrGlobalMod(req.uid),
+        ]));
+    }
+
+    // Handle old skin configs
+    const oldSkins = [&#039;noskin&#039;, &#039;default&#039;];
+    settings.bootswatchSkin = oldSkins.includes(settings.bootswatchSkin) ? &#039;&#039; : settings.bootswatchSkin;
+
+    config.usePagination = settings.usePagination;
+    config.topicsPerPage = settings.topicsPerPage;
+    config.postsPerPage = settings.postsPerPage;
+    config.userLang = validator.escape(
+        String((req.query.lang ? req.query.lang : null) || settings.userLang || config.defaultLang)
+    );
+    config.acpLang = validator.escape(String((req.query.lang ? req.query.lang : null) || settings.acpLang));
+    config.openOutgoingLinksInNewTab = settings.openOutgoingLinksInNewTab;
+    config.topicPostSort = settings.topicPostSort || config.topicPostSort;
+    config.categoryTopicSort = settings.categoryTopicSort || config.categoryTopicSort;
+    config.topicSearchEnabled = settings.topicSearchEnabled || false;
+    config.bootswatchSkin = (meta.config.disableCustomUserSkins !== 1 &amp;&amp; settings.bootswatchSkin &amp;&amp; settings.bootswatchSkin !== &#039;&#039;) ? settings.bootswatchSkin : &#039;&#039;;
+
+    // Overrides based on privilege
+    config.disableChatMessageEditing = isAdminOrGlobalMod ? false : config.disableChatMessageEditing;
+
+    return await plugins.hooks.fire(&#039;filter:config.get&#039;, config);
+};
+
+apiController.getConfig = async function (req, res) {
+    const config = await apiController.loadConfig(req);
+    res.json(config);
+};
+
+apiController.getModerators = async function (req, res) {
+    const moderators = await categories.getModerators(req.params.cid);
+    res.json({ moderators: moderators });
+};
+
+require(&#039;../promisify&#039;)(apiController, [&#039;getConfig&#039;, &#039;getObject&#039;, &#039;getModerators&#039;]);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

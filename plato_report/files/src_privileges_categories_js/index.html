@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/privileges/categories.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/privileges/categories.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.23</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">219</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.22</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.63</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const categories = require(&#039;../categories&#039;);
+const user = require(&#039;../user&#039;);
+const groups = require(&#039;../groups&#039;);
+const helpers = require(&#039;./helpers&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const privsCategories = module.exports;
+
+/**
+ * Looking to add a new category privilege via plugin/theme? Attach a hook to
+ * `static:privileges.category.init` and call .set() on the privilege map passed
+ * in to your listener.
+ */
+const _privilegeMap = new Map([
+    [&#039;find&#039;, { label: &#039;[[admin/manage/privileges:find-category]]&#039; }],
+    [&#039;read&#039;, { label: &#039;[[admin/manage/privileges:access-category]]&#039; }],
+    [&#039;topics:read&#039;, { label: &#039;[[admin/manage/privileges:access-topics]]&#039; }],
+    [&#039;topics:create&#039;, { label: &#039;[[admin/manage/privileges:create-topics]]&#039; }],
+    [&#039;topics:reply&#039;, { label: &#039;[[admin/manage/privileges:reply-to-topics]]&#039; }],
+    [&#039;topics:schedule&#039;, { label: &#039;[[admin/manage/privileges:schedule-topics]]&#039; }],
+    [&#039;topics:tag&#039;, { label: &#039;[[admin/manage/privileges:tag-topics]]&#039; }],
+    [&#039;posts:edit&#039;, { label: &#039;[[admin/manage/privileges:edit-posts]]&#039; }],
+    [&#039;posts:history&#039;, { label: &#039;[[admin/manage/privileges:view-edit-history]]&#039; }],
+    [&#039;posts:delete&#039;, { label: &#039;[[admin/manage/privileges:delete-posts]]&#039; }],
+    [&#039;posts:upvote&#039;, { label: &#039;[[admin/manage/privileges:upvote-posts]]&#039; }],
+    [&#039;posts:downvote&#039;, { label: &#039;[[admin/manage/privileges:downvote-posts]]&#039; }],
+    [&#039;topics:delete&#039;, { label: &#039;[[admin/manage/privileges:delete-topics]]&#039; }],
+    [&#039;posts:view_deleted&#039;, { label: &#039;[[admin/manage/privileges:view_deleted]]&#039; }],
+    [&#039;purge&#039;, { label: &#039;[[admin/manage/privileges:purge]]&#039; }],
+    [&#039;moderate&#039;, { label: &#039;[[admin/manage/privileges:moderate]]&#039; }],
+]);
+
+privsCategories.getUserPrivilegeList = async () =&gt; await plugins.hooks.fire(&#039;filter:privileges.list&#039;, Array.from(_privilegeMap.keys()));
+privsCategories.getGroupPrivilegeList = async () =&gt; await plugins.hooks.fire(&#039;filter:privileges.groups.list&#039;, Array.from(_privilegeMap.keys()).map(privilege =&gt; `groups:${privilege}`));
+privsCategories.getPrivilegeList = async () =&gt; {
+    const [user, group] = await Promise.all([
+        privsCategories.getUserPrivilegeList(),
+        privsCategories.getGroupPrivilegeList(),
+    ]);
+    return user.concat(group);
+};
+
+privsCategories.init = async () =&gt; {
+    privsCategories._coreSize = _privilegeMap.size;
+    await plugins.hooks.fire(&#039;static:privileges.categories.init&#039;, {
+        privileges: _privilegeMap,
+    });
+};
+
+// Method used in admin/category controller to show all users/groups with privs in that given cid
+privsCategories.list = async function (cid) {
+    let labels = Array.from(_privilegeMap.values()).map(data =&gt; data.label);
+    labels = await utils.promiseParallel({
+        users: plugins.hooks.fire(&#039;filter:privileges.list_human&#039;, labels.slice()),
+        groups: plugins.hooks.fire(&#039;filter:privileges.groups.list_human&#039;, labels.slice()),
+    });
+
+    const keys = await utils.promiseParallel({
+        users: privsCategories.getUserPrivilegeList(),
+        groups: privsCategories.getGroupPrivilegeList(),
+    });
+
+    const payload = await utils.promiseParallel({
+        labels,
+        users: helpers.getUserPrivileges(cid, keys.users),
+        groups: helpers.getGroupPrivileges(cid, keys.groups),
+    });
+    payload.keys = keys;
+
+    payload.columnCountUserOther = payload.labels.users.length - privsCategories._coreSize;
+    payload.columnCountGroupOther = payload.labels.groups.length - privsCategories._coreSize;
+
+    return payload;
+};
+
+privsCategories.get = async function (cid, uid) {
+    const privs = [
+        &#039;topics:create&#039;, &#039;topics:read&#039;, &#039;topics:schedule&#039;,
+        &#039;topics:tag&#039;, &#039;read&#039;, &#039;posts:view_deleted&#039;,
+    ];
+
+    const [userPrivileges, isAdministrator, isModerator] = await Promise.all([
+        helpers.isAllowedTo(privs, uid, cid),
+        user.isAdministrator(uid),
+        user.isModerator(uid, cid),
+    ]);
+
+    const combined = userPrivileges.map(allowed =&gt; allowed || isAdministrator);
+    const privData = _.zipObject(privs, combined);
+    const isAdminOrMod = isAdministrator || isModerator;
+
+    return await plugins.hooks.fire(&#039;filter:privileges.categories.get&#039;, {
+        ...privData,
+        cid: cid,
+        uid: uid,
+        editable: isAdminOrMod,
+        view_deleted: isAdminOrMod || privData[&#039;posts:view_deleted&#039;],
+        isAdminOrMod: isAdminOrMod,
+    });
+};
+
+privsCategories.isAdminOrMod = async function (cid, uid) {
+    if (parseInt(uid, 10) &lt;= 0) {
+        return false;
+    }
+    const [isAdmin, isMod] = await Promise.all([
+        user.isAdministrator(uid),
+        user.isModerator(uid, cid),
+    ]);
+    return isAdmin || isMod;
+};
+
+privsCategories.isUserAllowedTo = async function (privilege, cid, uid) {
+    if ((Array.isArray(privilege) &amp;&amp; !privilege.length) || (Array.isArray(cid) &amp;&amp; !cid.length)) {
+        return [];
+    }
+    if (!cid) {
+        return false;
+    }
+    const results = await helpers.isAllowedTo(privilege, uid, Array.isArray(cid) ? cid : [cid]);
+
+    if (Array.isArray(results) &amp;&amp; results.length) {
+        return Array.isArray(cid) ? results : results[0];
+    }
+    return false;
+};
+
+privsCategories.can = async function (privilege, cid, uid) {
+    if (!cid) {
+        return false;
+    }
+    const [disabled, isAdmin, isAllowed] = await Promise.all([
+        categories.getCategoryField(cid, &#039;disabled&#039;),
+        user.isAdministrator(uid),
+        privsCategories.isUserAllowedTo(privilege, cid, uid),
+    ]);
+    return !disabled &amp;&amp; (isAllowed || isAdmin);
+};
+
+privsCategories.filterCids = async function (privilege, cids, uid) {
+    if (!Array.isArray(cids) || !cids.length) {
+        return [];
+    }
+
+    cids = _.uniq(cids);
+    const [categoryData, allowedTo, isAdmin] = await Promise.all([
+        categories.getCategoriesFields(cids, [&#039;disabled&#039;]),
+        helpers.isAllowedTo(privilege, uid, cids),
+        user.isAdministrator(uid),
+    ]);
+    return cids.filter(
+        (cid, index) =&gt; !!cid &amp;&amp; !categoryData[index].disabled &amp;&amp; (allowedTo[index] || isAdmin)
+    );
+};
+
+privsCategories.getBase = async function (privilege, cids, uid) {
+    return await utils.promiseParallel({
+        categories: categories.getCategoriesFields(cids, [&#039;disabled&#039;]),
+        allowedTo: helpers.isAllowedTo(privilege, uid, cids),
+        view_deleted: helpers.isAllowedTo(&#039;posts:view_deleted&#039;, uid, cids),
+        view_scheduled: helpers.isAllowedTo(&#039;topics:schedule&#039;, uid, cids),
+        isAdmin: user.isAdministrator(uid),
+    });
+};
+
+privsCategories.filterUids = async function (privilege, cid, uids) {
+    if (!uids.length) {
+        return [];
+    }
+
+    uids = _.uniq(uids);
+
+    const [allowedTo, isAdmins] = await Promise.all([
+        helpers.isUsersAllowedTo(privilege, uids, cid),
+        user.isAdministrator(uids),
+    ]);
+    return uids.filter((uid, index) =&gt; allowedTo[index] || isAdmins[index]);
+};
+
+privsCategories.give = async function (privileges, cid, members) {
+    await helpers.giveOrRescind(groups.join, privileges, cid, members);
+    plugins.hooks.fire(&#039;action:privileges.categories.give&#039;, {
+        privileges: privileges,
+        cids: Array.isArray(cid) ? cid : [cid],
+        members: Array.isArray(members) ? members : [members],
+    });
+};
+
+privsCategories.rescind = async function (privileges, cid, members) {
+    await helpers.giveOrRescind(groups.leave, privileges, cid, members);
+    plugins.hooks.fire(&#039;action:privileges.categories.rescind&#039;, {
+        privileges: privileges,
+        cids: Array.isArray(cid) ? cid : [cid],
+        members: Array.isArray(members) ? members : [members],
+    });
+};
+
+privsCategories.canMoveAllTopics = async function (currentCid, targetCid, uid) {
+    const [isAdmin, isModerators] = await Promise.all([
+        user.isAdministrator(uid),
+        user.isModerator(uid, [currentCid, targetCid]),
+    ]);
+    return isAdmin || !isModerators.includes(false);
+};
+
+privsCategories.userPrivileges = async function (cid, uid) {
+    const userPrivilegeList = await privsCategories.getUserPrivilegeList();
+    return await helpers.userOrGroupPrivileges(cid, uid, userPrivilegeList);
+};
+
+privsCategories.groupPrivileges = async function (cid, groupName) {
+    const groupPrivilegeList = await privsCategories.getGroupPrivilegeList();
+    return await helpers.userOrGroupPrivileges(cid, groupName, groupPrivilegeList);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

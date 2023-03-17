@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/search.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/search.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">57.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">144</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">28.47</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.26</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const search = require(&#039;../search&#039;);
+const categories = require(&#039;../categories&#039;);
+const pagination = require(&#039;../pagination&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const utils = require(&#039;../utils&#039;);
+const helpers = require(&#039;./helpers&#039;);
+
+const searchController = module.exports;
+
+searchController.search = async function (req, res, next) {
+    if (!plugins.hooks.hasListeners(&#039;filter:search.query&#039;)) {
+        return next();
+    }
+    const page = Math.max(1, parseInt(req.query.page, 10)) || 1;
+
+    const searchOnly = parseInt(req.query.searchOnly, 10) === 1;
+
+    const userPrivileges = await utils.promiseParallel({
+        &#039;search:users&#039;: privileges.global.can(&#039;search:users&#039;, req.uid),
+        &#039;search:content&#039;: privileges.global.can(&#039;search:content&#039;, req.uid),
+        &#039;search:tags&#039;: privileges.global.can(&#039;search:tags&#039;, req.uid),
+    });
+    req.query.in = req.query.in || meta.config.searchDefaultIn || &#039;titlesposts&#039;;
+    let allowed = (req.query.in === &#039;users&#039; &amp;&amp; userPrivileges[&#039;search:users&#039;]) ||
+                    (req.query.in === &#039;tags&#039; &amp;&amp; userPrivileges[&#039;search:tags&#039;]) ||
+                    (req.query.in === &#039;categories&#039;) ||
+                    ([&#039;titles&#039;, &#039;titlesposts&#039;, &#039;posts&#039;].includes(req.query.in) &amp;&amp; userPrivileges[&#039;search:content&#039;]);
+    ({ allowed } = await plugins.hooks.fire(&#039;filter:search.isAllowed&#039;, {
+        uid: req.uid,
+        query: req.query,
+        allowed,
+    }));
+    if (!allowed) {
+        return helpers.notAllowed(req, res);
+    }
+
+    if (req.query.categories &amp;&amp; !Array.isArray(req.query.categories)) {
+        req.query.categories = [req.query.categories];
+    }
+    if (req.query.hasTags &amp;&amp; !Array.isArray(req.query.hasTags)) {
+        req.query.hasTags = [req.query.hasTags];
+    }
+
+    const data = {
+        query: req.query.term,
+        searchIn: req.query.in,
+        matchWords: req.query.matchWords || &#039;all&#039;,
+        postedBy: req.query.by,
+        categories: req.query.categories,
+        searchChildren: req.query.searchChildren,
+        hasTags: req.query.hasTags,
+        replies: req.query.replies,
+        repliesFilter: req.query.repliesFilter,
+        timeRange: req.query.timeRange,
+        timeFilter: req.query.timeFilter,
+        sortBy: req.query.sortBy || meta.config.searchDefaultSortBy || &#039;&#039;,
+        sortDirection: req.query.sortDirection,
+        page: page,
+        itemsPerPage: req.query.itemsPerPage,
+        uid: req.uid,
+        qs: req.query,
+    };
+
+    const [searchData, categoriesData] = await Promise.all([
+        search.search(data),
+        buildCategories(req.uid, searchOnly),
+        recordSearch(data),
+    ]);
+
+    searchData.pagination = pagination.create(page, searchData.pageCount, req.query);
+    searchData.multiplePages = searchData.pageCount &gt; 1;
+    searchData.search_query = validator.escape(String(req.query.term || &#039;&#039;));
+    searchData.term = req.query.term;
+
+    if (searchOnly) {
+        return res.json(searchData);
+    }
+
+    searchData.allCategories = categoriesData;
+    searchData.allCategoriesCount = Math.max(10, Math.min(20, categoriesData.length));
+
+    searchData.breadcrumbs = helpers.buildBreadcrumbs([{ text: &#039;[[global:search]]&#039; }]);
+    searchData.expandSearch = !req.query.term;
+
+    searchData.showAsPosts = !req.query.showAs || req.query.showAs === &#039;posts&#039;;
+    searchData.showAsTopics = req.query.showAs === &#039;topics&#039;;
+    searchData.title = &#039;[[global:header.search]]&#039;;
+
+    searchData.searchDefaultSortBy = meta.config.searchDefaultSortBy || &#039;&#039;;
+    searchData.searchDefaultIn = meta.config.searchDefaultIn || &#039;titlesposts&#039;;
+    searchData.privileges = userPrivileges;
+
+    res.render(&#039;search&#039;, searchData);
+};
+
+const searches = {};
+
+async function recordSearch(data) {
+    const { query, searchIn } = data;
+    if (query) {
+        const cleanedQuery = String(query).trim().toLowerCase().slice(0, 255);
+        if ([&#039;titles&#039;, &#039;titlesposts&#039;, &#039;posts&#039;].includes(searchIn) &amp;&amp; cleanedQuery.length &gt; 2) {
+            searches[data.uid] = searches[data.uid] || { timeoutId: 0, queries: [] };
+            searches[data.uid].queries.push(cleanedQuery);
+            if (searches[data.uid].timeoutId) {
+                clearTimeout(searches[data.uid].timeoutId);
+            }
+            searches[data.uid].timeoutId = setTimeout(async () =&gt; {
+                if (searches[data.uid] &amp;&amp; searches[data.uid].queries) {
+                    const copy = searches[data.uid].queries.slice();
+                    const filtered = searches[data.uid].queries.filter(
+                        q =&gt; !copy.find(query =&gt; query.startsWith(q) &amp;&amp; query.length &gt; q.length)
+                    );
+                    delete searches[data.uid];
+                    await Promise.all(filtered.map(query =&gt; db.sortedSetIncrBy(&#039;searches:all&#039;, 1, query)));
+                }
+            }, 5000);
+        }
+    }
+}
+
+async function buildCategories(uid, searchOnly) {
+    if (searchOnly) {
+        return [];
+    }
+
+    const cids = await categories.getCidsByPrivilege(&#039;categories:cid&#039;, uid, &#039;read&#039;);
+    let categoriesData = await categories.getCategoriesData(cids);
+    categoriesData = categoriesData.filter(category =&gt; category &amp;&amp; !category.link);
+    categoriesData = categories.getTree(categoriesData);
+    categoriesData = categories.buildForSelectCategories(categoriesData, [&#039;text&#039;, &#039;value&#039;]);
+
+    return [
+        { value: &#039;all&#039;, text: &#039;[[unread:all_categories]]&#039; },
+        { value: &#039;watched&#039;, text: &#039;[[category:watched-categories]]&#039; },
+    ].concat(categoriesData);
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

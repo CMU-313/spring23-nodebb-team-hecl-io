@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/posts/queue.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/posts/queue.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.38</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">367</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">48.71</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.74</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const meta = require(&#039;../meta&#039;);
+const groups = require(&#039;../groups&#039;);
+const topics = require(&#039;../topics&#039;);
+const categories = require(&#039;../categories&#039;);
+const notifications = require(&#039;../notifications&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+const cache = require(&#039;../cache&#039;);
+const socketHelpers = require(&#039;../socket.io/helpers&#039;);
+
+module.exports = function (Posts) {
+    Posts.getQueuedPosts = async (filter = {}, options = {}) =&gt; {
+        options = { metadata: true, ...options }; // defaults
+        let postData = _.cloneDeep(cache.get(&#039;post-queue&#039;));
+        if (!postData) {
+            const ids = await db.getSortedSetRange(&#039;post:queue&#039;, 0, -1);
+            const keys = ids.map(id =&gt; `post:queue:${id}`);
+            postData = await db.getObjects(keys);
+            postData.forEach((data) =&gt; {
+                if (data) {
+                    data.data = JSON.parse(data.data);
+                    data.data.timestampISO = utils.toISOString(data.data.timestamp);
+                }
+            });
+            const uids = postData.map(data =&gt; data &amp;&amp; data.uid);
+            const userData = await user.getUsersFields(uids, [&#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;]);
+            postData.forEach((postData, index) =&gt; {
+                if (postData) {
+                    postData.user = userData[index];
+                    postData.data.rawContent = validator.escape(String(postData.data.content));
+                    postData.data.title = validator.escape(String(postData.data.title || &#039;&#039;));
+                }
+            });
+            cache.set(&#039;post-queue&#039;, _.cloneDeep(postData));
+        }
+        if (filter.id) {
+            postData = postData.filter(p =&gt; p.id === filter.id);
+        }
+        if (options.metadata) {
+            await Promise.all(postData.map(p =&gt; addMetaData(p)));
+        }
+
+        // Filter by tid if present
+        if (utils.isNumber(filter.tid)) {
+            const tid = parseInt(filter.tid, 10);
+            postData = postData.filter(item =&gt; item.data.tid &amp;&amp; parseInt(item.data.tid, 10) === tid);
+        } else if (Array.isArray(filter.tid)) {
+            const tids = filter.tid.map(tid =&gt; parseInt(tid, 10));
+            postData = postData.filter(
+                item =&gt; item.data.tid &amp;&amp; tids.includes(parseInt(item.data.tid, 10))
+            );
+        }
+
+        return postData;
+    };
+
+    async function addMetaData(postData) {
+        if (!postData) {
+            return;
+        }
+        postData.topic = { cid: 0 };
+        if (postData.data.cid) {
+            postData.topic = { cid: parseInt(postData.data.cid, 10) };
+        } else if (postData.data.tid) {
+            postData.topic = await topics.getTopicFields(postData.data.tid, [&#039;title&#039;, &#039;cid&#039;]);
+        }
+        postData.category = await categories.getCategoryData(postData.topic.cid);
+        const result = await plugins.hooks.fire(&#039;filter:parse.post&#039;, { postData: postData.data });
+        postData.data.content = result.postData.content;
+    }
+
+    Posts.shouldQueue = async function (uid, data) {
+        const [userData, isMemberOfExempt, categoryQueueEnabled] = await Promise.all([
+            user.getUserFields(uid, [&#039;uid&#039;, &#039;reputation&#039;, &#039;postcount&#039;]),
+            groups.isMemberOfAny(uid, meta.config.groupsExemptFromPostQueue),
+            isCategoryQueueEnabled(data),
+        ]);
+
+        const shouldQueue = meta.config.postQueue &amp;&amp; categoryQueueEnabled &amp;&amp;
+            !isMemberOfExempt &amp;&amp;
+            (!userData.uid || userData.reputation &lt; meta.config.postQueueReputationThreshold ||
+                userData.postcount &lt;= 0);
+        const result = await plugins.hooks.fire(&#039;filter:post.shouldQueue&#039;, {
+            shouldQueue: !!shouldQueue,
+            uid: uid,
+            data: data,
+        });
+        return result.shouldQueue;
+    };
+
+    async function isCategoryQueueEnabled(data) {
+        const type = getType(data);
+        const cid = await getCid(type, data);
+        if (!cid) {
+            throw new Error(&#039;[[error:invalid-cid]]&#039;);
+        }
+        return await categories.getCategoryField(cid, &#039;postQueue&#039;);
+    }
+
+    function getType(data) {
+        if (data.hasOwnProperty(&#039;tid&#039;)) {
+            return &#039;reply&#039;;
+        } else if (data.hasOwnProperty(&#039;cid&#039;)) {
+            return &#039;topic&#039;;
+        }
+        throw new Error(&#039;[[error:invalid-type]]&#039;);
+    }
+
+    async function removeQueueNotification(id) {
+        await notifications.rescind(`post-queue-${id}`);
+        const data = await getParsedObject(id);
+        if (!data) {
+            return;
+        }
+        const cid = await getCid(data.type, data);
+        const uids = await getNotificationUids(cid);
+        uids.forEach(uid =&gt; user.notifications.pushCount(uid));
+    }
+
+    async function getNotificationUids(cid) {
+        const results = await Promise.all([
+            groups.getMembersOfGroups([&#039;administrators&#039;, &#039;Global Moderators&#039;]),
+            categories.getModeratorUids([cid]),
+        ]);
+        return _.uniq(_.flattenDeep(results));
+    }
+
+    Posts.addToQueue = async function (data) {
+        const type = getType(data);
+        const now = Date.now();
+        const id = `${type}-${now}`;
+        await canPost(type, data);
+
+        let payload = {
+            id: id,
+            uid: data.uid,
+            type: type,
+            data: data,
+        };
+        payload = await plugins.hooks.fire(&#039;filter:post-queue.save&#039;, payload);
+        payload.data = JSON.stringify(data);
+
+        await db.sortedSetAdd(&#039;post:queue&#039;, now, id);
+        await db.setObject(`post:queue:${id}`, payload);
+        await user.setUserField(data.uid, &#039;lastqueuetime&#039;, now);
+        cache.del(&#039;post-queue&#039;);
+
+        const cid = await getCid(type, data);
+        const uids = await getNotificationUids(cid);
+        const bodyLong = await parseBodyLong(cid, type, data);
+
+        const notifObj = await notifications.create({
+            type: &#039;post-queue&#039;,
+            nid: `post-queue-${id}`,
+            mergeId: &#039;post-queue&#039;,
+            bodyShort: &#039;[[notifications:post_awaiting_review]]&#039;,
+            bodyLong: bodyLong,
+            path: `/post-queue/${id}`,
+        });
+        await notifications.push(notifObj, uids);
+        return {
+            id: id,
+            type: type,
+            queued: true,
+            message: &#039;[[success:post-queued]]&#039;,
+        };
+    };
+
+    async function parseBodyLong(cid, type, data) {
+        const url = nconf.get(&#039;url&#039;);
+        const [content, category, userData] = await Promise.all([
+            plugins.hooks.fire(&#039;filter:parse.raw&#039;, data.content),
+            categories.getCategoryFields(cid, [&#039;name&#039;, &#039;slug&#039;]),
+            user.getUserFields(data.uid, [&#039;uid&#039;, &#039;username&#039;]),
+        ]);
+
+        category.url = `${url}/category/${category.slug}`;
+        if (userData.uid &gt; 0) {
+            userData.url = `${url}/uid/${userData.uid}`;
+        }
+
+        const topic = { cid: cid, title: data.title, tid: data.tid };
+        if (type === &#039;reply&#039;) {
+            topic.title = await topics.getTopicField(data.tid, &#039;title&#039;);
+            topic.url = `${url}/topic/${data.tid}`;
+        }
+        const { app } = require(&#039;../webserver&#039;);
+        return await app.renderAsync(&#039;emails/partials/post-queue-body&#039;, {
+            content: content,
+            category: category,
+            user: userData,
+            topic: topic,
+        });
+    }
+
+    async function getCid(type, data) {
+        if (type === &#039;topic&#039;) {
+            return data.cid;
+        } else if (type === &#039;reply&#039;) {
+            return await topics.getTopicField(data.tid, &#039;cid&#039;);
+        }
+        return null;
+    }
+
+    async function canPost(type, data) {
+        const cid = await getCid(type, data);
+        const typeToPrivilege = {
+            topic: &#039;topics:create&#039;,
+            reply: &#039;topics:reply&#039;,
+        };
+
+        topics.checkContent(data.content);
+        if (type === &#039;topic&#039;) {
+            topics.checkTitle(data.title);
+            if (data.tags) {
+                await topics.validateTags(data.tags, cid, data.uid);
+            }
+        }
+
+        const [canPost] = await Promise.all([
+            privileges.categories.can(typeToPrivilege[type], cid, data.uid),
+            user.isReadyToQueue(data.uid, cid),
+        ]);
+        if (!canPost) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+    }
+
+    Posts.removeFromQueue = async function (id) {
+        const data = await getParsedObject(id);
+        if (!data) {
+            return null;
+        }
+        const result = await plugins.hooks.fire(&#039;filter:post-queue:removeFromQueue&#039;, { data: data });
+        await removeFromQueue(id);
+        plugins.hooks.fire(&#039;action:post-queue:removeFromQueue&#039;, { data: result.data });
+        return result.data;
+    };
+
+    async function removeFromQueue(id) {
+        await removeQueueNotification(id);
+        await db.sortedSetRemove(&#039;post:queue&#039;, id);
+        await db.delete(`post:queue:${id}`);
+        cache.del(&#039;post-queue&#039;);
+    }
+
+    Posts.submitFromQueue = async function (id) {
+        let data = await getParsedObject(id);
+        if (!data) {
+            return null;
+        }
+        const result = await plugins.hooks.fire(&#039;filter:post-queue:submitFromQueue&#039;, { data: data });
+        data = result.data;
+        if (data.type === &#039;topic&#039;) {
+            const result = await createTopic(data.data);
+            data.pid = result.postData.pid;
+        } else if (data.type === &#039;reply&#039;) {
+            const result = await createReply(data.data);
+            data.pid = result.pid;
+        }
+        await removeFromQueue(id);
+        plugins.hooks.fire(&#039;action:post-queue:submitFromQueue&#039;, { data: data });
+        return data;
+    };
+
+    Posts.getFromQueue = async function (id) {
+        return await getParsedObject(id);
+    };
+
+    async function getParsedObject(id) {
+        const data = await db.getObject(`post:queue:${id}`);
+        if (!data) {
+            return null;
+        }
+        data.data = JSON.parse(data.data);
+        data.data.fromQueue = true;
+        return data;
+    }
+
+    async function createTopic(data) {
+        const result = await topics.post(data);
+        socketHelpers.notifyNew(data.uid, &#039;newTopic&#039;, { posts: [result.postData], topic: result.topicData });
+        return result;
+    }
+
+    async function createReply(data) {
+        const postData = await topics.reply(data);
+        const result = {
+            posts: [postData],
+            &#039;reputation:disabled&#039;: !!meta.config[&#039;reputation:disabled&#039;],
+            &#039;downvote:disabled&#039;: !!meta.config[&#039;downvote:disabled&#039;],
+        };
+        socketHelpers.notifyNew(data.uid, &#039;newPost&#039;, result);
+        return postData;
+    }
+
+    Posts.editQueuedContent = async function (uid, editData) {
+        const canEditQueue = await Posts.canEditQueue(uid, editData, &#039;edit&#039;);
+        if (!canEditQueue) {
+            throw new Error(&#039;[[error:no-privileges]]&#039;);
+        }
+        const data = await getParsedObject(editData.id);
+        if (!data) {
+            return;
+        }
+        if (editData.content !== undefined) {
+            data.data.content = editData.content;
+        }
+        if (editData.title !== undefined) {
+            data.data.title = editData.title;
+        }
+        if (editData.cid !== undefined) {
+            data.data.cid = editData.cid;
+        }
+        await db.setObjectField(`post:queue:${editData.id}`, &#039;data&#039;, JSON.stringify(data.data));
+        cache.del(&#039;post-queue&#039;);
+    };
+
+    Posts.canEditQueue = async function (uid, editData, action) {
+        const [isAdminOrGlobalMod, data] = await Promise.all([
+            user.isAdminOrGlobalMod(uid),
+            getParsedObject(editData.id),
+        ]);
+        if (!data) {
+            return false;
+        }
+        const selfPost = parseInt(uid, 10) === parseInt(data.uid, 10);
+        if (isAdminOrGlobalMod || ((action === &#039;reject&#039; || action === &#039;edit&#039;) &amp;&amp; selfPost)) {
+            return true;
+        }
+
+        let cid;
+        if (data.type === &#039;topic&#039;) {
+            cid = data.data.cid;
+        } else if (data.type === &#039;reply&#039;) {
+            cid = await topics.getTopicField(data.data.tid, &#039;cid&#039;);
+        }
+        const isModerator = await user.isModerator(uid, cid);
+        let isModeratorOfTargetCid = true;
+        if (editData.cid) {
+            isModeratorOfTargetCid = await user.isModerator(uid, editData.cid);
+        }
+        return isModerator &amp;&amp; isModeratorOfTargetCid;
+    };
+
+    Posts.updateQueuedPostsTopic = async function (newTid, tids) {
+        const postData = await Posts.getQueuedPosts({ tid: tids }, { metadata: false });
+        if (postData.length) {
+            postData.forEach((post) =&gt; {
+                post.data.tid = newTid;
+            });
+            await db.setObjectBulk(
+                postData.map(p =&gt; [`post:queue:${p.id}`, { data: JSON.stringify(p.data) }]),
+            );
+            cache.del(&#039;post-queue&#039;);
+        }
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/partials/menu.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/partials/menu.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.12</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">430</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">71.04</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">8.12</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;nav id=\&quot;menu\&quot; class=\&quot;hidden-md hidden-lg\&quot;&gt;\n    &lt;section class=\&quot;menu-section quick-actions\&quot;&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+        &quot;\n            &lt;div class=\&quot;button-group\&quot;&gt;\n                &lt;li component=\&quot;logout\&quot;&gt;\n    &lt;a href=\&quot;#\&quot; title=\&quot;[[admin/menu:logout]]\&quot; data-placement=\&quot;bottom\&quot; data-toggle=\&quot;tooltip\&quot;&gt;\n        &lt;i class=\&quot;fa fw-fw fa-sign-out\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n\n&quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+            &quot;\n&lt;li&gt;\n    &lt;a href=\&quot;#\&quot; class=\&quot;restart\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:restart-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-repeat\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n&lt;li&gt;\n    &lt;a href=\&quot;#\&quot; class=\&quot;rebuild-and-restart\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:rebuild-and-restart-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-refresh\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n&quot; :
+            &quot;&quot;) + 
+          &quot;\n\n&lt;li&gt;\n    &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:view-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-home\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n            &lt;/div&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &lt;div class=\&quot;alert &quot; + 
+      (guard((context != null) ? context[&#039;upgradeAvailable&#039;] : null) ?
+        &quot;alert-warning&quot; :
+        &quot;alert-info&quot;) + 
+      &quot; well-sm\&quot;&gt;\n    &lt;span&gt;[[admin/menu:alerts.version, &quot; + 
+      __escape(guard((context != null) ? context[&#039;version&#039;] : null)) + 
+      &quot;]]&lt;/span&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;upgradeAvailable&#039;] : null) ?
+        &quot;\n    &lt;span style=\&quot;margin-left: 10px\&quot;&gt;\n        &lt;a href=\&quot;https://docs.nodebb.org/configuring/upgrade/\&quot; target=\&quot;_blank\&quot;&gt;\n            &lt;u&gt;[[admin/menu:alerts.upgrade, &quot; + 
+          __escape(guard((context != null) ? context[&#039;latestVersion&#039;] : null)) + 
+          &quot;]]&lt;/u&gt;\n        &lt;/a&gt;\n    &lt;/span&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n&lt;/div&gt;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;showManageMenu&#039;] : null) ?
+        &quot;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-manage]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:categories&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/categories\&quot;&gt;[[admin/menu:manage/categories]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:privileges&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/privileges\&quot;&gt;[[admin/menu:manage/privileges]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:users&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/users\&quot;&gt;[[admin/menu:manage/users]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:groups&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/groups\&quot;&gt;[[admin/menu:manage/groups]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:admins-mods&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/admins-mods\&quot;&gt;[[admin/menu:manage/admins-mods]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:tags&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/tags\&quot;&gt;[[admin/menu:manage/tags]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+            &quot;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/registration\&quot;&gt;[[admin/menu:manage/registration]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/uploads\&quot;&gt;[[admin/menu:manage/uploads]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/digest\&quot;&gt;[[admin/menu:manage/digest]]&lt;/a&gt;&lt;/li&gt;\n\n            &lt;li&gt;&lt;a target=\&quot;_top\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/post-queue\&quot;&gt;[[admin/menu:manage/post-queue]] &lt;i class=\&quot;fa fa-external-link\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a target=\&quot;_top\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/ip-blacklist\&quot;&gt;[[admin/menu:manage/ip-blacklist]] &lt;i class=\&quot;fa fa-external-link\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;\n            &quot; :
+            &quot;&quot;) + 
+          &quot;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:settings&#039;] : null) ?
+        &quot;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-settings]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/general\&quot;&gt;[[admin/menu:section-general]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/homepage\&quot;&gt;[[admin/menu:settings/homepage]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/navigation\&quot;&gt;[[admin/menu:settings/navigation]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/user\&quot;&gt;[[admin/menu:settings/user]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/reputation\&quot;&gt;[[admin/menu:settings/reputation]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/guest\&quot;&gt;[[admin/menu:settings/guest]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/group\&quot;&gt;[[admin/menu:settings/group]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/tags\&quot;&gt;[[admin/menu:manage/tags]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/post\&quot;&gt;[[admin/menu:settings/post]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/uploads\&quot;&gt;[[admin/menu:settings/uploads]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/languages\&quot;&gt;[[admin/menu:settings/languages]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/email\&quot;&gt;[[admin/menu:settings/email]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/chat\&quot;&gt;[[admin/menu:settings/chat]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/pagination\&quot;&gt;[[admin/menu:settings/pagination]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/notifications\&quot;&gt;[[admin/menu:settings/notifications]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/api\&quot;&gt;[[admin/menu:settings/api]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/social\&quot;&gt;[[admin/menu:settings/social]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/cookies\&quot;&gt;[[admin/menu:settings/cookies]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/web-crawler\&quot;&gt;[[admin/menu:settings/web-crawler]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/advanced\&quot;&gt;[[admin/menu:settings/advanced]]&lt;/a&gt;&lt;/li&gt;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-appearance]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/themes\&quot;&gt;[[admin/menu:appearance/themes]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/skins\&quot;&gt;[[admin/menu:appearance/skins]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/customise\&quot;&gt;[[admin/menu:appearance/customise]]&lt;/a&gt;&lt;/li&gt;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-extend]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/plugins\&quot;&gt;[[admin/menu:extend/plugins]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/widgets\&quot;&gt;[[admin/menu:extend/widgets]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/rewards\&quot;&gt;[[admin/menu:extend/rewards]]&lt;/a&gt;&lt;/li&gt;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n\n    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null) ? context[&#039;plugins&#039;][&#039;length&#039;] : null) ?
+            &quot;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-plugins]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &quot; + 
+              compiled.blocks[&#039;plugins&#039;](helpers, context, guard, iter, helper) + 
+              &quot;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n    &quot; :
+            &quot;&quot;) + 
+          &quot;\n\n    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null) ? context[&#039;authentication&#039;][&#039;length&#039;] : null) ?
+            &quot;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-social-auth]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &quot; + 
+              compiled.blocks[&#039;authentication&#039;](helpers, context, guard, iter, helper) + 
+              &quot;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n    &quot; :
+            &quot;&quot;) + 
+          &quot;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+        &quot;\n    &lt;section class=\&quot;menu-section\&quot;&gt;\n        &lt;h3 class=\&quot;menu-section-title\&quot;&gt;[[admin/menu:section-advanced]]&lt;/h3&gt;\n        &lt;ul class=\&quot;menu-section-list\&quot;&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/database\&quot;&gt;[[admin/menu:advanced/database]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/events\&quot;&gt;[[admin/menu:advanced/events]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/hooks\&quot;&gt;[[admin/menu:advanced/hooks]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/cache\&quot;&gt;[[admin/menu:advanced/cache]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/errors\&quot;&gt;[[admin/menu:advanced/errors]]&lt;/a&gt;&lt;/li&gt;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/logs\&quot;&gt;[[admin/menu:advanced/logs]]&lt;/a&gt;&lt;/li&gt;\n            &quot; + 
+          (guard((context != null) ? context[&#039;env&#039;] : null) ?
+            &quot;\n            &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/development/logger\&quot;&gt;[[admin/menu:development/logger]]&lt;/a&gt;&lt;/li&gt;\n            &quot; :
+            &quot;&quot;) + 
+          &quot;\n        &lt;/ul&gt;\n    &lt;/section&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n&lt;/nav&gt;\n\n&lt;main id=\&quot;panel\&quot;&gt;\n    &lt;nav class=\&quot;header\&quot; id=\&quot;header\&quot;&gt;\n        &lt;div class=\&quot;pull-left\&quot;&gt;\n            &lt;div id=\&quot;mobile-menu\&quot;&gt;\n                &lt;div class=\&quot;bar\&quot;&gt;&lt;/div&gt;\n                &lt;div class=\&quot;bar\&quot;&gt;&lt;/div&gt;\n                &lt;div class=\&quot;bar\&quot;&gt;&lt;/div&gt;\n            &lt;/div&gt;\n            &lt;h1 id=\&quot;main-page-title\&quot;&gt;&lt;/h1&gt;\n        &lt;/div&gt;\n\n        &lt;ul class=\&quot;quick-actions hidden-xs hidden-sm\&quot;&gt;\n            &lt;li component=\&quot;logout\&quot;&gt;\n    &lt;a href=\&quot;#\&quot; title=\&quot;[[admin/menu:logout]]\&quot; data-placement=\&quot;bottom\&quot; data-toggle=\&quot;tooltip\&quot;&gt;\n        &lt;i class=\&quot;fa fw-fw fa-sign-out\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n\n&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+        &quot;\n&lt;li&gt;\n    &lt;a href=\&quot;#\&quot; class=\&quot;restart\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:restart-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-repeat\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n&lt;li&gt;\n    &lt;a href=\&quot;#\&quot; class=\&quot;rebuild-and-restart\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:rebuild-and-restart-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-refresh\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n&quot; :
+        &quot;&quot;) + 
+      &quot;\n\n&lt;li&gt;\n    &lt;a href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/\&quot; data-toggle=\&quot;tooltip\&quot; data-placement=\&quot;bottom\&quot; title=\&quot;[[admin/menu:view-forum]]\&quot;&gt;\n        &lt;i class=\&quot;fa fa-fw fa-home\&quot;&gt;&lt;/i&gt;\n    &lt;/a&gt;\n&lt;/li&gt;\n\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:settings&#039;] : null) ?
+        &quot;\n            &lt;form role=\&quot;search\&quot;&gt;\n                &lt;div id=\&quot;acp-search\&quot; &gt;\n                    &lt;div class=\&quot;dropdown\&quot; data-text=\&quot;[[admin/menu:search.placeholder]]\&quot;&gt;\n                        &lt;input type=\&quot;text\&quot; data-toggle=\&quot;dropdown\&quot; class=\&quot;form-control\&quot;&gt;\n                        &lt;ul class=\&quot;dropdown-menu dropdown-menu-right state-start-typing\&quot; role=\&quot;menu\&quot;&gt;\n                            &lt;li role=\&quot;presentation\&quot; class=\&quot;no-results\&quot;&gt;\n                                &lt;a&gt;[[admin/menu:search.no-results]]&lt;/a&gt;\n                            &lt;/li&gt;\n                            &lt;li role=\&quot;presentation\&quot; class=\&quot;divider search-forum\&quot;&gt;&lt;/li&gt;\n                            &lt;li role=\&quot;presentation\&quot; class=\&quot;search-forum\&quot;&gt;\n                                &lt;a role=\&quot;menuitem\&quot; target=\&quot;_top\&quot; href=\&quot;#\&quot;&gt;\n                                    [[admin/menu:search.search-forum]]\n                                &lt;/a&gt;\n                            &lt;/li&gt;\n                            &lt;li role=\&quot;presentation\&quot; class=\&quot;keep-typing\&quot;&gt;\n                                &lt;a&gt;[[admin/menu:search.keep-typing]]&lt;/a&gt;\n                            &lt;/li&gt;\n                            &lt;li role=\&quot;presentation\&quot; class=\&quot;start-typing\&quot;&gt;\n                                &lt;a&gt;[[admin/menu:search.start-typing]]&lt;/a&gt;\n                            &lt;/li&gt;\n                        &lt;/ul&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/form&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+        &quot;\n            &lt;div class=\&quot;alert &quot; + 
+          (guard((context != null) ? context[&#039;upgradeAvailable&#039;] : null) ?
+            &quot;alert-warning&quot; :
+            &quot;alert-info&quot;) + 
+          &quot; well-sm\&quot;&gt;\n    &lt;span&gt;[[admin/menu:alerts.version, &quot; + 
+          __escape(guard((context != null) ? context[&#039;version&#039;] : null)) + 
+          &quot;]]&lt;/span&gt;\n    &quot; + 
+          (guard((context != null) ? context[&#039;upgradeAvailable&#039;] : null) ?
+            &quot;\n    &lt;span style=\&quot;margin-left: 10px\&quot;&gt;\n        &lt;a href=\&quot;https://docs.nodebb.org/configuring/upgrade/\&quot; target=\&quot;_blank\&quot;&gt;\n            &lt;u&gt;[[admin/menu:alerts.upgrade, &quot; + 
+              __escape(guard((context != null) ? context[&#039;latestVersion&#039;] : null)) + 
+              &quot;]]&lt;/u&gt;\n        &lt;/a&gt;\n    &lt;/span&gt;\n    &quot; :
+            &quot;&quot;) + 
+          &quot;\n&lt;/div&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &lt;li class=\&quot;reconnect-spinner\&quot;&gt;\n                &lt;a href=\&quot;#\&quot; id=\&quot;reconnect\&quot; class=\&quot;hide\&quot; title=\&quot;[[admin/menu:connection-lost, &quot; + 
+      __escape(guard((context != null) ? context[&#039;title&#039;] : null)) + 
+      &quot;]]\&quot;&gt;\n                    &lt;i class=\&quot;fa fa-check\&quot;&gt;&lt;/i&gt;\n                &lt;/a&gt;\n            &lt;/li&gt;\n        &lt;/ul&gt;\n\n\n        &lt;ul id=\&quot;main-menu\&quot;&gt;\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:dashboard&#039;] : null) ?
+        &quot;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-dashboard]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/dashboard\&quot;&gt;[[admin/menu:dashboard/overview]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/dashboard/logins\&quot;&gt;[[admin/menu:dashboard/logins]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/dashboard/users\&quot;&gt;[[admin/menu:dashboard/users]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/dashboard/topics\&quot;&gt;[[admin/menu:dashboard/topics]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/dashboard/searches\&quot;&gt;[[admin/menu:dashboard/searches]]&lt;/a&gt;&lt;/li&gt;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &quot; + 
+      (guard((context != null) ? context[&#039;showManageMenu&#039;] : null) ?
+        &quot;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a id=\&quot;manage-menu\&quot; href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-manage]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:categories&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a id=\&quot;manage-categories\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/categories\&quot;&gt;[[admin/menu:manage/categories]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:privileges&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/privileges\&quot;&gt;[[admin/menu:manage/privileges]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:users&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a id=\&quot;manage-users\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/users\&quot;&gt;[[admin/menu:manage/users]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:groups&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/groups\&quot;&gt;[[admin/menu:manage/groups]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:admins-mods&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/admins-mods\&quot;&gt;[[admin/menu:manage/admins-mods]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:tags&#039;] : null) ?
+            &quot;&lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/tags\&quot;&gt;[[admin/menu:manage/tags]]&lt;/a&gt;&lt;/li&gt;&quot; :
+            &quot;&quot;) + 
+          &quot;\n                    &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+            &quot;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/registration\&quot;&gt;[[admin/menu:manage/registration]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/uploads\&quot;&gt;[[admin/menu:manage/uploads]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/manage/digest\&quot;&gt;[[admin/menu:manage/digest]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li role=\&quot;separator\&quot; class=\&quot;divider\&quot;&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a target=\&quot;_top\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/post-queue\&quot;&gt;[[admin/menu:manage/post-queue]] &lt;i class=\&quot;fa fa-external-link\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a target=\&quot;_top\&quot; href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/ip-blacklist\&quot;&gt;[[admin/menu:manage/ip-blacklist]] &lt;i class=\&quot;fa fa-external-link\&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/li&gt;\n                    &quot; :
+            &quot;&quot;) + 
+          &quot;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;admin:settings&#039;] : null) ?
+        &quot;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a id=\&quot;settings-menu\&quot; href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-settings]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li&gt;&lt;a id=\&quot;settings-general\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/general\&quot;&gt;[[admin/menu:section-general]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/homepage\&quot;&gt;[[admin/menu:settings/homepage]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/navigation\&quot;&gt;[[admin/menu:settings/navigation]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/user\&quot;&gt;[[admin/menu:settings/user]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/reputation\&quot;&gt;[[admin/menu:settings/reputation]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/guest\&quot;&gt;[[admin/menu:settings/guest]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/group\&quot;&gt;[[admin/menu:settings/group]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/tags\&quot;&gt;[[admin/menu:manage/tags]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/post\&quot;&gt;[[admin/menu:settings/post]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/uploads\&quot;&gt;[[admin/menu:settings/uploads]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/languages\&quot;&gt;[[admin/menu:settings/languages]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/email\&quot;&gt;[[admin/menu:settings/email]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/chat\&quot;&gt;[[admin/menu:settings/chat]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/pagination\&quot;&gt;[[admin/menu:settings/pagination]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/notifications\&quot;&gt;[[admin/menu:settings/notifications]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/api\&quot;&gt;[[admin/menu:settings/api]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/social\&quot;&gt;[[admin/menu:settings/social]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/cookies\&quot;&gt;[[admin/menu:settings/cookies]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/web-crawler\&quot;&gt;[[admin/menu:settings/web-crawler]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/settings/advanced\&quot;&gt;[[admin/menu:settings/advanced]]&lt;/a&gt;&lt;/li&gt;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a id=\&quot;appearance-menu\&quot; href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-appearance]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li&gt;&lt;a id=\&quot;appearance-themes\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/themes\&quot;&gt;[[admin/menu:appearance/themes]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a id=\&quot;appearance-skins\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/skins\&quot;&gt;[[admin/menu:appearance/skins]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a id=\&quot;appearance-customise\&quot; href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/appearance/customise\&quot;&gt;[[admin/menu:appearance/customise]]&lt;/a&gt;&lt;/li&gt;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-extend]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/plugins\&quot;&gt;[[admin/menu:extend/plugins]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/widgets\&quot;&gt;[[admin/menu:extend/widgets]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/extend/rewards\&quot;&gt;[[admin/menu:extend/rewards]]&lt;/a&gt;&lt;/li&gt;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null) ? context[&#039;plugins&#039;][&#039;length&#039;] : null) ?
+            &quot;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-plugins]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu plugins-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li class=\&quot;dropdown-header\&quot;&gt;[[admin/menu:section-plugins]]&lt;/li&gt;\n                    &quot; + 
+              iter(guard((context != null) ? context[&#039;plugins&#039;] : null), function each(key0, index, length, value) {
+                var key = key0;
+                return &quot;\n                    &lt;li&gt;\n                        &lt;a href=\&quot;&quot; + 
+                  __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+                  &quot;/admin&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null &amp;&amp; context[&#039;plugins&#039;][key0] != null) ? context[&#039;plugins&#039;][key0][&#039;route&#039;] : null)) + 
+                  &quot;\&quot;&gt;&quot; + 
+                  __escape(guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null &amp;&amp; context[&#039;plugins&#039;][key0] != null) ? context[&#039;plugins&#039;][key0][&#039;name&#039;] : null)) + 
+                  &quot;&lt;/a&gt;\n                    &lt;/li&gt;\n                    &quot;;
+              }, function alt() {
+                return &quot;&quot;;
+              }) + 
+              &quot;\n                    &quot; + 
+              (guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null) ? context[&#039;authentication&#039;][&#039;length&#039;] : null) ?
+                &quot;\n                    &lt;li class=\&quot;divider\&quot;&gt;&lt;/li&gt;\n                    &quot; + 
+                  (guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null) ? context[&#039;authentication&#039;][&#039;length&#039;] : null) ?
+                    &quot;\n                    &lt;li class=\&quot;dropdown-header\&quot;&gt;[[admin/menu:section-social-auth]]&lt;/li&gt;\n                    &quot; + 
+                      iter(guard((context != null) ? context[&#039;authentication&#039;] : null), function each(key0, index, length, value) {
+                        var key = key0;
+                        return &quot;\n                    &lt;li&gt;\n                        &lt;a href=\&quot;&quot; + 
+                          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+                          &quot;/admin&quot; + 
+                          __escape(guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null &amp;&amp; context[&#039;authentication&#039;][key0] != null) ? context[&#039;authentication&#039;][key0][&#039;route&#039;] : null)) + 
+                          &quot;\&quot;&gt;&quot; + 
+                          __escape(guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null &amp;&amp; context[&#039;authentication&#039;][key0] != null) ? context[&#039;authentication&#039;][key0][&#039;name&#039;] : null)) + 
+                          &quot;&lt;/a&gt;\n                    &lt;/li&gt;\n                    &quot;;
+                      }, function alt() {
+                        return &quot;&quot;;
+                      }) + 
+                      &quot;\n                    &quot; :
+                    &quot;&quot;) + 
+                  &quot;\n                    &quot; :
+                &quot;&quot;) + 
+              &quot;\n                    &lt;li class=\&quot;divider\&quot;&gt;&lt;/li&gt;\n                    &lt;li data-link=\&quot;1\&quot;&gt;\n                        &lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/extend/plugins#download\&quot;&gt;[[admin/menu:extend/plugins.install]]&lt;/a&gt;\n                    &lt;/li&gt;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &quot; :
+            &quot;&quot;) + 
+          &quot;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n            &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;user&#039;] != null &amp;&amp; context[&#039;user&#039;][&#039;privileges&#039;] != null) ? context[&#039;user&#039;][&#039;privileges&#039;][&#039;superadmin&#039;] : null) ?
+        &quot;\n            &lt;li class=\&quot;dropdown menu-item\&quot;&gt;\n                &lt;a href=\&quot;#\&quot; class=\&quot;dropdown-toggle\&quot; data-toggle=\&quot;dropdown\&quot; role=\&quot;button\&quot; aria-expanded=\&quot;false\&quot;&gt;[[admin/menu:section-advanced]]&lt;/a&gt;\n                &lt;ul class=\&quot;dropdown-menu\&quot; role=\&quot;menu\&quot;&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/database\&quot;&gt;[[admin/menu:advanced/database]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/events\&quot;&gt;[[admin/menu:advanced/events]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/hooks\&quot;&gt;[[admin/menu:advanced/hooks]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/cache\&quot;&gt;[[admin/menu:advanced/cache]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/errors\&quot;&gt;[[admin/menu:advanced/errors]]&lt;/a&gt;&lt;/li&gt;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin/advanced/logs\&quot;&gt;[[admin/menu:advanced/logs]]&lt;/a&gt;&lt;/li&gt;\n                    &quot; + 
+          (guard((context != null) ? context[&#039;env&#039;] : null) ?
+            &quot;\n                    &lt;li&gt;&lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+              &quot;/admin/development/logger\&quot;&gt;[[admin/menu:development/logger]]&lt;/a&gt;&lt;/li&gt;\n                    &quot; :
+            &quot;&quot;) + 
+          &quot;\n                &lt;/ul&gt;\n            &lt;/li&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n        &lt;/ul&gt;\n    &lt;/nav&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;plugins&#039;: function plugins(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;plugins&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;li&gt;\n                &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null &amp;&amp; context[&#039;plugins&#039;][key0] != null) ? context[&#039;plugins&#039;][key0][&#039;route&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;plugins&#039;] != null &amp;&amp; context[&#039;plugins&#039;][key0] != null) ? context[&#039;plugins&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;authentication&#039;: function authentication(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;authentication&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;li&gt;\n                &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;relative_path&#039;] : null)) + 
+          &quot;/admin&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null &amp;&amp; context[&#039;authentication&#039;][key0] != null) ? context[&#039;authentication&#039;][key0][&#039;route&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;authentication&#039;] != null &amp;&amp; context[&#039;authentication&#039;][key0] != null) ? context[&#039;authentication&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;&lt;/a&gt;\n            &lt;/li&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

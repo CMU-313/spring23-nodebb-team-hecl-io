@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/admin.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/admin.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.26</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">88</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">21.94</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.96</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const fs = require(&#039;fs&#039;);
+const path = require(&#039;path&#039;);
+const winston = require(&#039;winston&#039;);
+const validator = require(&#039;validator&#039;);
+
+const { baseDir } = require(&#039;../constants&#039;).paths;
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const batch = require(&#039;../batch&#039;);
+
+module.exports = function (User) {
+    User.logIP = async function (uid, ip) {
+        if (!(parseInt(uid, 10) &gt; 0)) {
+            return;
+        }
+        const now = Date.now();
+        const bulk = [
+            [`uid:${uid}:ip`, now, ip || &#039;Unknown&#039;],
+        ];
+        if (ip) {
+            bulk.push([`ip:${ip}:uid`, now, uid]);
+        }
+        await db.sortedSetAddBulk(bulk);
+    };
+
+    User.getIPs = async function (uid, stop) {
+        const ips = await db.getSortedSetRevRange(`uid:${uid}:ip`, 0, stop);
+        return ips.map(ip =&gt; validator.escape(String(ip)));
+    };
+
+    User.getUsersCSV = async function () {
+        winston.verbose(&#039;[user/getUsersCSV] Compiling User CSV data&#039;);
+
+        const data = await plugins.hooks.fire(&#039;filter:user.csvFields&#039;, { fields: [&#039;uid&#039;, &#039;email&#039;, &#039;username&#039;] });
+        let csvContent = `${data.fields.join(&#039;,&#039;)}\n`;
+        await batch.processSortedSet(&#039;users:joindate&#039;, async (uids) =&gt; {
+            const usersData = await User.getUsersFields(uids, data.fields);
+            csvContent += usersData.reduce((memo, user) =&gt; {
+                memo += `${data.fields.map(field =&gt; user[field]).join(&#039;,&#039;)}\n`;
+                return memo;
+            }, &#039;&#039;);
+        }, {});
+
+        return csvContent;
+    };
+
+    User.exportUsersCSV = async function () {
+        winston.verbose(&#039;[user/exportUsersCSV] Exporting User CSV data&#039;);
+
+        const { fields, showIps } = await plugins.hooks.fire(&#039;filter:user.csvFields&#039;, {
+            fields: [&#039;email&#039;, &#039;username&#039;, &#039;uid&#039;],
+            showIps: true,
+        });
+        const fd = await fs.promises.open(
+            path.join(baseDir, &#039;build/export&#039;, &#039;users.csv&#039;),
+            &#039;w&#039;
+        );
+        fs.promises.appendFile(fd, `${fields.join(&#039;,&#039;)}${showIps ? &#039;,ip&#039; : &#039;&#039;}\n`);
+        await batch.processSortedSet(&#039;users:joindate&#039;, async (uids) =&gt; {
+            const usersData = await User.getUsersFields(uids, fields.slice());
+            let userIPs = &#039;&#039;;
+            let ips = [];
+
+            if (showIps) {
+                ips = await db.getSortedSetsMembers(uids.map(uid =&gt; `uid:${uid}:ip`));
+            }
+
+            let line = &#039;&#039;;
+            usersData.forEach((user, index) =&gt; {
+                line += `${fields.map(field =&gt; user[field]).join(&#039;,&#039;)}`;
+                if (showIps) {
+                    userIPs = ips[index] ? ips[index].join(&#039;,&#039;) : &#039;&#039;;
+                    line += `,&quot;${userIPs}&quot;\n`;
+                } else {
+                    line += &#039;\n&#039;;
+                }
+            });
+
+            await fs.promises.appendFile(fd, line);
+        }, {
+            batch: 5000,
+            interval: 250,
+        });
+        await fd.close();
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

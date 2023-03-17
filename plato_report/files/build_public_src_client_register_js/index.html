@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/register.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/register.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">209</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">34.45</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.98</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/register&#039;, [
+    &#039;translator&#039;, &#039;slugify&#039;, &#039;api&#039;, &#039;bootbox&#039;, &#039;forum/login&#039;, &#039;zxcvbn&#039;, &#039;jquery-form&#039;,
+], function (translator, slugify, api, bootbox, Login, zxcvbn) {
+    const Register = {};
+    let validationError = false;
+    const successIcon = &#039;&#039;;
+
+    Register.init = function () {
+        const username = $(&#039;#username&#039;);
+        const password = $(&#039;#password&#039;);
+        const password_confirm = $(&#039;#password-confirm&#039;);
+        const register = $(&#039;#register&#039;);
+
+        handleLanguageOverride();
+
+        $(&#039;#content #noscript&#039;).val(&#039;false&#039;);
+
+        const query = utils.params();
+        if (query.token) {
+            $(&#039;#token&#039;).val(query.token);
+        }
+
+        // Update the &quot;others can mention you via&quot; text
+        username.on(&#039;keyup&#039;, function () {
+            $(&#039;#yourUsername&#039;).text(this.value.length &gt; 0 ? slugify(this.value) : &#039;username&#039;);
+        });
+
+        username.on(&#039;blur&#039;, function () {
+            if (username.val().length) {
+                validateUsername(username.val());
+            }
+        });
+
+        password.on(&#039;blur&#039;, function () {
+            if (password.val().length) {
+                validatePassword(password.val(), password_confirm.val());
+            }
+        });
+
+        password_confirm.on(&#039;blur&#039;, function () {
+            if (password_confirm.val().length) {
+                validatePasswordConfirm(password.val(), password_confirm.val());
+            }
+        });
+
+        function validateForm(callback) {
+            validationError = false;
+            validatePassword(password.val(), password_confirm.val());
+            validatePasswordConfirm(password.val(), password_confirm.val());
+            validateUsername(username.val(), callback);
+        }
+
+        // Guard against caps lock
+        Login.capsLockCheck(document.querySelector(&#039;#password&#039;), document.querySelector(&#039;#caps-lock-warning&#039;));
+
+        register.on(&#039;click&#039;, function (e) {
+            const registerBtn = $(this);
+            const errorEl = $(&#039;#register-error-notify&#039;);
+            errorEl.addClass(&#039;hidden&#039;);
+            e.preventDefault();
+            validateForm(function () {
+                if (validationError) {
+                    return;
+                }
+
+                registerBtn.addClass(&#039;disabled&#039;);
+
+                registerBtn.parents(&#039;form&#039;).ajaxSubmit({
+                    headers: {
+                        &#039;x-csrf-token&#039;: config.csrf_token,
+                    },
+                    success: function (data) {
+                        registerBtn.removeClass(&#039;disabled&#039;);
+                        if (!data) {
+                            return;
+                        }
+                        if (data.next) {
+                            const pathname = utils.urlToLocation(data.next).pathname;
+
+                            const params = utils.params({ url: data.next });
+                            params.registered = true;
+                            const qs = decodeURIComponent($.param(params));
+
+                            window.location.href = pathname + &#039;?&#039; + qs;
+                        } else if (data.message) {
+                            translator.translate(data.message, function (msg) {
+                                bootbox.alert(msg);
+                                ajaxify.go(&#039;/&#039;);
+                            });
+                        }
+                    },
+                    error: function (data) {
+                        translator.translate(data.responseText, config.defaultLang, function (translated) {
+                            if (data.status === 403 &amp;&amp; data.responseText === &#039;Forbidden&#039;) {
+                                window.location.href = config.relative_path + &#039;/register?error=csrf-invalid&#039;;
+                            } else {
+                                errorEl.find(&#039;p&#039;).text(translated);
+                                errorEl.removeClass(&#039;hidden&#039;);
+                                registerBtn.removeClass(&#039;disabled&#039;);
+                            }
+                        });
+                    },
+                });
+            });
+        });
+
+        // Set initial focus
+        $(&#039;#username&#039;).focus();
+    };
+
+    function validateUsername(username, callback) {
+        callback = callback || function () {};
+
+        const username_notify = $(&#039;#username-notify&#039;);
+        const userslug = slugify(username);
+        if (username.length &lt; ajaxify.data.minimumUsernameLength ||
+            userslug.length &lt; ajaxify.data.minimumUsernameLength) {
+            showError(username_notify, &#039;[[error:username-too-short]]&#039;);
+        } else if (username.length &gt; ajaxify.data.maximumUsernameLength) {
+            showError(username_notify, &#039;[[error:username-too-long]]&#039;);
+        } else if (!utils.isUserNameValid(username) || !userslug) {
+            showError(username_notify, &#039;[[error:invalid-username]]&#039;);
+        } else {
+            Promise.allSettled([
+                api.head(`/users/bySlug/${username}`, {}),
+                api.head(`/groups/${username}`, {}),
+            ]).then((results) =&gt; {
+                if (results.every(obj =&gt; obj.status === &#039;rejected&#039;)) {
+                    showSuccess(username_notify, successIcon);
+                } else {
+                    showError(username_notify, &#039;[[error:username-taken]]&#039;);
+                }
+
+                callback();
+            });
+        }
+    }
+
+    function validatePassword(password, password_confirm) {
+        const password_notify = $(&#039;#password-notify&#039;);
+        const password_confirm_notify = $(&#039;#password-confirm-notify&#039;);
+
+        try {
+            utils.assertPasswordValidity(password, zxcvbn);
+
+            if (password === $(&#039;#username&#039;).val()) {
+                throw new Error(&#039;[[user:password_same_as_username]]&#039;);
+            }
+
+            showSuccess(password_notify, successIcon);
+        } catch (err) {
+            showError(password_notify, err.message);
+        }
+
+        if (password !== password_confirm &amp;&amp; password_confirm !== &#039;&#039;) {
+            showError(password_confirm_notify, &#039;[[user:change_password_error_match]]&#039;);
+        }
+    }
+
+    function validatePasswordConfirm(password, password_confirm) {
+        const password_notify = $(&#039;#password-notify&#039;);
+        const password_confirm_notify = $(&#039;#password-confirm-notify&#039;);
+
+        if (!password || password_notify.hasClass(&#039;alert-error&#039;)) {
+            return;
+        }
+
+        if (password !== password_confirm) {
+            showError(password_confirm_notify, &#039;[[user:change_password_error_match]]&#039;);
+        } else {
+            showSuccess(password_confirm_notify, successIcon);
+        }
+    }
+
+    function showError(element, msg) {
+        translator.translate(msg, function (msg) {
+            element.html(msg);
+            element.parent()
+                .removeClass(&#039;register-success&#039;)
+                .addClass(&#039;register-danger&#039;);
+            element.show();
+        });
+        validationError = true;
+    }
+
+    function showSuccess(element, msg) {
+        translator.translate(msg, function (msg) {
+            element.html(msg);
+            element.parent()
+                .removeClass(&#039;register-danger&#039;)
+                .addClass(&#039;register-success&#039;);
+            element.show();
+        });
+    }
+
+    function handleLanguageOverride() {
+        if (!app.user.uid &amp;&amp; config.defaultLang !== config.userLang) {
+            const formEl = $(&#039;[component=&quot;register/local&quot;]&#039;);
+            const langEl = $(&#039;&lt;input type=&quot;hidden&quot; name=&quot;userLang&quot; value=&quot;&#039; + config.userLang + &#039;&quot; /&gt;&#039;);
+
+            formEl.append(langEl);
+        }
+    }
+
+    return Register;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

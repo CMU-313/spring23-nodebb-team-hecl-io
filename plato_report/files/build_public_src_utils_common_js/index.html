@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/utils.common.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/utils.common.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.92</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">750</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">32.51</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">9.10</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+// add default escape function for escaping HTML entities
+const escapeCharMap = Object.freeze({
+    &#039;&amp;&#039;: &#039;&amp;amp;&#039;,
+    &#039;&lt;&#039;: &#039;&amp;lt;&#039;,
+    &#039;&gt;&#039;: &#039;&amp;gt;&#039;,
+    &#039;&quot;&#039;: &#039;&amp;quot;&#039;,
+    &quot;&#039;&quot;: &#039;&amp;#x27;&#039;,
+    &#039;`&#039;: &#039;&amp;#x60;&#039;,
+    &#039;=&#039;: &#039;&amp;#x3D;&#039;,
+});
+function replaceChar(c) {
+    return escapeCharMap[c];
+}
+const escapeChars = /[&amp;&lt;&gt;&quot;&#039;`=]/g;
+
+const HTMLEntities = Object.freeze({
+    amp: &#039;&amp;&#039;,
+    gt: &#039;&gt;&#039;,
+    lt: &#039;&lt;&#039;,
+    quot: &#039;&quot;&#039;,
+    apos: &quot;&#039;&quot;,
+    AElig: 198,
+    Aacute: 193,
+    Acirc: 194,
+    Agrave: 192,
+    Aring: 197,
+    Atilde: 195,
+    Auml: 196,
+    Ccedil: 199,
+    ETH: 208,
+    Eacute: 201,
+    Ecirc: 202,
+    Egrave: 200,
+    Euml: 203,
+    Iacute: 205,
+    Icirc: 206,
+    Igrave: 204,
+    Iuml: 207,
+    Ntilde: 209,
+    Oacute: 211,
+    Ocirc: 212,
+    Ograve: 210,
+    Oslash: 216,
+    Otilde: 213,
+    Ouml: 214,
+    THORN: 222,
+    Uacute: 218,
+    Ucirc: 219,
+    Ugrave: 217,
+    Uuml: 220,
+    Yacute: 221,
+    aacute: 225,
+    acirc: 226,
+    aelig: 230,
+    agrave: 224,
+    aring: 229,
+    atilde: 227,
+    auml: 228,
+    ccedil: 231,
+    eacute: 233,
+    ecirc: 234,
+    egrave: 232,
+    eth: 240,
+    euml: 235,
+    iacute: 237,
+    icirc: 238,
+    igrave: 236,
+    iuml: 239,
+    ntilde: 241,
+    oacute: 243,
+    ocirc: 244,
+    ograve: 242,
+    oslash: 248,
+    otilde: 245,
+    ouml: 246,
+    szlig: 223,
+    thorn: 254,
+    uacute: 250,
+    ucirc: 251,
+    ugrave: 249,
+    uuml: 252,
+    yacute: 253,
+    yuml: 255,
+    copy: 169,
+    reg: 174,
+    nbsp: 160,
+    iexcl: 161,
+    cent: 162,
+    pound: 163,
+    curren: 164,
+    yen: 165,
+    brvbar: 166,
+    sect: 167,
+    uml: 168,
+    ordf: 170,
+    laquo: 171,
+    not: 172,
+    shy: 173,
+    macr: 175,
+    deg: 176,
+    plusmn: 177,
+    sup1: 185,
+    sup2: 178,
+    sup3: 179,
+    acute: 180,
+    micro: 181,
+    para: 182,
+    middot: 183,
+    cedil: 184,
+    ordm: 186,
+    raquo: 187,
+    frac14: 188,
+    frac12: 189,
+    frac34: 190,
+    iquest: 191,
+    times: 215,
+    divide: 247,
+    &#039;OElig;&#039;: 338,
+    &#039;oelig;&#039;: 339,
+    &#039;Scaron;&#039;: 352,
+    &#039;scaron;&#039;: 353,
+    &#039;Yuml;&#039;: 376,
+    &#039;fnof;&#039;: 402,
+    &#039;circ;&#039;: 710,
+    &#039;tilde;&#039;: 732,
+    &#039;Alpha;&#039;: 913,
+    &#039;Beta;&#039;: 914,
+    &#039;Gamma;&#039;: 915,
+    &#039;Delta;&#039;: 916,
+    &#039;Epsilon;&#039;: 917,
+    &#039;Zeta;&#039;: 918,
+    &#039;Eta;&#039;: 919,
+    &#039;Theta;&#039;: 920,
+    &#039;Iota;&#039;: 921,
+    &#039;Kappa;&#039;: 922,
+    &#039;Lambda;&#039;: 923,
+    &#039;Mu;&#039;: 924,
+    &#039;Nu;&#039;: 925,
+    &#039;Xi;&#039;: 926,
+    &#039;Omicron;&#039;: 927,
+    &#039;Pi;&#039;: 928,
+    &#039;Rho;&#039;: 929,
+    &#039;Sigma;&#039;: 931,
+    &#039;Tau;&#039;: 932,
+    &#039;Upsilon;&#039;: 933,
+    &#039;Phi;&#039;: 934,
+    &#039;Chi;&#039;: 935,
+    &#039;Psi;&#039;: 936,
+    &#039;Omega;&#039;: 937,
+    &#039;alpha;&#039;: 945,
+    &#039;beta;&#039;: 946,
+    &#039;gamma;&#039;: 947,
+    &#039;delta;&#039;: 948,
+    &#039;epsilon;&#039;: 949,
+    &#039;zeta;&#039;: 950,
+    &#039;eta;&#039;: 951,
+    &#039;theta;&#039;: 952,
+    &#039;iota;&#039;: 953,
+    &#039;kappa;&#039;: 954,
+    &#039;lambda;&#039;: 955,
+    &#039;mu;&#039;: 956,
+    &#039;nu;&#039;: 957,
+    &#039;xi;&#039;: 958,
+    &#039;omicron;&#039;: 959,
+    &#039;pi;&#039;: 960,
+    &#039;rho;&#039;: 961,
+    &#039;sigmaf;&#039;: 962,
+    &#039;sigma;&#039;: 963,
+    &#039;tau;&#039;: 964,
+    &#039;upsilon;&#039;: 965,
+    &#039;phi;&#039;: 966,
+    &#039;chi;&#039;: 967,
+    &#039;psi;&#039;: 968,
+    &#039;omega;&#039;: 969,
+    &#039;thetasym;&#039;: 977,
+    &#039;upsih;&#039;: 978,
+    &#039;piv;&#039;: 982,
+    &#039;ensp;&#039;: 8194,
+    &#039;emsp;&#039;: 8195,
+    &#039;thinsp;&#039;: 8201,
+    &#039;zwnj;&#039;: 8204,
+    &#039;zwj;&#039;: 8205,
+    &#039;lrm;&#039;: 8206,
+    &#039;rlm;&#039;: 8207,
+    &#039;ndash;&#039;: 8211,
+    &#039;mdash;&#039;: 8212,
+    &#039;lsquo;&#039;: 8216,
+    &#039;rsquo;&#039;: 8217,
+    &#039;sbquo;&#039;: 8218,
+    &#039;ldquo;&#039;: 8220,
+    &#039;rdquo;&#039;: 8221,
+    &#039;bdquo;&#039;: 8222,
+    &#039;dagger;&#039;: 8224,
+    &#039;Dagger;&#039;: 8225,
+    &#039;bull;&#039;: 8226,
+    &#039;hellip;&#039;: 8230,
+    &#039;permil;&#039;: 8240,
+    &#039;prime;&#039;: 8242,
+    &#039;Prime;&#039;: 8243,
+    &#039;lsaquo;&#039;: 8249,
+    &#039;rsaquo;&#039;: 8250,
+    &#039;oline;&#039;: 8254,
+    &#039;frasl;&#039;: 8260,
+    &#039;euro;&#039;: 8364,
+    &#039;image;&#039;: 8465,
+    &#039;weierp;&#039;: 8472,
+    &#039;real;&#039;: 8476,
+    &#039;trade;&#039;: 8482,
+    &#039;alefsym;&#039;: 8501,
+    &#039;larr;&#039;: 8592,
+    &#039;uarr;&#039;: 8593,
+    &#039;rarr;&#039;: 8594,
+    &#039;darr;&#039;: 8595,
+    &#039;harr;&#039;: 8596,
+    &#039;crarr;&#039;: 8629,
+    &#039;lArr;&#039;: 8656,
+    &#039;uArr;&#039;: 8657,
+    &#039;rArr;&#039;: 8658,
+    &#039;dArr;&#039;: 8659,
+    &#039;hArr;&#039;: 8660,
+    &#039;forall;&#039;: 8704,
+    &#039;part;&#039;: 8706,
+    &#039;exist;&#039;: 8707,
+    &#039;empty;&#039;: 8709,
+    &#039;nabla;&#039;: 8711,
+    &#039;isin;&#039;: 8712,
+    &#039;notin;&#039;: 8713,
+    &#039;ni;&#039;: 8715,
+    &#039;prod;&#039;: 8719,
+    &#039;sum;&#039;: 8721,
+    &#039;minus;&#039;: 8722,
+    &#039;lowast;&#039;: 8727,
+    &#039;radic;&#039;: 8730,
+    &#039;prop;&#039;: 8733,
+    &#039;infin;&#039;: 8734,
+    &#039;ang;&#039;: 8736,
+    &#039;and;&#039;: 8743,
+    &#039;or;&#039;: 8744,
+    &#039;cap;&#039;: 8745,
+    &#039;cup;&#039;: 8746,
+    &#039;int;&#039;: 8747,
+    &#039;there4;&#039;: 8756,
+    &#039;sim;&#039;: 8764,
+    &#039;cong;&#039;: 8773,
+    &#039;asymp;&#039;: 8776,
+    &#039;ne;&#039;: 8800,
+    &#039;equiv;&#039;: 8801,
+    &#039;le;&#039;: 8804,
+    &#039;ge;&#039;: 8805,
+    &#039;sub;&#039;: 8834,
+    &#039;sup;&#039;: 8835,
+    &#039;nsub;&#039;: 8836,
+    &#039;sube;&#039;: 8838,
+    &#039;supe;&#039;: 8839,
+    &#039;oplus;&#039;: 8853,
+    &#039;otimes;&#039;: 8855,
+    &#039;perp;&#039;: 8869,
+    &#039;sdot;&#039;: 8901,
+    &#039;lceil;&#039;: 8968,
+    &#039;rceil;&#039;: 8969,
+    &#039;lfloor;&#039;: 8970,
+    &#039;rfloor;&#039;: 8971,
+    &#039;lang;&#039;: 9001,
+    &#039;rang;&#039;: 9002,
+    &#039;loz;&#039;: 9674,
+    &#039;spades;&#039;: 9824,
+    &#039;clubs;&#039;: 9827,
+    &#039;hearts;&#039;: 9829,
+    &#039;diams;&#039;: 9830,
+});
+
+/* eslint-disable no-redeclare */
+const utils = {
+    // https://github.com/substack/node-ent/blob/master/index.js
+    decodeHTMLEntities: function (html) {
+        return String(html)
+            .replace(/&amp;#(\d+);?/g, function (_, code) {
+                return String.fromCharCode(code);
+            })
+            .replace(/&amp;#[xX]([A-Fa-f0-9]+);?/g, function (_, hex) {
+                return String.fromCharCode(parseInt(hex, 16));
+            })
+            .replace(/&amp;([^;\W]+;?)/g, function (m, e) {
+                const ee = e.replace(/;$/, &#039;&#039;);
+                const target = HTMLEntities[e] || (e.match(/;$/) &amp;&amp; HTMLEntities[ee]);
+
+                if (typeof target === &#039;number&#039;) {
+                    return String.fromCharCode(target);
+                } else if (typeof target === &#039;string&#039;) {
+                    return target;
+                }
+
+                return m;
+            });
+    },
+    // https://github.com/jprichardson/string.js/blob/master/lib/string.js
+    stripHTMLTags: function (str, tags) {
+        const pattern = (tags || [&#039;&#039;]).join(&#039;|&#039;);
+        return String(str).replace(new RegExp(&#039;&lt;(\\/)?(&#039; + (pattern || &#039;[^\\s&gt;]+&#039;) + &#039;)(\\s+[^&lt;&gt;]*?)?\\s*(\\/)?&gt;&#039;, &#039;gi&#039;), &#039;&#039;);
+    },
+
+    cleanUpTag: function (tag, maxLength) {
+        if (typeof tag !== &#039;string&#039; || !tag.length) {
+            return &#039;&#039;;
+        }
+
+        tag = tag.trim().toLowerCase();
+        // see https://github.com/NodeBB/NodeBB/issues/4378
+        tag = tag.replace(/\u202E/gi, &#039;&#039;);
+        tag = tag.replace(/[,/#!$^*;:{}=_`&lt;&gt;&#039;&quot;~()?|]/g, &#039;&#039;);
+        tag = tag.slice(0, maxLength || 15).trim();
+        const matches = tag.match(/^[.-]*(.+?)[.-]*$/);
+        if (matches &amp;&amp; matches.length &gt; 1) {
+            tag = matches[1];
+        }
+        return tag;
+    },
+
+    removePunctuation: function (str) {
+        return str.replace(/[.,-/#!$%^&amp;*;:{}=\-_`&lt;&gt;&#039;&quot;~()?]/g, &#039;&#039;);
+    },
+
+    isEmailValid: function (email) {
+        return typeof email === &#039;string&#039; &amp;&amp; email.length &amp;&amp; email.indexOf(&#039;@&#039;) !== -1 &amp;&amp; email.indexOf(&#039;,&#039;) === -1 &amp;&amp; email.indexOf(&#039;;&#039;) === -1;
+    },
+
+    isUserNameValid: function (name) {
+        return (name &amp;&amp; name !== &#039;&#039; &amp;&amp; (/^[&#039;&quot; \-+.*[\]0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]+$/.test(name)));
+    },
+
+    isPasswordValid: function (password) {
+        return typeof password === &#039;string&#039; &amp;&amp; password.length;
+    },
+
+    isNumber: function (n) {
+        // `isFinite(&#039;&#039;) === true` so isNan parseFloat check is necessary
+        return !isNaN(parseFloat(n)) &amp;&amp; isFinite(n);
+    },
+
+    languageKeyRegex: /\[\[[\w]+:.+\]\]/,
+    hasLanguageKey: function (input) {
+        return utils.languageKeyRegex.test(input);
+    },
+    userLangToTimeagoCode: function (userLang) {
+        const mapping = {
+            &#039;en-GB&#039;: &#039;en&#039;,
+            &#039;en-US&#039;: &#039;en&#039;,
+            &#039;fa-IR&#039;: &#039;fa&#039;,
+            &#039;pt-BR&#039;: &#039;pt-br&#039;,
+            nb: &#039;no&#039;,
+        };
+        return mapping.hasOwnProperty(userLang) ? mapping[userLang] : userLang;
+    },
+    // shallow objects merge
+    merge: function () {
+        const result = {};
+        let obj;
+        let keys;
+        for (let i = 0; i &lt; arguments.length; i += 1) {
+            obj = arguments[i] || {};
+            keys = Object.keys(obj);
+            for (let j = 0; j &lt; keys.length; j += 1) {
+                result[keys[j]] = obj[keys[j]];
+            }
+        }
+        return result;
+    },
+
+    fileExtension: function (path) {
+        return (&#039;&#039; + path).split(&#039;.&#039;).pop();
+    },
+
+    extensionMimeTypeMap: {
+        bmp: &#039;image/bmp&#039;,
+        cmx: &#039;image/x-cmx&#039;,
+        cod: &#039;image/cis-cod&#039;,
+        gif: &#039;image/gif&#039;,
+        ico: &#039;image/x-icon&#039;,
+        ief: &#039;image/ief&#039;,
+        jfif: &#039;image/pipeg&#039;,
+        jpe: &#039;image/jpeg&#039;,
+        jpeg: &#039;image/jpeg&#039;,
+        jpg: &#039;image/jpeg&#039;,
+        png: &#039;image/png&#039;,
+        pbm: &#039;image/x-portable-bitmap&#039;,
+        pgm: &#039;image/x-portable-graymap&#039;,
+        pnm: &#039;image/x-portable-anymap&#039;,
+        ppm: &#039;image/x-portable-pixmap&#039;,
+        ras: &#039;image/x-cmu-raster&#039;,
+        rgb: &#039;image/x-rgb&#039;,
+        svg: &#039;image/svg+xml&#039;,
+        tif: &#039;image/tiff&#039;,
+        tiff: &#039;image/tiff&#039;,
+        xbm: &#039;image/x-xbitmap&#039;,
+        xpm: &#039;image/x-xpixmap&#039;,
+        xwd: &#039;image/x-xwindowdump&#039;,
+    },
+
+    fileMimeType: function (path) {
+        return utils.extensionToMimeType(utils.fileExtension(path));
+    },
+
+    extensionToMimeType: function (extension) {
+        return utils.extensionMimeTypeMap.hasOwnProperty(extension) ? utils.extensionMimeTypeMap[extension] : &#039;*&#039;;
+    },
+
+    isPromise: function (object) {
+        // https://stackoverflow.com/questions/27746304/how-do-i-tell-if-an-object-is-a-promise#comment97339131_27746324
+        return object &amp;&amp; typeof object.then === &#039;function&#039;;
+    },
+
+    promiseParallel: function (obj) {
+        const keys = Object.keys(obj);
+        return Promise.all(
+            keys.map(function (k) { return obj[k]; })
+        ).then(function (results) {
+            const data = {};
+            keys.forEach(function (k, i) {
+                data[k] = results[i];
+            });
+            return data;
+        });
+    },
+
+    // https://github.com/sindresorhus/is-absolute-url
+    isAbsoluteUrlRE: /^[a-zA-Z][a-zA-Z\d+\-.]*:/,
+    isWinPathRE: /^[a-zA-Z]:\\/,
+    isAbsoluteUrl: function (url) {
+        if (utils.isWinPathRE.test(url)) {
+            return false;
+        }
+        return utils.isAbsoluteUrlRE.test(url);
+    },
+
+    isRelativeUrl: function (url) {
+        return !utils.isAbsoluteUrl(url);
+    },
+
+    makeNumberHumanReadable: function (num) {
+        const n = parseInt(num, 10);
+        if (!n) {
+            return num;
+        }
+        if (n &gt; 999999) {
+            return (n / 1000000).toFixed(1) + &#039;m&#039;;
+        } else if (n &gt; 999) {
+            return (n / 1000).toFixed(1) + &#039;k&#039;;
+        }
+        return n;
+    },
+
+    // takes a string like 1000 and returns 1,000
+    addCommas: function (text) {
+        return String(text).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, &#039;$1,&#039;);
+    },
+
+    toISOString: function (timestamp) {
+        if (!timestamp || !Date.prototype.toISOString) {
+            return &#039;&#039;;
+        }
+
+        // Prevent too-high values to be passed to Date object
+        timestamp = Math.min(timestamp, 8640000000000000);
+
+        try {
+            return new Date(parseInt(timestamp, 10)).toISOString();
+        } catch (e) {
+            return timestamp;
+        }
+    },
+
+    tags: [&#039;a&#039;, &#039;abbr&#039;, &#039;acronym&#039;, &#039;address&#039;, &#039;applet&#039;, &#039;area&#039;, &#039;article&#039;, &#039;aside&#039;, &#039;audio&#039;, &#039;b&#039;, &#039;base&#039;, &#039;basefont&#039;,
+        &#039;bdi&#039;, &#039;bdo&#039;, &#039;big&#039;, &#039;blockquote&#039;, &#039;body&#039;, &#039;br&#039;, &#039;button&#039;, &#039;canvas&#039;, &#039;caption&#039;, &#039;center&#039;, &#039;cite&#039;, &#039;code&#039;, &#039;col&#039;, &#039;colgroup&#039;,
+        &#039;command&#039;, &#039;datalist&#039;, &#039;dd&#039;, &#039;del&#039;, &#039;details&#039;, &#039;dfn&#039;, &#039;dialog&#039;, &#039;dir&#039;, &#039;div&#039;, &#039;dl&#039;, &#039;dt&#039;, &#039;em&#039;, &#039;embed&#039;,
+        &#039;fieldset&#039;, &#039;figcaption&#039;, &#039;figure&#039;, &#039;font&#039;, &#039;footer&#039;, &#039;form&#039;, &#039;frame&#039;, &#039;frameset&#039;, &#039;h1&#039;, &#039;h2&#039;, &#039;h3&#039;, &#039;h4&#039;, &#039;h5&#039;, &#039;h6&#039;,
+        &#039;head&#039;, &#039;header&#039;, &#039;hr&#039;, &#039;html&#039;, &#039;i&#039;, &#039;iframe&#039;, &#039;img&#039;, &#039;input&#039;, &#039;ins&#039;, &#039;kbd&#039;, &#039;keygen&#039;, &#039;label&#039;, &#039;legend&#039;, &#039;li&#039;, &#039;link&#039;,
+        &#039;map&#039;, &#039;mark&#039;, &#039;menu&#039;, &#039;meta&#039;, &#039;meter&#039;, &#039;nav&#039;, &#039;noframes&#039;, &#039;noscript&#039;, &#039;object&#039;, &#039;ol&#039;, &#039;optgroup&#039;, &#039;option&#039;,
+        &#039;output&#039;, &#039;p&#039;, &#039;param&#039;, &#039;pre&#039;, &#039;progress&#039;, &#039;q&#039;, &#039;rp&#039;, &#039;rt&#039;, &#039;ruby&#039;, &#039;s&#039;, &#039;samp&#039;, &#039;script&#039;, &#039;section&#039;, &#039;select&#039;,
+        &#039;small&#039;, &#039;source&#039;, &#039;span&#039;, &#039;strike&#039;, &#039;strong&#039;, &#039;style&#039;, &#039;sub&#039;, &#039;summary&#039;, &#039;sup&#039;, &#039;table&#039;, &#039;tbody&#039;, &#039;td&#039;, &#039;textarea&#039;, &#039;tfoot&#039;,
+        &#039;th&#039;, &#039;thead&#039;, &#039;time&#039;, &#039;title&#039;, &#039;tr&#039;, &#039;track&#039;, &#039;tt&#039;, &#039;u&#039;, &#039;ul&#039;, &#039;const&#039;, &#039;video&#039;, &#039;wbr&#039;],
+
+    stripTags: [&#039;abbr&#039;, &#039;acronym&#039;, &#039;address&#039;, &#039;applet&#039;, &#039;area&#039;, &#039;article&#039;, &#039;aside&#039;, &#039;audio&#039;, &#039;base&#039;, &#039;basefont&#039;,
+        &#039;bdi&#039;, &#039;bdo&#039;, &#039;big&#039;, &#039;blink&#039;, &#039;body&#039;, &#039;button&#039;, &#039;canvas&#039;, &#039;caption&#039;, &#039;center&#039;, &#039;cite&#039;, &#039;code&#039;, &#039;col&#039;, &#039;colgroup&#039;,
+        &#039;command&#039;, &#039;datalist&#039;, &#039;dd&#039;, &#039;del&#039;, &#039;details&#039;, &#039;dfn&#039;, &#039;dialog&#039;, &#039;dir&#039;, &#039;div&#039;, &#039;dl&#039;, &#039;dt&#039;, &#039;em&#039;, &#039;embed&#039;,
+        &#039;fieldset&#039;, &#039;figcaption&#039;, &#039;figure&#039;, &#039;font&#039;, &#039;footer&#039;, &#039;form&#039;, &#039;frame&#039;, &#039;frameset&#039;, &#039;h1&#039;, &#039;h2&#039;, &#039;h3&#039;, &#039;h4&#039;, &#039;h5&#039;, &#039;h6&#039;,
+        &#039;head&#039;, &#039;header&#039;, &#039;hr&#039;, &#039;html&#039;, &#039;iframe&#039;, &#039;input&#039;, &#039;ins&#039;, &#039;kbd&#039;, &#039;keygen&#039;, &#039;label&#039;, &#039;legend&#039;, &#039;li&#039;, &#039;link&#039;,
+        &#039;map&#039;, &#039;mark&#039;, &#039;marquee&#039;, &#039;menu&#039;, &#039;meta&#039;, &#039;meter&#039;, &#039;nav&#039;, &#039;noframes&#039;, &#039;noscript&#039;, &#039;object&#039;, &#039;ol&#039;, &#039;optgroup&#039;, &#039;option&#039;,
+        &#039;output&#039;, &#039;param&#039;, &#039;pre&#039;, &#039;progress&#039;, &#039;q&#039;, &#039;rp&#039;, &#039;rt&#039;, &#039;ruby&#039;, &#039;s&#039;, &#039;samp&#039;, &#039;script&#039;, &#039;section&#039;, &#039;select&#039;,
+        &#039;source&#039;, &#039;span&#039;, &#039;strike&#039;, &#039;style&#039;, &#039;sub&#039;, &#039;summary&#039;, &#039;sup&#039;, &#039;table&#039;, &#039;tbody&#039;, &#039;td&#039;, &#039;textarea&#039;, &#039;tfoot&#039;,
+        &#039;th&#039;, &#039;thead&#039;, &#039;time&#039;, &#039;title&#039;, &#039;tr&#039;, &#039;track&#039;, &#039;tt&#039;, &#039;u&#039;, &#039;ul&#039;, &#039;const&#039;, &#039;video&#039;, &#039;wbr&#039;],
+
+    escapeRegexChars: function (text) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, &#039;\\$&amp;&#039;);
+    },
+
+    escapeHTML: function (str) {
+        if (str == null) {
+            return &#039;&#039;;
+        }
+        if (!str) {
+            return String(str);
+        }
+
+        return str.toString().replace(escapeChars, replaceChar);
+    },
+
+    isAndroidBrowser: function () {
+        // http://stackoverflow.com/questions/9286355/how-to-detect-only-the-native-android-browser
+        const nua = navigator.userAgent;
+        return ((nua.indexOf(&#039;Mozilla/5.0&#039;) &gt; -1 &amp;&amp; nua.indexOf(&#039;Android &#039;) &gt; -1 &amp;&amp; nua.indexOf(&#039;AppleWebKit&#039;) &gt; -1) &amp;&amp; !(nua.indexOf(&#039;Chrome&#039;) &gt; -1));
+    },
+
+    isTouchDevice: function () {
+        return &#039;ontouchstart&#039; in document.documentElement;
+    },
+
+    findBootstrapEnvironment: function () {
+        // http://stackoverflow.com/questions/14441456/how-to-detect-which-device-view-youre-on-using-twitter-bootstrap-api
+        const envs = [&#039;xs&#039;, &#039;sm&#039;, &#039;md&#039;, &#039;lg&#039;];
+        const $el = $(&#039;&lt;div&gt;&#039;);
+
+        $el.appendTo($(&#039;body&#039;));
+
+        for (let i = envs.length - 1; i &gt;= 0; i -= 1) {
+            const env = envs[i];
+
+            $el.addClass(&#039;hidden-&#039; + env);
+            if ($el.is(&#039;:hidden&#039;)) {
+                $el.remove();
+                return env;
+            }
+        }
+    },
+
+    isMobile: function () {
+        const env = utils.findBootstrapEnvironment();
+        return [&#039;xs&#039;, &#039;sm&#039;].some(function (targetEnv) {
+            return targetEnv === env;
+        });
+    },
+
+    getHoursArray: function () {
+        const currentHour = new Date().getHours();
+        const labels = [];
+
+        for (let i = currentHour, ii = currentHour - 24; i &gt; ii; i -= 1) {
+            const hour = i &lt; 0 ? 24 + i : i;
+            labels.push(hour + &#039;:00&#039;);
+        }
+
+        return labels.reverse();
+    },
+
+    getDaysArray: function (from, amount) {
+        const currentDay = new Date(parseInt(from, 10) || Date.now()).getTime();
+        const months = [&#039;Jan&#039;, &#039;Feb&#039;, &#039;Mar&#039;, &#039;Apr&#039;, &#039;May&#039;, &#039;Jun&#039;, &#039;Jul&#039;, &#039;Aug&#039;, &#039;Sep&#039;, &#039;Oct&#039;, &#039;Nov&#039;, &#039;Dec&#039;];
+        const labels = [];
+        let tmpDate;
+
+        for (let x = (amount || 30) - 1; x &gt;= 0; x -= 1) {
+            tmpDate = new Date(currentDay - (1000 * 60 * 60 * 24 * x));
+            labels.push(months[tmpDate.getMonth()] + &#039; &#039; + tmpDate.getDate());
+        }
+
+        return labels;
+    },
+
+    /* Retrieved from http://stackoverflow.com/a/7557433 @ 27 Mar 2016 */
+    isElementInViewport: function (el) {
+        // special bonus for those using jQuery
+        if (typeof jQuery === &#039;function&#039; &amp;&amp; el instanceof jQuery) {
+            el = el[0];
+        }
+
+        const rect = el.getBoundingClientRect();
+
+        return (
+            rect.top &gt;= 0 &amp;&amp;
+            rect.left &gt;= 0 &amp;&amp;
+            rect.bottom &lt;= (window.innerHeight || document.documentElement.clientHeight) &amp;&amp; /* or $(window).height() */
+            rect.right &lt;= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+        );
+    },
+
+    // get all the url params in a single key/value hash
+    params: function (options = {}) {
+        let url;
+        if (options.url &amp;&amp; !options.url.startsWith(&#039;http&#039;)) {
+            // relative path passed in
+            options.url = options.url.replace(new RegExp(`/?${config.relative_path.slice(1)}/`, &#039;g&#039;), &#039;&#039;);
+            url = new URL(document.location);
+            url.pathname = options.url;
+        } else {
+            url = new URL(options.url || document.location);
+        }
+        let params = url.searchParams;
+
+        if (options.full) { // return URLSearchParams object
+            return params;
+        }
+
+        // Handle arrays passed in query string (Object.fromEntries does not)
+        const arrays = {};
+        params.forEach((value, key) =&gt; {
+            if (!key.endsWith(&#039;[]&#039;)) {
+                return;
+            }
+
+            key = key.slice(0, -2);
+            arrays[key] = arrays[key] || [];
+            arrays[key].push(utils.toType(value));
+        });
+        Object.keys(arrays).forEach((key) =&gt; {
+            params.delete(`${key}[]`);
+        });
+
+        // Backwards compatibility with v1.x -- all values passed through utils.toType()
+        params = Object.fromEntries(params);
+        Object.keys(params).forEach((key) =&gt; {
+            params[key] = utils.toType(params[key]);
+        });
+
+        return { ...params, ...arrays };
+    },
+
+    param: function (key) {
+        return this.params()[key];
+    },
+
+    urlToLocation: function (url) {
+        const a = document.createElement(&#039;a&#039;);
+        a.href = url;
+        return a;
+    },
+
+    // return boolean if string &#039;true&#039; or string &#039;false&#039;, or if a parsable string which is a number
+    // also supports JSON object and/or arrays parsing
+    toType: function (str) {
+        const type = typeof str;
+        if (type !== &#039;string&#039;) {
+            return str;
+        }
+        const nb = parseFloat(str);
+        if (!isNaN(nb) &amp;&amp; isFinite(str)) {
+            return nb;
+        }
+        if (str === &#039;false&#039;) {
+            return false;
+        }
+        if (str === &#039;true&#039;) {
+            return true;
+        }
+
+        try {
+            str = JSON.parse(str);
+        } catch (e) {}
+
+        return str;
+    },
+
+    // Safely get/set chained properties on an object
+    // set example: utils.props(A, &#039;a.b.c.d&#039;, 10) // sets A to {a: {b: {c: {d: 10}}}}, and returns 10
+    // get example: utils.props(A, &#039;a.b.c&#039;) // returns {d: 10}
+    // get example: utils.props(A, &#039;a.b.c.foo.bar&#039;) // returns undefined without throwing a TypeError
+    // credits to github.com/gkindel
+    props: function (obj, props, value) {
+        if (obj === undefined) {
+            obj = window;
+        }
+        if (props == null) {
+            return undefined;
+        }
+        const i = props.indexOf(&#039;.&#039;);
+        if (i === -1) {
+            if (value !== undefined) {
+                obj[props] = value;
+            }
+            return obj[props];
+        }
+        const prop = props.slice(0, i);
+        const newProps = props.slice(i + 1);
+
+        if (props !== undefined &amp;&amp; !(obj[prop] instanceof Object)) {
+            obj[prop] = {};
+        }
+
+        return utils.props(obj[prop], newProps, value);
+    },
+
+    isInternalURI: function (targetLocation, referenceLocation, relative_path) {
+        return targetLocation.host === &#039;&#039; || // Relative paths are always internal links
+            (
+                targetLocation.host === referenceLocation.host &amp;&amp;
+                // Otherwise need to check if protocol and host match
+                targetLocation.protocol === referenceLocation.protocol &amp;&amp;
+                // Subfolder installs need this additional check
+                (relative_path.length &gt; 0 ? targetLocation.pathname.indexOf(relative_path) === 0 : true)
+            );
+    },
+
+    rtrim: function (str) {
+        return str.replace(/\s+$/g, &#039;&#039;);
+    },
+
+    debounce: function (func, wait, immediate) {
+        // modified from https://davidwalsh.name/javascript-debounce-function
+        let timeout;
+        return function () {
+            const context = this;
+            const args = arguments;
+            const later = function () {
+                timeout = null;
+                if (!immediate) {
+                    func.apply(context, args);
+                }
+            };
+            const callNow = immediate &amp;&amp; !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) {
+                func.apply(context, args);
+            }
+        };
+    },
+    throttle: function (func, wait, immediate) {
+        let timeout;
+        return function () {
+            const context = this;
+            const args = arguments;
+            const later = function () {
+                timeout = null;
+                if (!immediate) {
+                    func.apply(context, args);
+                }
+            };
+            const callNow = immediate &amp;&amp; !timeout;
+            if (!timeout) {
+                timeout = setTimeout(later, wait);
+            }
+            if (callNow) {
+                func.apply(context, args);
+            }
+        };
+    },
+};
+
+module.exports = utils;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

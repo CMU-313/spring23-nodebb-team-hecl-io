@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/scripts-admin.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/scripts-admin.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.33</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">1076</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">88.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">10.61</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function ($) {
+  &quot;use strict&quot;;
+
+  var defaultOptions = {
+    tagClass: function(item) {
+      return &#039;label label-info&#039;;
+    },
+    focusClass: &#039;focus&#039;,
+    itemValue: function(item) {
+      return item ? item.toString() : item;
+    },
+    itemText: function(item) {
+      return this.itemValue(item);
+    },
+    itemTitle: function(item) {
+      return null;
+    },
+    freeInput: true,
+    addOnBlur: true,
+    maxTags: undefined,
+    maxChars: undefined,
+    confirmKeys: [13, 44],
+    delimiter: &#039;,&#039;,
+    delimiterRegex: null,
+    cancelConfirmKeysOnEmpty: false,
+    onTagExists: function(item, $tag) {
+      $tag.hide().fadeIn();
+    },
+    trimValue: false,
+    allowDuplicates: false,
+    triggerChange: true
+  };
+
+  /**
+   * Constructor function
+   */
+  function TagsInput(element, options) {
+    this.isInit = true;
+    this.itemsArray = [];
+
+    this.$element = $(element);
+    this.$element.hide();
+
+    this.isSelect = (element.tagName === &#039;SELECT&#039;);
+    this.multiple = (this.isSelect &amp;&amp; element.hasAttribute(&#039;multiple&#039;));
+    this.objectItems = options &amp;&amp; options.itemValue;
+    this.placeholderText = element.hasAttribute(&#039;placeholder&#039;) ? this.$element.attr(&#039;placeholder&#039;) : &#039;&#039;;
+    this.inputSize = Math.max(1, this.placeholderText.length);
+
+    this.$container = $(&#039;&lt;div class=&quot;bootstrap-tagsinput&quot;&gt;&lt;/div&gt;&#039;);
+    this.$input = $(&#039;&lt;input type=&quot;text&quot; placeholder=&quot;&#039; + this.placeholderText + &#039;&quot;/&gt;&#039;).appendTo(this.$container);
+
+    this.$element.before(this.$container);
+
+    this.build(options);
+    this.isInit = false;
+  }
+
+  TagsInput.prototype = {
+    constructor: TagsInput,
+
+    /**
+     * Adds the given item as a new tag. Pass true to dontPushVal to prevent
+     * updating the elements val()
+     */
+    add: function(item, dontPushVal, options) {
+      var self = this;
+
+      if (self.options.maxTags &amp;&amp; self.itemsArray.length &gt;= self.options.maxTags)
+        return;
+
+      // Ignore falsey values, except false
+      if (item !== false &amp;&amp; !item)
+        return;
+
+      // Trim value
+      if (typeof item === &quot;string&quot; &amp;&amp; self.options.trimValue) {
+        item = $.trim(item);
+      }
+
+      // Throw an error when trying to add an object while the itemValue option was not set
+      if (typeof item === &quot;object&quot; &amp;&amp; !self.objectItems)
+        throw(&quot;Can&#039;t add objects when itemValue option is not set&quot;);
+
+      // Ignore strings only containg whitespace
+      if (item.toString().match(/^\s*$/))
+        return;
+
+      // If SELECT but not multiple, remove current tag
+      if (self.isSelect &amp;&amp; !self.multiple &amp;&amp; self.itemsArray.length &gt; 0)
+        self.remove(self.itemsArray[0]);
+
+      if (typeof item === &quot;string&quot; &amp;&amp; this.$element[0].tagName === &#039;INPUT&#039;) {
+        var delimiter = (self.options.delimiterRegex) ? self.options.delimiterRegex : self.options.delimiter;
+        var items = item.split(delimiter);
+        if (items.length &gt; 1) {
+          for (var i = 0; i &lt; items.length; i++) {
+            this.add(items[i], true);
+          }
+
+          if (!dontPushVal)
+            self.pushVal(self.options.triggerChange);
+          return;
+        }
+      }
+
+      var itemValue = self.options.itemValue(item),
+          itemText = self.options.itemText(item),
+          tagClass = self.options.tagClass(item),
+          itemTitle = self.options.itemTitle(item);
+
+      // Ignore items allready added
+      var existing = $.grep(self.itemsArray, function(item) { return self.options.itemValue(item) === itemValue; } )[0];
+      if (existing &amp;&amp; !self.options.allowDuplicates) {
+        // Invoke onTagExists
+        if (self.options.onTagExists) {
+          var $existingTag = $(&quot;.tag&quot;, self.$container).filter(function() { return $(this).data(&quot;item&quot;) === existing; });
+          self.options.onTagExists(item, $existingTag);
+        }
+        return;
+      }
+
+      // if length greater than limit
+      if (self.items().toString().length + item.length + 1 &gt; self.options.maxInputLength)
+        return;
+
+      // raise beforeItemAdd arg
+      var beforeItemAddEvent = $.Event(&#039;beforeItemAdd&#039;, { item: item, cancel: false, options: options});
+      self.$element.trigger(beforeItemAddEvent);
+      if (beforeItemAddEvent.cancel)
+        return;
+
+      // register item in internal array and map
+      self.itemsArray.push(item);
+
+      // add a tag element
+
+      var $tag = $(&#039;&lt;span class=&quot;tag &#039; + htmlEncode(tagClass) + (itemTitle !== null ? (&#039;&quot; title=&quot;&#039; + itemTitle) : &#039;&#039;) + &#039;&quot;&gt;&#039; + htmlEncode(itemText) + &#039;&lt;span data-role=&quot;remove&quot;&gt;&lt;/span&gt;&lt;/span&gt;&#039;);
+      $tag.data(&#039;item&#039;, item);
+      self.findInputWrapper().before($tag);
+      $tag.after(&#039; &#039;);
+
+      if (self.isSelect) {
+        // Check to see if the tag exists in its raw or uri-encoded form
+        var optionExists = (
+            $(&#039;option[value=&quot;&#039; + encodeURIComponent(itemValue) + &#039;&quot;]&#039;, self.$element).length ||
+            $(&#039;option[value=&quot;&#039; + htmlEncode(itemValue) + &#039;&quot;]&#039;, self.$element).length
+        );
+        // add &lt;option /&gt; if item represents a value not present in one of the &lt;select /&gt;&#039;s options
+        if(!optionExists){
+          var $option = $(&#039;&lt;option selected&gt;&#039; + htmlEncode(itemText) + &#039;&lt;/option&gt;&#039;);
+          $option.data(&#039;item&#039;, item);
+          $option.attr(&#039;value&#039;, itemValue);
+          self.$element.append($option);
+        }        
+      }
+
+      if (!dontPushVal)
+        self.pushVal(self.options.triggerChange);
+
+      // Add class when reached maxTags
+      if (self.options.maxTags === self.itemsArray.length || self.items().toString().length === self.options.maxInputLength)
+        self.$container.addClass(&#039;bootstrap-tagsinput-max&#039;);
+
+      // If using typeahead, once the tag has been added, clear the typeahead value so it does not stick around in the input.
+      if ($(&#039;.typeahead, .twitter-typeahead&#039;, self.$container).length) {
+        self.$input.typeahead(&#039;val&#039;, &#039;&#039;);
+      }
+
+      if (this.isInit) {
+        self.$element.trigger($.Event(&#039;itemAddedOnInit&#039;, { item: item, options: options }));
+      } else {
+        self.$element.trigger($.Event(&#039;itemAdded&#039;, { item: item, options: options }));
+      }
+    },
+
+    /**
+     * Removes the given item. Pass true to dontPushVal to prevent updating the
+     * elements val()
+     */
+    remove: function(item, dontPushVal, options) {
+      var self = this;
+
+      if (self.objectItems) {
+        if (typeof item === &quot;object&quot;)
+          item = $.grep(self.itemsArray, function(other) { return self.options.itemValue(other) ==  self.options.itemValue(item); } );
+        else
+          item = $.grep(self.itemsArray, function(other) { return self.options.itemValue(other) ==  item; } );
+
+        item = item[item.length-1];
+      }
+
+      if (item) {
+        var beforeItemRemoveEvent = $.Event(&#039;beforeItemRemove&#039;, { item: item, cancel: false, options: options });
+        self.$element.trigger(beforeItemRemoveEvent);
+        if (beforeItemRemoveEvent.cancel)
+          return;
+
+        $(&#039;.tag&#039;, self.$container).filter(function() { return $(this).data(&#039;item&#039;) === item; }).remove();
+        $(&#039;option&#039;, self.$element).filter(function() { return $(this).data(&#039;item&#039;) === item; }).remove();
+        if($.inArray(item, self.itemsArray) !== -1)
+          self.itemsArray.splice($.inArray(item, self.itemsArray), 1);
+      }
+
+      if (!dontPushVal)
+        self.pushVal(self.options.triggerChange);
+
+      // Remove class when reached maxTags
+      if (self.options.maxTags &gt; self.itemsArray.length)
+        self.$container.removeClass(&#039;bootstrap-tagsinput-max&#039;);
+
+      self.$element.trigger($.Event(&#039;itemRemoved&#039;,  { item: item, options: options }));
+    },
+
+    /**
+     * Removes all items
+     */
+    removeAll: function() {
+      var self = this;
+
+      $(&#039;.tag&#039;, self.$container).remove();
+      $(&#039;option&#039;, self.$element).remove();
+
+      while(self.itemsArray.length &gt; 0)
+        self.itemsArray.pop();
+
+      self.pushVal(self.options.triggerChange);
+    },
+
+    /**
+     * Refreshes the tags so they match the text/value of their corresponding
+     * item.
+     */
+    refresh: function() {
+      var self = this;
+      $(&#039;.tag&#039;, self.$container).each(function() {
+        var $tag = $(this),
+            item = $tag.data(&#039;item&#039;),
+            itemValue = self.options.itemValue(item),
+            itemText = self.options.itemText(item),
+            tagClass = self.options.tagClass(item);
+
+          // Update tag&#039;s class and inner text
+          $tag.attr(&#039;class&#039;, null);
+          $tag.addClass(&#039;tag &#039; + htmlEncode(tagClass));
+          $tag.contents().filter(function() {
+            return this.nodeType == 3;
+          })[0].nodeValue = htmlEncode(itemText);
+
+          if (self.isSelect) {
+            var option = $(&#039;option&#039;, self.$element).filter(function() { return $(this).data(&#039;item&#039;) === item; });
+            option.attr(&#039;value&#039;, itemValue);
+          }
+      });
+    },
+
+    /**
+     * Returns the items added as tags
+     */
+    items: function() {
+      return this.itemsArray;
+    },
+
+    /**
+     * Assembly value by retrieving the value of each item, and set it on the
+     * element.
+     */
+    pushVal: function() {
+      var self = this,
+          val = $.map(self.items(), function(item) {
+            return self.options.itemValue(item).toString();
+          });
+
+      self.$element.val(val, true);
+
+      if (self.options.triggerChange)
+        self.$element.trigger(&#039;change&#039;);
+    },
+
+    /**
+     * Initializes the tags input behaviour on the element
+     */
+    build: function(options) {
+      var self = this;
+
+      self.options = $.extend({}, defaultOptions, options);
+      // When itemValue is set, freeInput should always be false
+      if (self.objectItems)
+        self.options.freeInput = false;
+
+      makeOptionItemFunction(self.options, &#039;itemValue&#039;);
+      makeOptionItemFunction(self.options, &#039;itemText&#039;);
+      makeOptionFunction(self.options, &#039;tagClass&#039;);
+
+      // Typeahead Bootstrap version 2.3.2
+      if (self.options.typeahead) {
+        var typeahead = self.options.typeahead || {};
+
+        makeOptionFunction(typeahead, &#039;source&#039;);
+
+        self.$input.typeahead($.extend({}, typeahead, {
+          source: function (query, process) {
+            function processItems(items) {
+              var texts = [];
+
+              for (var i = 0; i &lt; items.length; i++) {
+                var text = self.options.itemText(items[i]);
+                map[text] = items[i];
+                texts.push(text);
+              }
+              process(texts);
+            }
+
+            this.map = {};
+            var map = this.map,
+                data = typeahead.source(query);
+
+            if ($.isFunction(data.success)) {
+              // support for Angular callbacks
+              data.success(processItems);
+            } else if ($.isFunction(data.then)) {
+              // support for Angular promises
+              data.then(processItems);
+            } else {
+              // support for functions and jquery promises
+              $.when(data)
+               .then(processItems);
+            }
+          },
+          updater: function (text) {
+            self.add(this.map[text]);
+            return this.map[text];
+          },
+          matcher: function (text) {
+            return (text.toLowerCase().indexOf(this.query.trim().toLowerCase()) !== -1);
+          },
+          sorter: function (texts) {
+            return texts.sort();
+          },
+          highlighter: function (text) {
+            var regex = new RegExp( &#039;(&#039; + this.query + &#039;)&#039;, &#039;gi&#039; );
+            return text.replace( regex, &quot;&lt;strong&gt;$1&lt;/strong&gt;&quot; );
+          }
+        }));
+      }
+
+      // typeahead.js
+      if (self.options.typeaheadjs) {
+          var typeaheadConfig = null;
+          var typeaheadDatasets = {};
+
+          // Determine if main configurations were passed or simply a dataset
+          var typeaheadjs = self.options.typeaheadjs;
+          if ($.isArray(typeaheadjs)) {
+            typeaheadConfig = typeaheadjs[0];
+            typeaheadDatasets = typeaheadjs[1];
+          } else {
+            typeaheadDatasets = typeaheadjs;
+          }
+
+          self.$input.typeahead(typeaheadConfig, typeaheadDatasets).on(&#039;typeahead:selected&#039;, $.proxy(function (obj, datum) {
+            if (typeaheadDatasets.valueKey)
+              self.add(datum[typeaheadDatasets.valueKey]);
+            else
+              self.add(datum);
+            self.$input.typeahead(&#039;val&#039;, &#039;&#039;);
+          }, self));
+      }
+
+      self.$container.on(&#039;click&#039;, $.proxy(function(event) {
+        if (! self.$element.attr(&#039;disabled&#039;)) {
+          self.$input.removeAttr(&#039;disabled&#039;);
+        }
+        self.$input.focus();
+      }, self));
+
+        if (self.options.addOnBlur &amp;&amp; self.options.freeInput) {
+          self.$input.on(&#039;focusout&#039;, $.proxy(function(event) {
+              // HACK: only process on focusout when no typeahead opened, to
+              //       avoid adding the typeahead text as tag
+              if ($(&#039;.typeahead, .twitter-typeahead&#039;, self.$container).length === 0) {
+                self.add(self.$input.val());
+                self.$input.val(&#039;&#039;);
+              }
+          }, self));
+        }
+
+      // Toggle the &#039;focus&#039; css class on the container when it has focus
+      self.$container.on({
+        focusin: function() {
+          self.$container.addClass(self.options.focusClass);
+        },
+        focusout: function() {
+          self.$container.removeClass(self.options.focusClass);
+        },
+      });
+
+      self.$container.on(&#039;keydown&#039;, &#039;input&#039;, $.proxy(function(event) {
+        var $input = $(event.target),
+            $inputWrapper = self.findInputWrapper();
+
+        if (self.$element.attr(&#039;disabled&#039;)) {
+          self.$input.attr(&#039;disabled&#039;, &#039;disabled&#039;);
+          return;
+        }
+
+        switch (event.which) {
+          // BACKSPACE
+          case 8:
+            if (doGetCaretPosition($input[0]) === 0) {
+              var prev = $inputWrapper.prev();
+              if (prev.length) {
+                self.remove(prev.data(&#039;item&#039;));
+              }
+            }
+            break;
+
+          // DELETE
+          case 46:
+            if (doGetCaretPosition($input[0]) === 0) {
+              var next = $inputWrapper.next();
+              if (next.length) {
+                self.remove(next.data(&#039;item&#039;));
+              }
+            }
+            break;
+
+          // LEFT ARROW
+          case 37:
+            // Try to move the input before the previous tag
+            var $prevTag = $inputWrapper.prev();
+            if ($input.val().length === 0 &amp;&amp; $prevTag[0]) {
+              $prevTag.before($inputWrapper);
+              $input.focus();
+            }
+            break;
+          // RIGHT ARROW
+          case 39:
+            // Try to move the input after the next tag
+            var $nextTag = $inputWrapper.next();
+            if ($input.val().length === 0 &amp;&amp; $nextTag[0]) {
+              $nextTag.after($inputWrapper);
+              $input.focus();
+            }
+            break;
+         default:
+             // ignore
+         }
+
+        // Reset internal input&#039;s size
+        var textLength = $input.val().length,
+            wordSpace = Math.ceil(textLength / 5),
+            size = textLength + wordSpace + 1;
+        $input.attr(&#039;size&#039;, Math.max(this.inputSize, $input.val().length));
+      }, self));
+
+      self.$container.on(&#039;keypress&#039;, &#039;input&#039;, $.proxy(function(event) {
+         var $input = $(event.target);
+
+         if (self.$element.attr(&#039;disabled&#039;)) {
+            self.$input.attr(&#039;disabled&#039;, &#039;disabled&#039;);
+            return;
+         }
+
+         var text = $input.val(),
+         maxLengthReached = self.options.maxChars &amp;&amp; text.length &gt;= self.options.maxChars;
+         if (self.options.freeInput &amp;&amp; (keyCombinationInList(event, self.options.confirmKeys) || maxLengthReached)) {
+            // Only attempt to add a tag if there is data in the field
+            if (text.length !== 0) {
+               self.add(maxLengthReached ? text.substr(0, self.options.maxChars) : text);
+               $input.val(&#039;&#039;);
+            }
+
+            // If the field is empty, let the event triggered fire as usual
+            if (self.options.cancelConfirmKeysOnEmpty === false) {
+                event.preventDefault();
+            }
+         }
+
+         // Reset internal input&#039;s size
+         var textLength = $input.val().length,
+            wordSpace = Math.ceil(textLength / 5),
+            size = textLength + wordSpace + 1;
+         $input.attr(&#039;size&#039;, Math.max(this.inputSize, $input.val().length));
+      }, self));
+
+      // Remove icon clicked
+      self.$container.on(&#039;click&#039;, &#039;[data-role=remove]&#039;, $.proxy(function(event) {
+        if (self.$element.attr(&#039;disabled&#039;)) {
+          return;
+        }
+        self.remove($(event.target).closest(&#039;.tag&#039;).data(&#039;item&#039;));
+      }, self));
+
+      // Only add existing value as tags when using strings as tags
+      if (self.options.itemValue === defaultOptions.itemValue) {
+        if (self.$element[0].tagName === &#039;INPUT&#039;) {
+            self.add(self.$element.val());
+        } else {
+          $(&#039;option&#039;, self.$element).each(function() {
+            self.add($(this).attr(&#039;value&#039;), true);
+          });
+        }
+      }
+    },
+
+    /**
+     * Removes all tagsinput behaviour and unregsiter all event handlers
+     */
+    destroy: function() {
+      var self = this;
+
+      // Unbind events
+      self.$container.off(&#039;keypress&#039;, &#039;input&#039;);
+      self.$container.off(&#039;click&#039;, &#039;[role=remove]&#039;);
+
+      self.$container.remove();
+      self.$element.removeData(&#039;tagsinput&#039;);
+      self.$element.show();
+    },
+
+    /**
+     * Sets focus on the tagsinput
+     */
+    focus: function() {
+      this.$input.focus();
+    },
+
+    /**
+     * Returns the internal input element
+     */
+    input: function() {
+      return this.$input;
+    },
+
+    /**
+     * Returns the element which is wrapped around the internal input. This
+     * is normally the $container, but typeahead.js moves the $input element.
+     */
+    findInputWrapper: function() {
+      var elt = this.$input[0],
+          container = this.$container[0];
+      while(elt &amp;&amp; elt.parentNode !== container)
+        elt = elt.parentNode;
+
+      return $(elt);
+    }
+  };
+
+  /**
+   * Register JQuery plugin
+   */
+  $.fn.tagsinput = function(arg1, arg2, arg3) {
+    var results = [];
+
+    this.each(function() {
+      var tagsinput = $(this).data(&#039;tagsinput&#039;);
+      // Initialize a new tags input
+      if (!tagsinput) {
+          tagsinput = new TagsInput(this, arg1);
+          $(this).data(&#039;tagsinput&#039;, tagsinput);
+          results.push(tagsinput);
+
+          if (this.tagName === &#039;SELECT&#039;) {
+              $(&#039;option&#039;, $(this)).attr(&#039;selected&#039;, &#039;selected&#039;);
+          }
+
+          // Init tags from $(this).val()
+          $(this).val($(this).val());
+      } else if (!arg1 &amp;&amp; !arg2) {
+          // tagsinput already exists
+          // no function, trying to init
+          results.push(tagsinput);
+      } else if(tagsinput[arg1] !== undefined) {
+          // Invoke function on existing tags input
+            if(tagsinput[arg1].length === 3 &amp;&amp; arg3 !== undefined){
+               var retVal = tagsinput[arg1](arg2, null, arg3);
+            }else{
+               var retVal = tagsinput[arg1](arg2);
+            }
+          if (retVal !== undefined)
+              results.push(retVal);
+      }
+    });
+
+    if ( typeof arg1 == &#039;string&#039;) {
+      // Return the results from the invoked function calls
+      return results.length &gt; 1 ? results : results[0];
+    } else {
+      return results;
+    }
+  };
+
+  $.fn.tagsinput.Constructor = TagsInput;
+
+  /**
+   * Most options support both a string or number as well as a function as
+   * option value. This function makes sure that the option with the given
+   * key in the given options is wrapped in a function
+   */
+  function makeOptionItemFunction(options, key) {
+    if (typeof options[key] !== &#039;function&#039;) {
+      var propertyName = options[key];
+      options[key] = function(item) { return item[propertyName]; };
+    }
+  }
+  function makeOptionFunction(options, key) {
+    if (typeof options[key] !== &#039;function&#039;) {
+      var value = options[key];
+      options[key] = function() { return value; };
+    }
+  }
+  /**
+   * HtmlEncodes the given value
+   */
+  var htmlEncodeContainer = $(&#039;&lt;div /&gt;&#039;);
+  function htmlEncode(value) {
+    if (value) {
+      return htmlEncodeContainer.text(value).html();
+    } else {
+      return &#039;&#039;;
+    }
+  }
+
+  /**
+   * Returns the position of the caret in the given input field
+   * http://flightschool.acylt.com/devnotes/caret-position-woes/
+   */
+  function doGetCaretPosition(oField) {
+    var iCaretPos = 0;
+    if (document.selection) {
+      oField.focus ();
+      var oSel = document.selection.createRange();
+      oSel.moveStart (&#039;character&#039;, -oField.value.length);
+      iCaretPos = oSel.text.length;
+    } else if (oField.selectionStart || oField.selectionStart == &#039;0&#039;) {
+      iCaretPos = oField.selectionStart;
+    }
+    return (iCaretPos);
+  }
+
+  /**
+    * Returns boolean indicates whether user has pressed an expected key combination.
+    * @param object keyPressEvent: JavaScript event object, refer
+    *     http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
+    * @param object lookupList: expected key combinations, as in:
+    *     [13, {which: 188, shiftKey: true}]
+    */
+  function keyCombinationInList(keyPressEvent, lookupList) {
+      var found = false;
+      $.each(lookupList, function (index, keyCombination) {
+          if (typeof (keyCombination) === &#039;number&#039; &amp;&amp; keyPressEvent.which === keyCombination) {
+              found = true;
+              return false;
+          }
+
+          if (keyPressEvent.which === keyCombination.which) {
+              var alt = !keyCombination.hasOwnProperty(&#039;altKey&#039;) || keyPressEvent.altKey === keyCombination.altKey,
+                  shift = !keyCombination.hasOwnProperty(&#039;shiftKey&#039;) || keyPressEvent.shiftKey === keyCombination.shiftKey,
+                  ctrl = !keyCombination.hasOwnProperty(&#039;ctrlKey&#039;) || keyPressEvent.ctrlKey === keyCombination.ctrlKey;
+              if (alt &amp;&amp; shift &amp;&amp; ctrl) {
+                  found = true;
+                  return false;
+              }
+          }
+      });
+
+      return found;
+  }
+
+  /**
+   * Initialize tagsinput behaviour on inputs and selects which have
+   * data-role=tagsinput
+   */
+  $(function() {
+    $(&quot;input[data-role=tagsinput], select[multiple][data-role=tagsinput]&quot;).tagsinput();
+  });
+})(window.jQuery);
+
+;/**
+  (The MIT License)
+
+  Copyright (c) 2012 Gilles Ruppert &lt;gilles@madeofbytes.com&gt;
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  &#039;Software&#039;), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED &#039;AS IS&#039;, WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+  serialises a form to an object. The use is the same than $.fn.serialize
+  and $.fn.serializeArray.
+  The keys are the form element names and the value is the the form element
+  value. If multiple form elements have the same name with different values,
+  the value is an array with all the values. `undefined` and `null` are
+  converted to empty strings.
+ */
+
+jQuery.fn.serializeObject = function() {
+  var o = {};
+  var a = this.serializeArray();
+  for (var i = 0, l = a.length; i &lt; l; i++) {
+    var item = a[i];
+    var name = item.name;
+    // if the value is null or undefined, we set to empty string, else we
+    // use the value passed
+    var value = item.value != null ? item.value : &#039;&#039;;
+
+    // if the key already exists we convert it to an array
+    if (o[name] !== undefined) {
+      if (!o[name].push) {
+        // convert to array
+        o[name] = [o[name]];
+      }
+      o[name].push(value);
+    }
+    else {
+      o[name] = value ;
+    }
+  }
+
+  return o;
+};
+
+;/**
+ * Copyright (C) 2017 Kyle Florence
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * @website https://github.com/kflorence/jquery-deserialize/
+ * @version 2.0.0-rc1
+ *
+ * Dual licensed under the MIT and GPLv2 licenses.
+ */
+(function( factory ) {
+  if ( typeof module === &quot;object&quot; &amp;&amp; module.exports ) {
+    // Node/CommonJS
+    module.exports = factory( require( &quot;jquery&quot; ) );
+
+  } else {
+    // Browser globals
+    factory( window.jQuery );
+  }
+}(function( $ ) {
+
+  /**
+   * Updates a key/valueArray with the given property and value. Values will always be stored as arrays.
+   *
+   * @param prop The property to add the value to.
+   * @param value The value to add.
+   * @param obj The object to update.
+   * @returns {object} Updated object.
+   */
+  function updateKeyValueArray( prop, value, obj ) {
+    var current = obj[ prop ];
+
+    if ( current === undefined ) {
+      obj[ prop ] = [ value ];
+
+    } else {
+      current.push( value );
+    }
+
+    return obj;
+  }
+
+  /**
+   * Get all of the fields contained within the given elements by name.
+   *
+   * @param $elements jQuery object of elements.
+   * @param filter Custom filter to apply to the list of fields.
+   * @returns {object} All of the fields contained within the given elements, keyed by name.
+   */
+  function getFieldsByName( $elements, filter ) {
+    var elementsByName = {};
+
+    // Extract fields from elements
+    var fields = $elements
+      .map(function convertFormToElements() {
+        return this.elements ? $.makeArray( this.elements ) : this;
+      })
+      .filter( filter || &quot;:input:not(:disabled)&quot; )
+      .get();
+
+    $.each( fields, function( index, field ) {
+      updateKeyValueArray( field.name, field, elementsByName );
+    });
+
+    return elementsByName;
+  }
+
+  /**
+   * Figure out the type of an element. Input type will be used first, falling back to nodeName.
+   *
+   * @param element DOM element to check type of.
+   * @returns {string} The element&#039;s type.
+   */
+  function getElementType( element ) {
+    return ( element.type || element.nodeName ).toLowerCase();
+  }
+
+  /**
+   * Normalize the provided data into a key/valueArray store.
+   *
+   * @param data The data provided by the user to the plugin.
+   * @returns {object} The data normalized into a key/valueArray store.
+   */
+  function normalizeData( data ) {
+    var normalized = {};
+    var rPlus = /\+/g;
+
+    // Convert data from .serializeObject() notation
+    if ( $.isPlainObject( data ) ) {
+      $.extend( normalized, data );
+
+      // Convert non-array values into an array
+      $.each( normalized, function( name, value ) {
+        if ( !$.isArray( value ) ) {
+          normalized[ name ] = [ value ];
+        }
+      });
+
+    // Convert data from .serializeArray() notation
+    } else if ( $.isArray( data ) ) {
+      $.each( data, function( index, field ) {
+        updateKeyValueArray( field.name, field.value, normalized );
+      });
+
+    // Convert data from .serialize() notation
+    } else if ( typeof data === &quot;string&quot; ) {
+      $.each( data.split( &quot;&amp;&quot; ), function( index, field ) {
+        var current = field.split( &quot;=&quot; );
+        var name = decodeURIComponent( current[ 0 ].replace( rPlus, &quot;%20&quot; ) );
+        var value = decodeURIComponent( current[ 1 ].replace( rPlus, &quot;%20&quot; ) );
+        updateKeyValueArray( name, value, normalized );
+      });
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Map of property name -&gt; element types.
+   *
+   * @type {object}
+   */
+  var updateTypes = {
+    checked: [
+      &quot;radio&quot;,
+      &quot;checkbox&quot;
+    ],
+    selected: [
+      &quot;option&quot;,
+      &quot;select-one&quot;,
+      &quot;select-multiple&quot;
+    ],
+    value: [
+      &quot;button&quot;,
+      &quot;color&quot;,
+      &quot;date&quot;,
+      &quot;datetime&quot;,
+      &quot;datetime-local&quot;,
+      &quot;email&quot;,
+      &quot;hidden&quot;,
+      &quot;month&quot;,
+      &quot;number&quot;,
+      &quot;password&quot;,
+      &quot;range&quot;,
+      &quot;reset&quot;,
+      &quot;search&quot;,
+      &quot;submit&quot;,
+      &quot;tel&quot;,
+      &quot;text&quot;,
+      &quot;textarea&quot;,
+      &quot;time&quot;,
+      &quot;url&quot;,
+      &quot;week&quot;
+    ]
+  };
+
+  /**
+   * Get the property to update on an element being updated.
+   *
+   * @param element The DOM element to get the property for.
+   * @returns The name of the property to update if element is supported, otherwise `undefined`.
+   */
+  function getPropertyToUpdate( element ) {
+    var type = getElementType( element );
+    var elementProperty = undefined;
+
+    $.each( updateTypes, function( property, types ) {
+      if ( $.inArray( type, types ) &gt; -1 ) {
+        elementProperty = property;
+        return false;
+      }
+    });
+
+    return elementProperty;
+  }
+
+  /**
+   * Update the element based on the provided data.
+   *
+   * @param element The DOM element to update.
+   * @param elementIndex The index of this element in the list of elements with the same name.
+   * @param value The serialized element value.
+   * @param valueIndex The index of the value in the list of values for elements with the same name.
+   * @param callback A function to call if the value of an element was updated.
+   */
+  function update( element, elementIndex, value, valueIndex, callback ) {
+    var property = getPropertyToUpdate( element );
+
+    // Handle value inputs
+    // If there are multiple value inputs with the same name, they will be populated by matching indexes.
+    if ( property == &quot;value&quot; &amp;&amp; elementIndex == valueIndex ) {
+      element.value = value;
+      callback.call( element, value );
+
+    // Handle select menus, checkboxes and radio buttons
+    } else if ( property == &quot;checked&quot; || property == &quot;selected&quot; ) {
+      var fields = [];
+
+      // Extract option fields from select menus
+      if ( element.options ) {
+        $.each( element.options, function( index, option ) {
+          fields.push( option );
+        });
+
+      } else {
+        fields.push( element );
+      }
+
+      // #37: Remove selection from multiple select menus before deserialization
+      if ( element.multiple &amp;&amp; valueIndex == 0 ) {
+        element.selectedIndex = -1;
+      }
+
+      $.each( fields, function( index, field ) {
+        if ( field.value == value ) {
+          field[ property ] = true;
+          callback.call( field, value );
+        }
+      });
+    }
+  }
+
+  /**
+   * Default plugin options.
+   *
+   * @type {object}
+   */
+  var defaultOptions = {
+    change: $.noop,
+    complete: $.noop
+  };
+
+  /**
+   * The $.deserialize function.
+   *
+   * @param data The data to deserialize.
+   * @param options Additional options.
+   * @returns {jQuery} The jQuery object that was provided to the plugin.
+   */
+  $.fn.deserialize = function( data, options ) {
+
+    // Backwards compatible with old arguments: data, callback
+    if ( $.isFunction( options ) ) {
+      options = { complete: options };
+    }
+
+    options = $.extend( defaultOptions, options || {} );
+    data = normalizeData( data );
+
+    var elementsByName = getFieldsByName( this, options.filter );
+
+    $.each( data, function( name, values ) {
+      $.each( elementsByName[ name ], function( elementIndex, element ) {
+        $.each( values, function( valueIndex, value ) {
+          update( element, elementIndex, value, valueIndex, options.change );
+        });
+      });
+    });
+
+    options.complete.call( this );
+
+    return this;
+  };
+}));
+
+;/* global bootbox */
+
+require([&#039;translator&#039;, &#039;bootbox&#039;], function (shim, bootbox) {
+    &#039;use strict&#039;;
+
+    // expose as global with a warning
+    if (Object.defineProperty) {
+        Object.defineProperty(window, &#039;bootbox&#039;, {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+                console.warn(&#039;[deprecated] Accessing bootbox globally is deprecated. Use `require([&quot;bootbox&quot;], function (bootbox) { ... })` instead&#039;);
+                return bootbox;
+            },
+        });
+    } else {
+        window.bootbox = bootbox;
+    }
+
+    bootbox.setDefaults({
+        locale: config.userLang,
+    });
+
+    var translator = shim.Translator.create();
+    var dialog = bootbox.dialog;
+    var attrsToTranslate = [&#039;placeholder&#039;, &#039;title&#039;, &#039;value&#039;, &#039;label&#039;];
+    bootbox.dialog = function (options) {
+        var show = options.show !== false;
+        options.show = false;
+
+        var $elem = dialog.call(bootbox, options);
+        var element = $elem[0];
+
+        if (/\[\[.+\]\]/.test(element.outerHTML)) {
+            translator.translateInPlace(element, attrsToTranslate).then(function () {
+                if (show) {
+                    $elem.modal(&#039;show&#039;);
+                }
+            });
+        } else if (show) {
+            $elem.modal(&#039;show&#039;);
+        }
+
+        return $elem;
+    };
+
+    Promise.all([
+        translator.translateKey(&#039;modules:bootbox.ok&#039;, []),
+        translator.translateKey(&#039;modules:bootbox.cancel&#039;, []),
+        translator.translateKey(&#039;modules:bootbox.confirm&#039;, []),
+    ]).then(function (translations) {
+        var lang = shim.getLanguage();
+        bootbox.addLocale(lang, {
+            OK: translations[0],
+            CANCEL: translations[1],
+            CONFIRM: translations[2],
+        });
+
+        bootbox.setLocale(lang);
+    });
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

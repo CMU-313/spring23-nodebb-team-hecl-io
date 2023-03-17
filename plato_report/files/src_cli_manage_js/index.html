@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/cli/manage.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/cli/manage.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">209</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">38.10</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.34</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const childProcess = require(&#039;child_process&#039;);
+const CliGraph = require(&#039;cli-graph&#039;);
+const chalk = require(&#039;chalk&#039;);
+const nconf = require(&#039;nconf&#039;);
+
+const build = require(&#039;../meta/build&#039;);
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const events = require(&#039;../events&#039;);
+const analytics = require(&#039;../analytics&#039;);
+const reset = require(&#039;./reset&#039;);
+const { pluginNamePattern, themeNamePattern, paths } = require(&#039;../constants&#039;);
+
+async function install(plugin, options) {
+    if (!options) {
+        options = {};
+    }
+    try {
+        await db.init();
+        if (!pluginNamePattern.test(plugin)) {
+            // Allow omission of `nodebb-plugin-`
+            plugin = `nodebb-plugin-${plugin}`;
+        }
+
+        plugin = await plugins.autocomplete(plugin);
+
+        const isInstalled = await plugins.isInstalled(plugin);
+        if (isInstalled) {
+            throw new Error(&#039;plugin already installed&#039;);
+        }
+        const nbbVersion = require(paths.currentPackage).version;
+        const suggested = await plugins.suggest(plugin, nbbVersion);
+        if (!suggested.version) {
+            if (!options.force) {
+                throw new Error(suggested.message);
+            }
+            winston.warn(`${suggested.message} Proceeding with installation anyway due to force option being provided`);
+            suggested.version = &#039;latest&#039;;
+        }
+        winston.info(&#039;Installing Plugin `%s@%s`&#039;, plugin, suggested.version);
+        await plugins.toggleInstall(plugin, suggested.version);
+
+        process.exit(0);
+    } catch (err) {
+        winston.error(`An error occurred during plugin installation\n${err.stack}`);
+        process.exit(1);
+    }
+}
+
+async function activate(plugin) {
+    if (themeNamePattern.test(plugin)) {
+        await reset.reset({
+            theme: plugin,
+        });
+        process.exit();
+    }
+    try {
+        await db.init();
+        if (!pluginNamePattern.test(plugin)) {
+            // Allow omission of `nodebb-plugin-`
+            plugin = `nodebb-plugin-${plugin}`;
+        }
+
+        plugin = await plugins.autocomplete(plugin);
+
+        const isInstalled = await plugins.isInstalled(plugin);
+        if (!isInstalled) {
+            throw new Error(&#039;plugin not installed&#039;);
+        }
+        const isActive = await plugins.isActive(plugin);
+        if (isActive) {
+            winston.info(&#039;Plugin `%s` already active&#039;, plugin);
+            process.exit(0);
+        }
+        if (nconf.get(&#039;plugins:active&#039;)) {
+            winston.error(&#039;Cannot activate plugins while plugin state configuration is set, please change your active configuration (config.json, environmental variables or terminal arguments) instead&#039;);
+            process.exit(1);
+        }
+        const numPlugins = await db.sortedSetCard(&#039;plugins:active&#039;);
+        winston.info(&#039;Activating plugin `%s`&#039;, plugin);
+        await db.sortedSetAdd(&#039;plugins:active&#039;, numPlugins, plugin);
+        await events.log({
+            type: &#039;plugin-activate&#039;,
+            text: plugin,
+        });
+
+        process.exit(0);
+    } catch (err) {
+        winston.error(`An error occurred during plugin activation\n${err.stack}`);
+        process.exit(1);
+    }
+}
+
+async function listPlugins() {
+    await db.init();
+    const installed = await plugins.showInstalled();
+    const installedList = installed.map(plugin =&gt; plugin.name);
+    const active = await plugins.getActive();
+    // Merge the two sets, defer to plugins in  `installed` if already present
+    const combined = installed.concat(active.reduce((memo, cur) =&gt; {
+        if (!installedList.includes(cur)) {
+            memo.push({
+                id: cur,
+                active: true,
+                installed: false,
+            });
+        }
+
+        return memo;
+    }, []));
+
+    // Alphabetical sort
+    combined.sort((a, b) =&gt; (a.id &gt; b.id ? 1 : -1));
+
+    // Pretty output
+    process.stdout.write(&#039;Active plugins:\n&#039;);
+    combined.forEach((plugin) =&gt; {
+        process.stdout.write(`\t* ${plugin.id}${plugin.version ? `@${plugin.version}` : &#039;&#039;} (`);
+        process.stdout.write(plugin.installed ? chalk.green(&#039;installed&#039;) : chalk.red(&#039;not installed&#039;));
+        process.stdout.write(&#039;, &#039;);
+        process.stdout.write(plugin.active ? chalk.green(&#039;enabled&#039;) : chalk.yellow(&#039;disabled&#039;));
+        process.stdout.write(&#039;)\n&#039;);
+    });
+
+    process.exit();
+}
+
+async function listEvents(count = 10) {
+    await db.init();
+    const eventData = await events.getEvents(&#039;&#039;, 0, count - 1);
+    console.log(chalk.bold(`\nDisplaying last ${count} administrative events...`));
+    eventData.forEach((event) =&gt; {
+        console.log(`  * ${chalk.green(String(event.timestampISO))} ${chalk.yellow(String(event.type))}${event.text ? ` ${event.text}` : &#039;&#039;} (uid: ${event.uid ? event.uid : 0})`);
+    });
+    process.exit();
+}
+
+async function info() {
+    console.log(&#039;&#039;);
+    const { version } = require(&#039;../../package.json&#039;);
+    console.log(`  version:  ${version}`);
+
+    console.log(`  Node ver: ${process.version}`);
+
+    const hash = childProcess.execSync(&#039;git rev-parse HEAD&#039;);
+    console.log(`  git hash: ${hash}`);
+
+    console.log(`  database: ${nconf.get(&#039;database&#039;)}`);
+
+    await db.init();
+    const info = await db.info(db.client);
+
+    switch (nconf.get(&#039;database&#039;)) {
+    case &#039;redis&#039;:
+        console.log(`        version: ${info.redis_version}`);
+        console.log(`        disk sync:  ${info.rdb_last_bgsave_status}`);
+        break;
+
+    case &#039;mongo&#039;:
+        console.log(`        version: ${info.version}`);
+        console.log(`        engine:  ${info.storageEngine}`);
+        break;
+    case &#039;postgres&#039;:
+        console.log(`        version: ${info.version}`);
+        console.log(`        uptime:  ${info.uptime}`);
+        break;
+    }
+
+    const analyticsData = await analytics.getHourlyStatsForSet(&#039;analytics:pageviews&#039;, Date.now(), 24);
+    const graph = new CliGraph({
+        height: 12,
+        width: 25,
+        center: {
+            x: 0,
+            y: 11,
+        },
+    });
+    const min = Math.min(...analyticsData);
+    const max = Math.max(...analyticsData);
+
+    analyticsData.forEach((point, idx) =&gt; {
+        graph.addPoint(idx + 1, Math.round(point / max * 10));
+    });
+
+    console.log(&#039;&#039;);
+    console.log(graph.toString());
+    console.log(`Pageviews, last 24h (min: ${min}  max: ${max})`);
+    process.exit();
+}
+
+async function buildWrapper(targets, options) {
+    try {
+        await build.build(targets, options);
+        process.exit(0);
+    } catch (err) {
+        winston.error(err.stack);
+        process.exit(1);
+    }
+}
+
+exports.build = buildWrapper;
+exports.install = install;
+exports.activate = activate;
+exports.listPlugins = listPlugins;
+exports.listEvents = listEvents;
+exports.info = info;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

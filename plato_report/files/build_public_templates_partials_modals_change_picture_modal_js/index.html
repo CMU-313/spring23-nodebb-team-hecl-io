@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/partials/modals/change_picture_modal.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/partials/modals/change_picture_modal.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.17</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">71</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">33.83</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.91</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-xs-6 col-sm-8 col-md-6\&quot;&gt;\n        &lt;div class=\&quot;list-group media\&quot;&gt;\n            &lt;button type=\&quot;button\&quot; class=\&quot;list-group-item\&quot; data-type=\&quot;default\&quot;&gt;\n                &lt;div class=\&quot;media-left\&quot;&gt;\n                    &quot; + 
+      (guard((context != null) ? context[&#039;defaultAvatar&#039;] : null) ?
+        &quot;\n                    &lt;img class=\&quot;media-object\&quot; src=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;defaultAvatar&#039;] : null)) + 
+          &quot;\&quot;  /&gt;\n                    &quot; :
+        &quot;\n                    &lt;div class=\&quot;user-icon media-object\&quot; style=\&quot;background-color: &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;icon&#039;] != null) ? context[&#039;icon&#039;][&#039;bgColor&#039;] : null)) + 
+          &quot;;\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;icon&#039;] != null) ? context[&#039;icon&#039;][&#039;text&#039;] : null)) + 
+          &quot;&lt;/div&gt;\n                    &quot;) + 
+      &quot;\n                &lt;/div&gt;\n                &lt;div class=\&quot;media-body\&quot;&gt;\n                    &lt;h4 class=\&quot;media-heading\&quot;&gt;[[user:default_picture]]&lt;/h4&gt;\n                &lt;/div&gt;\n            &lt;/button&gt;\n            &quot; + 
+      compiled.blocks[&#039;pictures&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &lt;div class=\&quot;col-xs-6 col-sm-4 col-md-6\&quot;&gt;\n        &lt;div class=\&quot;btn-group-vertical btn-block\&quot; role=\&quot;group\&quot;&gt;\n            &quot; + 
+      (guard((context != null) ? context[&#039;allowProfileImageUploads&#039;] : null) ?
+        &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default\&quot; data-action=\&quot;upload\&quot;&gt;\n                &lt;span class=\&quot;hidden-xs hidden-sm\&quot;&gt;\n                    [[user:upload_new_picture]]\n                &lt;/span&gt;\n                &lt;span class=\&quot;visible-xs-inline visible-sm-inline\&quot;&gt;\n                    &lt;i class=\&quot;fa fa-plus\&quot;&gt;&lt;/i&gt;\n                    &lt;i class=\&quot;fa fa-upload\&quot;&gt;&lt;/i&gt;\n                &lt;/span&gt;\n            &lt;/button&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default\&quot; data-action=\&quot;upload-url\&quot;&gt;\n                &lt;span class=\&quot;hidden-xs hidden-sm\&quot;&gt;\n                    [[user:upload_new_picture_from_url]]\n                &lt;/span&gt;\n                &lt;span class=\&quot;visible-xs-inline visible-sm-inline\&quot;&gt;\n                    &lt;i class=\&quot;fa fa-plus\&quot;&gt;&lt;/i&gt;\n                    &lt;i class=\&quot;fa fa-link\&quot;&gt;&lt;/i&gt;\n                &lt;/span&gt;\n            &lt;/button&gt;\n            &quot; + 
+      (guard((context != null) ? context[&#039;uploaded&#039;] : null) ?
+        &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;btn btn-default\&quot; data-action=\&quot;remove-uploaded\&quot;&gt;\n                &lt;span class=\&quot;hidden-xs hidden-sm\&quot;&gt;\n                    [[user:remove_uploaded_picture]]\n                &lt;/span&gt;\n                &lt;span class=\&quot;visible-xs-inline visible-sm-inline\&quot;&gt;\n                    &lt;i class=\&quot;fa fa-picture-o\&quot;&gt;&lt;/i&gt;\n                    &lt;i class=\&quot;fa fa-long-arrow-right\&quot;&gt;&lt;/i&gt;\n                    &lt;i class=\&quot;fa fa-trash-o\&quot;&gt;&lt;/i&gt;\n                &lt;/span&gt;\n            &lt;/button&gt;\n            &quot; :
+        &quot;&quot;) + 
+      &quot;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;hr /&gt;\n\n&lt;h4&gt;[[user:avatar-background-colour]]&lt;/h4&gt;\n\n&lt;label&gt;&lt;input type=\&quot;radio\&quot; name=\&quot;icon:bgColor\&quot; value=\&quot;transparent\&quot; /&gt;&lt;span&gt;&lt;/span&gt;&lt;/label&gt;\n&quot; + 
+      compiled.blocks[&#039;iconBackgrounds&#039;](helpers, context, guard, iter, helper);
+  }
+
+  compiled.blocks = {
+    &#039;pictures&#039;: function pictures(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;pictures&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;button type=\&quot;button\&quot; class=\&quot;list-group-item\&quot; data-type=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;pictures&#039;] != null &amp;&amp; context[&#039;pictures&#039;][key0] != null) ? context[&#039;pictures&#039;][key0][&#039;type&#039;] : null)) + 
+          &quot;\&quot;&gt;\n                &lt;div class=\&quot;media-left\&quot;&gt;\n                    &lt;img class=\&quot;media-object\&quot; src=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;pictures&#039;] != null &amp;&amp; context[&#039;pictures&#039;][key0] != null) ? context[&#039;pictures&#039;][key0][&#039;url&#039;] : null)) + 
+          &quot;\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;pictures&#039;] != null &amp;&amp; context[&#039;pictures&#039;][key0] != null) ? context[&#039;pictures&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;media-body\&quot;&gt;\n                    &lt;h4 class=\&quot;media-heading\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;pictures&#039;] != null &amp;&amp; context[&#039;pictures&#039;][key0] != null) ? context[&#039;pictures&#039;][key0][&#039;text&#039;] : null)) + 
+          &quot;&lt;/h4&gt;\n                &lt;/div&gt;\n            &lt;/button&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;iconBackgrounds&#039;: function iconBackgrounds(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;iconBackgrounds&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n&lt;label&gt;&lt;input type=\&quot;radio\&quot; name=\&quot;icon:bgColor\&quot; value=\&quot;&quot; + 
+          __escape(guard(value)) + 
+          &quot;\&quot; /&gt;&lt;span style=\&quot;background-color: &quot; + 
+          __escape(guard(value)) + 
+          &quot;;\&quot;&gt;&lt;/span&gt;&lt;/label&gt;\n&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

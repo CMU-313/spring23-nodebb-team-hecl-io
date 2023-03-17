@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/install/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/install/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">115</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">45.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.99</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;!DOCTYPE html&gt;\n&lt;html&gt;\n&lt;head&gt;\n    &lt;meta charset=\&quot;utf-8\&quot;&gt;\n    &lt;meta http-equiv=\&quot;X-UA-Compatible\&quot; content=\&quot;IE=edge\&quot;&gt;\n    &lt;meta name=\&quot;viewport\&quot; content=\&quot;width=device-width, initial-scale=1\&quot;&gt;\n    &lt;title&gt;NodeBB Web Installer&lt;/title&gt;\n\n    &lt;link rel=\&quot;stylesheet\&quot; type=\&quot;text/css\&quot; href=\&quot;bootstrap.min.css\&quot;&gt;\n    &lt;link rel=\&quot;stylesheet\&quot; type=\&quot;text/css\&quot; href=\&quot;installer.css\&quot;&gt;\n\n    &lt;script type=\&quot;text/javascript\&quot; async defer src=\&quot;/assets/installer.min.js\&quot;&gt;&lt;/script&gt;\n&lt;/head&gt;\n\n&lt;body&gt;\n    &lt;nav class=\&quot;navbar navbar-default\&quot;&gt;\n        &lt;div class=\&quot;container-fluid\&quot;&gt;\n            &lt;div class=\&quot;navbar-header\&quot;&gt;\n                &lt;a class=\&quot;navbar-brand\&quot; href=\&quot;#\&quot;&gt;NodeBB&lt;/a&gt;\n            &lt;/div&gt;\n\n            &lt;ul class=\&quot;nav navbar-nav\&quot;&gt;\n                &lt;li class=\&quot;active\&quot;&gt;&lt;a href=\&quot;/\&quot;&gt;Installer&lt;/a&gt;&lt;/li&gt;\n                &lt;li&gt;&lt;a href=\&quot;https://docs.nodebb.org\&quot; target=\&quot;_blank\&quot;&gt;Get Help&lt;/a&gt;&lt;/li&gt;\n                &lt;li&gt;&lt;a href=\&quot;https://community.nodebb.org\&quot; target=\&quot;_blank\&quot;&gt;Community&lt;/a&gt;&lt;/li&gt;\n            &lt;/ul&gt;\n        &lt;/div&gt;\n    &lt;/nav&gt;\n    &quot; + 
+      (guard((context != null) ? context[&#039;installing&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n    &lt;div class=\&quot;container &quot; + 
+          (guard((context != null) ? context[&#039;success&#039;] : null) ?
+            &quot;hide&quot; :
+            &quot;&quot;) + 
+          &quot;\&quot;&gt;\n        &lt;p&gt;\n            &lt;h1&gt;Welcome to the NodeBB Installer&lt;/h1&gt;\n            You are just a few steps away from launching your own NodeBB forum!\n        &lt;/p&gt;\n        &lt;form id=\&quot;install\&quot; action=\&quot;/\&quot; method=\&quot;post\&quot;&gt;\n            &quot; + 
+          (guard((context != null) ? context[&#039;skipGeneralSetup&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n            &lt;div class=\&quot;general\&quot;&gt;\n                &lt;p&gt;\n                    &lt;h1&gt;&lt;small&gt;General Instance Setup&lt;/small&gt;&lt;/h1&gt;\n                    &lt;hr /&gt;\n                &lt;/p&gt;\n\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;install:url\&quot;&gt;Web Address (URL)&lt;/label&gt;\n                        &lt;input id=\&quot;install:url\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; name=\&quot;url\&quot; value=\&quot;&quot; + 
+              (guard((context != null) ? context[&#039;url&#039;] : null) ?
+                __escape(guard((context != null) ? context[&#039;url&#039;] : null)) :
+                &quot;&quot;) + 
+              &quot;\&quot; placeholder=\&quot;http://localhost:4567\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;This is the address that resolves to your NodeBB forum. If no port is specified, &lt;code&gt;4567&lt;/code&gt; will be used.\&quot;&gt;&lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n            &quot;) + 
+          &quot;\n            &lt;div class=\&quot;admin\&quot;&gt;\n                &lt;p&gt;\n                    &lt;h1&gt;&lt;small&gt;Create an Administrator account&lt;/small&gt;&lt;/h1&gt;\n                    &lt;hr /&gt;\n                &lt;/p&gt;\n\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;admin:username\&quot;&gt;Username&lt;/label&gt;\n                        &lt;input id=\&quot;admin:username\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; name=\&quot;admin:username\&quot; value=\&quot;&quot; + 
+          (guard((context != null) ? context[&#039;admin:username&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;admin:username&#039;] : null)) :
+            &quot;&quot;) + 
+          &quot;\&quot; placeholder=\&quot;Username\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;Enter an &lt;strong&gt;alphanumeric username&lt;/strong&gt;. Spaces between words are allowed. You can always change your username later on your profile page.\&quot;&gt;&lt;/div&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;admin:email\&quot;&gt;Email Address&lt;/label&gt;\n                        &lt;input id=\&quot;admin:email\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; name=\&quot;admin:email\&quot; value=\&quot;&quot; + 
+          (guard((context != null) ? context[&#039;admin:email&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;admin:email&#039;] : null)) :
+            &quot;&quot;) + 
+          &quot;\&quot; placeholder=\&quot;Email Address\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;Please enter your email address.\&quot;&gt;&lt;/div&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;admin:password\&quot;&gt;Password&lt;/label&gt;\n                        &lt;input id=\&quot;admin:password\&quot; type=\&quot;password\&quot; class=\&quot;form-control\&quot; name=\&quot;admin:password\&quot; value=\&quot;&quot; + 
+          (guard((context != null) ? context[&#039;admin:password&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;admin:password&#039;] : null)) :
+            &quot;&quot;) + 
+          &quot;\&quot; placeholder=\&quot;Password\&quot; data-minimum-strength=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;minimumPasswordStrength&#039;] : null)) + 
+          &quot;\&quot; data-minimum-length=\&quot;&quot; + 
+          __escape(guard((context != null) ? context[&#039;minimumPasswordLength&#039;] : null)) + 
+          &quot;\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;Use a combination of numbers, symbols, and different cases. You can change the strictness of password creation in the Admin Control Panel. Minimum &quot; + 
+          __escape(guard((context != null) ? context[&#039;minimumPasswordLength&#039;] : null)) + 
+          &quot; characters.\&quot;&gt;&lt;/div&gt;\n                &lt;/div&gt;\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;admin:passwordConfirm\&quot;&gt;Confirm Password&lt;/label&gt;\n                        &lt;input id=\&quot;admin:passwordConfirm\&quot; type=\&quot;password\&quot; class=\&quot;form-control\&quot; name=\&quot;admin:passwordConfirm\&quot; value=\&quot;&quot; + 
+          (guard((context != null) ? context[&#039;admin:passwordConfirm&#039;] : null) ?
+            __escape(guard((context != null) ? context[&#039;admin:passwordConfirm&#039;] : null)) :
+            &quot;&quot;) + 
+          &quot;\&quot; placeholder=\&quot;Confirm Password\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;Please confirm your password.\&quot;&gt;&lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n\n            &quot; + 
+          (guard((context != null) ? context[&#039;error&#039;] : null) ?
+            &quot;\n            &lt;a id=\&quot;database-error\&quot;&gt;&lt;/a&gt;\n            &quot; :
+            &quot;&quot;) + 
+          &quot;\n\n            &quot; + 
+          (guard((context != null) ? context[&#039;skipDatabaseSetup&#039;] : null) ?
+            &quot;&quot; :
+            &quot;\n            &lt;div class=\&quot;database\&quot;&gt;\n                &lt;p&gt;\n                    &lt;h1&gt;&lt;small&gt;Configure your database&lt;/small&gt;&lt;/h1&gt;\n                    &lt;hr /&gt;\n                &lt;/p&gt;\n\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;install:database\&quot;&gt;Database Type&lt;/label&gt;\n                        &lt;select id=\&quot;install:database\&quot; class=\&quot;form-control\&quot; name=\&quot;database\&quot;&gt;\n                            &lt;option value=\&quot;mongo\&quot;&gt;MongoDB&lt;/option&gt;\n                            &lt;option value=\&quot;redis\&quot;&gt;Redis&lt;/option&gt;\n                            &lt;option value=\&quot;postgres\&quot;&gt;PostgreSQL&lt;/option&gt;\n                        &lt;/select&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-sm-5 help-text\&quot; data-help=\&quot;Leave the fields blank to use the default settings.\&quot;&gt;&quot; + 
+              (guard((context != null) ? context[&#039;error&#039;] : null) ?
+                &quot;There was an error connecting to your database. Please try again.&quot; :
+                &quot;&quot;) + 
+              &quot;&lt;/div&gt;\n                &lt;/div&gt;\n\n                &lt;div id=\&quot;database-config\&quot;&gt;&lt;/div&gt;\n            &lt;/div&gt;\n            &quot;) + 
+          &quot;\n\n            &lt;button id=\&quot;submit\&quot; type=\&quot;submit\&quot; class=\&quot;btn btn-lg btn-success\&quot;&gt;Install NodeBB &lt;i class=\&quot;working hide\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n    &quot;) + 
+      &quot;\n\n    &quot; + 
+      (guard((context != null) ? context[&#039;installing&#039;] : null) ?
+        &quot;\n    &lt;div id=\&quot;installing\&quot; class=\&quot;container\&quot;&gt;\n        &lt;p&gt;\n            &lt;h1&gt;Hang tight! Your NodeBB is being installed.&lt;/h1&gt;\n        &lt;/p&gt;\n    &lt;/div&gt;\n    &quot; :
+        &quot;&quot;) + 
+      &quot;\n\n    &lt;div class=\&quot;container &quot; + 
+      (guard((context != null) ? context[&#039;success&#039;] : null) ?
+        &quot;&quot; :
+        &quot;hide&quot;) + 
+      &quot;\&quot;&gt;\n        &lt;p&gt;\n            &lt;h1&gt;Congratulations! Your NodeBB has been set-up.&lt;/h1&gt;\n\n            &lt;button id=\&quot;launch\&quot; data-url=\&quot;&quot; + 
+      __escape(guard((context != null) ? context[&#039;launchUrl&#039;] : null)) + 
+      &quot;\&quot; class=\&quot;btn btn-lg btn-success\&quot;&gt;Launch NodeBB &lt;i class=\&quot;working hide\&quot;&gt;&lt;/i&gt;&lt;/button&gt;\n        &lt;/p&gt;\n    &lt;/div&gt;\n\n    &lt;div class=\&quot;hide\&quot;&gt;\n        &quot; + 
+      compiled.blocks[&#039;databases&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n    &lt;/div&gt;\n&lt;/body&gt;\n&lt;/html&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;databases&#039;: function databases(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;databases&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n        &lt;div data-database=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null) ? context[&#039;databases&#039;][key0][&#039;name&#039;] : null)) + 
+          &quot;\&quot;&gt;\n             &quot; + 
+          iter(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;] : null), function each(key1, index, length, value) {
+            var key = key1;
+            return &quot;\n                &lt;div class=\&quot;row input-row\&quot;&gt;\n                    &lt;div class=\&quot;col-sm-7 col-xs-12 input-field\&quot;&gt;\n                        &lt;label for=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;name&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;description&#039;] : null)) + 
+              &quot;&lt;/label&gt;\n                        &lt;input id=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;name&#039;] : null)) + 
+              &quot;\&quot; type=\&quot;&quot; + 
+              (guard((context != null) ? context[&#039;hidden&#039;] : null) ?
+                &quot;password&quot; :
+                &quot;text&quot;) + 
+              &quot;\&quot; class=\&quot;form-control\&quot; name=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;name&#039;] : null)) + 
+              &quot;\&quot; placeholder=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;default&#039;] : null)) + 
+              &quot;\&quot; value=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;databases&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;] != null &amp;&amp; context[&#039;databases&#039;][key0][&#039;questions&#039;][key1] != null) ? context[&#039;databases&#039;][key0][&#039;questions&#039;][key1][&#039;default&#039;] : null)) + 
+              &quot;\&quot; /&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &quot;;
+          }, function alt() {
+            return &quot;&quot;;
+          }) + 
+          &quot;\n        &lt;/div&gt;\n        &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

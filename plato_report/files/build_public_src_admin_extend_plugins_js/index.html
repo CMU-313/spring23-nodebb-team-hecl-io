@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/extend/plugins.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/extend/plugins.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.59</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">348</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">36.37</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.80</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;admin/extend/plugins&#039;, [
+    &#039;translator&#039;,
+    &#039;benchpress&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+    &#039;jquery-ui/widgets/sortable&#039;,
+], function (translator, Benchpress, bootbox, alerts) {
+    const Plugins = {};
+    Plugins.init = function () {
+        const pluginsList = $(&#039;.plugins&#039;);
+        const numPlugins = pluginsList[0].querySelectorAll(&#039;li&#039;).length;
+        let pluginID;
+
+        if (!numPlugins) {
+            translator.translate(&#039;&lt;li&gt;&lt;p&gt;&lt;i&gt;[[admin/extend/plugins:none-found]]&lt;/i&gt;&lt;/p&gt;&lt;/li&gt;&#039;, function (html) {
+                pluginsList.append(html);
+            });
+            return;
+        }
+
+        const searchInputEl = document.querySelector(&#039;#plugin-search&#039;);
+        searchInputEl.value = &#039;&#039;;
+
+        pluginsList.on(&#039;click&#039;, &#039;button[data-action=&quot;toggleActive&quot;]&#039;, function () {
+            const pluginEl = $(this).parents(&#039;li&#039;);
+            pluginID = pluginEl.attr(&#039;data-plugin-id&#039;);
+            const btn = $(&#039;[id=&quot;&#039; + pluginID + &#039;&quot;] [data-action=&quot;toggleActive&quot;]&#039;);
+
+            const pluginData = ajaxify.data.installed[pluginEl.attr(&#039;data-plugin-index&#039;)];
+
+            function toggleActivate() {
+                socket.emit(&#039;admin.plugins.toggleActive&#039;, pluginID, function (err, status) {
+                    if (err) {
+                        return alerts.error(err);
+                    }
+                    translator.translate(&#039;&lt;i class=&quot;fa fa-power-off&quot;&gt;&lt;/i&gt; [[admin/extend/plugins:plugin-item.&#039; + (status.active ? &#039;deactivate&#039; : &#039;activate&#039;) + &#039;]]&#039;, function (buttonText) {
+                        btn.html(buttonText);
+                        btn.toggleClass(&#039;btn-warning&#039;, status.active).toggleClass(&#039;btn-success&#039;, !status.active);
+
+                        // clone it to active plugins tab
+                        if (status.active &amp;&amp; !$(&#039;#active [id=&quot;&#039; + pluginID + &#039;&quot;]&#039;).length) {
+                            $(&#039;#active ul&#039;).prepend(pluginEl.clone(true));
+                        }
+
+                        // Toggle active state in template data
+                        pluginData.active = !pluginData.active;
+
+                        alerts.alert({
+                            alert_id: &#039;plugin_toggled&#039;,
+                            title: &#039;[[admin/extend/plugins:alert.&#039; + (status.active ? &#039;enabled&#039; : &#039;disabled&#039;) + &#039;]]&#039;,
+                            message: &#039;[[admin/extend/plugins:alert.&#039; + (status.active ? &#039;activate-success&#039; : &#039;deactivate-success&#039;) + &#039;]]&#039;,
+                            type: status.active ? &#039;warning&#039; : &#039;success&#039;,
+                            timeout: 5000,
+                            clickfn: function () {
+                                require([&#039;admin/modules/instance&#039;], function (instance) {
+                                    instance.rebuildAndRestart();
+                                });
+                            },
+                        });
+                    });
+                });
+            }
+
+            if (pluginData.license &amp;&amp; pluginData.active !== true) {
+                Benchpress.render(&#039;admin/partials/plugins/license&#039;, pluginData).then(function (html) {
+                    bootbox.dialog({
+                        title: &#039;[[admin/extend/plugins:license.title]]&#039;,
+                        message: html,
+                        size: &#039;large&#039;,
+                        buttons: {
+                            cancel: {
+                                label: &#039;[[modules:bootbox.cancel]]&#039;,
+                                className: &#039;btn-link&#039;,
+                            },
+                            save: {
+                                label: &#039;[[modules:bootbox.confirm]]&#039;,
+                                className: &#039;btn-primary&#039;,
+                                callback: toggleActivate,
+                            },
+                        },
+                        onShown: function () {
+                            const saveEl = this.querySelector(&#039;button.btn-primary&#039;);
+                            if (saveEl) {
+                                saveEl.focus();
+                            }
+                        },
+                    });
+                });
+            } else {
+                toggleActivate(pluginID);
+            }
+        });
+
+        pluginsList.on(&#039;click&#039;, &#039;button[data-action=&quot;toggleInstall&quot;]&#039;, function () {
+            const btn = $(this);
+            btn.attr(&#039;disabled&#039;, true);
+            pluginID = $(this).parents(&#039;li&#039;).attr(&#039;data-plugin-id&#039;);
+
+            if ($(this).attr(&#039;data-installed&#039;) === &#039;1&#039;) {
+                return Plugins.toggleInstall(pluginID, $(this).parents(&#039;li&#039;).attr(&#039;data-version&#039;));
+            }
+
+            Plugins.suggest(pluginID, function (err, payload) {
+                if (err) {
+                    bootbox.confirm(translator.compile(&#039;admin/extend/plugins:alert.suggest-error&#039;, err.status, err.responseText), function (confirm) {
+                        if (confirm) {
+                            Plugins.toggleInstall(pluginID, &#039;latest&#039;);
+                        } else {
+                            btn.removeAttr(&#039;disabled&#039;);
+                        }
+                    });
+                    return;
+                }
+
+                if (payload.version !== &#039;latest&#039;) {
+                    Plugins.toggleInstall(pluginID, payload.version);
+                } else if (payload.version === &#039;latest&#039;) {
+                    confirmInstall(pluginID, function (confirm) {
+                        if (confirm) {
+                            Plugins.toggleInstall(pluginID, &#039;latest&#039;);
+                        } else {
+                            btn.removeAttr(&#039;disabled&#039;);
+                        }
+                    });
+                } else {
+                    btn.removeAttr(&#039;disabled&#039;);
+                }
+            });
+        });
+
+        pluginsList.on(&#039;click&#039;, &#039;button[data-action=&quot;upgrade&quot;]&#039;, function () {
+            const btn = $(this);
+            const parent = btn.parents(&#039;li&#039;);
+            pluginID = parent.attr(&#039;data-plugin-id&#039;);
+
+            Plugins.suggest(pluginID, function (err, payload) {
+                if (err) {
+                    return bootbox.alert(&#039;[[admin/extend/plugins:alert.package-manager-unreachable]]&#039;);
+                }
+
+                require([&#039;compare-versions&#039;], function (compareVersions) {
+                    const currentVersion = parent.find(&#039;.currentVersion&#039;).text();
+                    if (payload.version !== &#039;latest&#039; &amp;&amp; compareVersions.compare(payload.version, currentVersion, &#039;&gt;&#039;)) {
+                        upgrade(pluginID, btn, payload.version);
+                    } else if (payload.version === &#039;latest&#039;) {
+                        confirmInstall(pluginID, function () {
+                            upgrade(pluginID, btn, payload.version);
+                        });
+                    } else {
+                        bootbox.alert(translator.compile(&#039;admin/extend/plugins:alert.incompatible&#039;, app.config.version, payload.version));
+                    }
+                });
+            });
+        });
+
+        $(searchInputEl).on(&#039;input propertychange&#039;, function () {
+            const term = $(this).val();
+            $(&#039;.plugins li&#039;).each(function () {
+                const pluginId = $(this).attr(&#039;data-plugin-id&#039;);
+                $(this).toggleClass(&#039;hide&#039;, pluginId &amp;&amp; pluginId.indexOf(term) === -1);
+            });
+
+            const tabEls = document.querySelectorAll(&#039;.plugins .tab-pane&#039;);
+            tabEls.forEach((tabEl) =&gt; {
+                const remaining = tabEl.querySelectorAll(&#039;li:not(.hide)&#039;).length;
+                const noticeEl = tabEl.querySelector(&#039;.no-plugins&#039;);
+                if (noticeEl) {
+                    noticeEl.classList.toggle(&#039;hide&#039;, remaining !== 0);
+                }
+            });
+        });
+
+        $(&#039;#plugin-submit-usage&#039;).on(&#039;click&#039;, function () {
+            socket.emit(&#039;admin.config.setMultiple&#039;, {
+                submitPluginUsage: $(this).prop(&#039;checked&#039;) ? &#039;1&#039; : &#039;0&#039;,
+            }, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+            });
+        });
+
+        $(&#039;#plugin-order&#039;).on(&#039;click&#039;, function () {
+            $(&#039;#order-active-plugins-modal&#039;).modal(&#039;show&#039;);
+            socket.emit(&#039;admin.plugins.getActive&#039;, function (err, activePlugins) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                let html = &#039;&#039;;
+                activePlugins.forEach(function (plugin) {
+                    html += &#039;&lt;li class=&quot;&quot;&gt;&#039; + plugin + &#039;&lt;span class=&quot;pull-right&quot;&gt;&lt;i class=&quot;fa fa-chevron-up&quot;&gt;&lt;/i&gt;&lt;i class=&quot;fa fa-chevron-down&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/li&gt;&#039;;
+                });
+                if (!activePlugins.length) {
+                    translator.translate(&#039;[[admin/extend/plugins:none-active]]&#039;, function (text) {
+                        $(&#039;#order-active-plugins-modal .plugin-list&#039;).html(text).sortable();
+                    });
+                    return;
+                }
+                const list = $(&#039;#order-active-plugins-modal .plugin-list&#039;);
+                list.html(html).sortable();
+
+                list.find(&#039;.fa-chevron-up&#039;).on(&#039;click&#039;, function () {
+                    const item = $(this).parents(&#039;li&#039;);
+                    item.prev().before(item);
+                });
+
+                list.find(&#039;.fa-chevron-down&#039;).on(&#039;click&#039;, function () {
+                    const item = $(this).parents(&#039;li&#039;);
+                    item.next().after(item);
+                });
+            });
+        });
+
+        $(&#039;#save-plugin-order&#039;).on(&#039;click&#039;, function () {
+            const plugins = $(&#039;#order-active-plugins-modal .plugin-list&#039;).children();
+            const data = [];
+            plugins.each(function (index, el) {
+                data.push({ name: $(el).text(), order: index });
+            });
+
+            socket.emit(&#039;admin.plugins.orderActivePlugins&#039;, data, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                $(&#039;#order-active-plugins-modal&#039;).modal(&#039;hide&#039;);
+
+                alerts.alert({
+                    alert_id: &#039;plugin_reordered&#039;,
+                    title: &#039;[[admin/extend/plugins:alert.reorder]]&#039;,
+                    message: &#039;[[admin/extend/plugins:alert.reorder-success]]&#039;,
+                    type: &#039;success&#039;,
+                    timeout: 5000,
+                    clickfn: function () {
+                        require([&#039;admin/modules/instance&#039;], function (instance) {
+                            instance.rebuildAndRestart();
+                        });
+                    },
+                });
+            });
+        });
+
+        populateUpgradeablePlugins();
+        populateActivePlugins();
+        searchInputEl.focus();
+    };
+
+    function confirmInstall(pluginID, callback) {
+        bootbox.confirm(translator.compile(&#039;admin/extend/plugins:alert.possibly-incompatible&#039;, pluginID), function (confirm) {
+            callback(confirm);
+        });
+    }
+
+    function upgrade(pluginID, btn, version) {
+        btn.attr(&#039;disabled&#039;, true).find(&#039;i&#039;).attr(&#039;class&#039;, &#039;fa fa-refresh fa-spin&#039;);
+        socket.emit(&#039;admin.plugins.upgrade&#039;, {
+            id: pluginID,
+            version: version,
+        }, function (err, isActive) {
+            if (err) {
+                return alerts.error(err);
+            }
+            const parent = btn.parents(&#039;li&#039;);
+            parent.find(&#039;.fa-exclamation-triangle&#039;).remove();
+            parent.find(&#039;.currentVersion&#039;).text(version);
+            btn.remove();
+            if (isActive) {
+                alerts.alert({
+                    alert_id: &#039;plugin_upgraded&#039;,
+                    title: &#039;[[admin/extend/plugins:alert.upgraded]]&#039;,
+                    message: &#039;[[admin/extend/plugins:alert.upgrade-success]]&#039;,
+                    type: &#039;warning&#039;,
+                    timeout: 5000,
+                    clickfn: function () {
+                        require([&#039;admin/modules/instance&#039;], function (instance) {
+                            instance.rebuildAndRestart();
+                        });
+                    },
+                });
+            }
+        });
+    }
+
+    Plugins.toggleInstall = function (pluginID, version, callback) {
+        const btn = $(&#039;li[data-plugin-id=&quot;&#039; + pluginID + &#039;&quot;] button[data-action=&quot;toggleInstall&quot;]&#039;);
+        btn.find(&#039;i&#039;).attr(&#039;class&#039;, &#039;fa fa-refresh fa-spin&#039;);
+
+        socket.emit(&#039;admin.plugins.toggleInstall&#039;, {
+            id: pluginID,
+            version: version,
+        }, function (err, pluginData) {
+            if (err) {
+                btn.removeAttr(&#039;disabled&#039;);
+                return alerts.error(err);
+            }
+
+            ajaxify.refresh();
+
+            alerts.alert({
+                alert_id: &#039;plugin_toggled&#039;,
+                title: &#039;[[admin/extend/plugins:alert.&#039; + (pluginData.installed ? &#039;installed&#039; : &#039;uninstalled&#039;) + &#039;]]&#039;,
+                message: &#039;[[admin/extend/plugins:alert.&#039; + (pluginData.installed ? &#039;install-success&#039; : &#039;uninstall-success&#039;) + &#039;]]&#039;,
+                type: &#039;info&#039;,
+                timeout: 5000,
+            });
+
+            if (typeof callback === &#039;function&#039;) {
+                callback.apply(this, arguments);
+            }
+        });
+    };
+
+    Plugins.suggest = function (pluginId, callback) {
+        const nbbVersion = app.config.version.match(/^\d+\.\d+\.\d+/);
+        $.ajax((app.config.registry || &#039;https://packages.nodebb.org&#039;) + &#039;/api/v1/suggest&#039;, {
+            type: &#039;GET&#039;,
+            data: {
+                package: pluginId,
+                version: nbbVersion[0],
+            },
+            dataType: &#039;json&#039;,
+        }).done(function (payload) {
+            callback(undefined, payload);
+        }).fail(callback);
+    };
+
+    function populateUpgradeablePlugins() {
+        $(&#039;#installed ul li&#039;).each(function () {
+            if ($(this).children(&#039;[data-action=&quot;upgrade&quot;]&#039;).length) {
+                $(&#039;#upgrade ul&#039;).append($(this).clone(true));
+            }
+        });
+    }
+
+    function populateActivePlugins() {
+        $(&#039;#installed ul li&#039;).each(function () {
+            if ($(this).hasClass(&#039;active&#039;)) {
+                $(&#039;#active ul&#039;).append($(this).clone(true));
+            } else {
+                $(&#039;#deactive ul&#039;).append($(this).clone(true));
+            }
+        });
+    }
+
+    return Plugins;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

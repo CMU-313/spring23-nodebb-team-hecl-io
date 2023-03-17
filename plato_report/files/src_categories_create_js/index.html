@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/categories/create.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/categories/create.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">63.31</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">250</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">47.49</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.25</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const utils = require(&#039;../utils&#039;);
+const slugify = require(&#039;../slugify&#039;);
+const cache = require(&#039;../cache&#039;);
+
+module.exports = function (Categories) {
+    Categories.create = async function (data) {
+        const parentCid = data.parentCid ? data.parentCid : 0;
+        const [cid, firstChild] = await Promise.all([
+            db.incrObjectField(&#039;global&#039;, &#039;nextCid&#039;),
+            db.getSortedSetRangeWithScores(`cid:${parentCid}:children`, 0, 0),
+        ]);
+
+        data.name = String(data.name || `Category ${cid}`);
+        const slug = `${cid}/${slugify(data.name)}`;
+        const smallestOrder = firstChild.length ? firstChild[0].score - 1 : 1;
+        const order = data.order || smallestOrder; // If no order provided, place it at the top
+        const colours = Categories.assignColours();
+
+        let category = {
+            cid: cid,
+            name: data.name,
+            description: data.description ? data.description : &#039;&#039;,
+            descriptionParsed: data.descriptionParsed ? data.descriptionParsed : &#039;&#039;,
+            icon: data.icon ? data.icon : &#039;&#039;,
+            bgColor: data.bgColor || colours[0],
+            color: data.color || colours[1],
+            slug: slug,
+            parentCid: parentCid,
+            topic_count: 0,
+            post_count: 0,
+            disabled: data.disabled ? 1 : 0,
+            order: order,
+            link: data.link || &#039;&#039;,
+            numRecentReplies: 1,
+            class: (data.class ? data.class : &#039;col-md-3 col-xs-6&#039;),
+            imageClass: &#039;cover&#039;,
+            isSection: 0,
+            subCategoriesPerPage: 10,
+        };
+
+        if (data.backgroundImage) {
+            category.backgroundImage = data.backgroundImage;
+        }
+
+        const defaultPrivileges = [
+            &#039;groups:find&#039;,
+            &#039;groups:read&#039;,
+            &#039;groups:topics:read&#039;,
+            &#039;groups:topics:create&#039;,
+            &#039;groups:topics:reply&#039;,
+            &#039;groups:topics:tag&#039;,
+            &#039;groups:posts:edit&#039;,
+            &#039;groups:posts:history&#039;,
+            &#039;groups:posts:delete&#039;,
+            &#039;groups:posts:upvote&#039;,
+            &#039;groups:posts:downvote&#039;,
+            &#039;groups:topics:delete&#039;,
+        ];
+        const modPrivileges = defaultPrivileges.concat([
+            &#039;groups:topics:schedule&#039;,
+            &#039;groups:posts:view_deleted&#039;,
+            &#039;groups:purge&#039;,
+        ]);
+        const guestPrivileges = [&#039;groups:find&#039;, &#039;groups:read&#039;, &#039;groups:topics:read&#039;];
+
+        const result = await plugins.hooks.fire(&#039;filter:category.create&#039;, {
+            category: category,
+            data: data,
+            defaultPrivileges: defaultPrivileges,
+            modPrivileges: modPrivileges,
+            guestPrivileges: guestPrivileges,
+        });
+        category = result.category;
+
+        await db.setObject(`category:${category.cid}`, category);
+        if (!category.descriptionParsed) {
+            await Categories.parseDescription(category.cid, category.description);
+        }
+
+        await db.sortedSetAddBulk([
+            [&#039;categories:cid&#039;, category.order, category.cid],
+            [`cid:${parentCid}:children`, category.order, category.cid],
+            [&#039;categories:name&#039;, 0, `${data.name.slice(0, 200).toLowerCase()}:${category.cid}`],
+        ]);
+
+        await privileges.categories.give(result.defaultPrivileges, category.cid, &#039;registered-users&#039;);
+        await privileges.categories.give(result.modPrivileges, category.cid, [&#039;administrators&#039;, &#039;Global Moderators&#039;]);
+        await privileges.categories.give(result.guestPrivileges, category.cid, [&#039;guests&#039;, &#039;spiders&#039;]);
+
+        cache.del([
+            &#039;categories:cid&#039;,
+            `cid:${parentCid}:children`,
+            `cid:${parentCid}:children:all`,
+        ]);
+        if (data.cloneFromCid &amp;&amp; parseInt(data.cloneFromCid, 10)) {
+            category = await Categories.copySettingsFrom(data.cloneFromCid, category.cid, !data.parentCid);
+        }
+
+        if (data.cloneChildren) {
+            await duplicateCategoriesChildren(category.cid, data.cloneFromCid, data.uid);
+        }
+
+        plugins.hooks.fire(&#039;action:category.create&#039;, { category: category });
+        return category;
+    };
+
+    async function duplicateCategoriesChildren(parentCid, cid, uid) {
+        let children = await Categories.getChildren([cid], uid);
+        if (!children.length) {
+            return;
+        }
+
+        children = children[0];
+
+        children.forEach((child) =&gt; {
+            child.parentCid = parentCid;
+            child.cloneFromCid = child.cid;
+            child.cloneChildren = true;
+            child.name = utils.decodeHTMLEntities(child.name);
+            child.description = utils.decodeHTMLEntities(child.description);
+            child.uid = uid;
+        });
+
+        await async.each(children, Categories.create);
+    }
+
+    Categories.assignColours = function () {
+        const backgrounds = [&#039;#AB4642&#039;, &#039;#DC9656&#039;, &#039;#F7CA88&#039;, &#039;#A1B56C&#039;, &#039;#86C1B9&#039;, &#039;#7CAFC2&#039;, &#039;#BA8BAF&#039;, &#039;#A16946&#039;];
+        const text = [&#039;#ffffff&#039;, &#039;#ffffff&#039;, &#039;#333333&#039;, &#039;#ffffff&#039;, &#039;#333333&#039;, &#039;#ffffff&#039;, &#039;#ffffff&#039;, &#039;#ffffff&#039;];
+        const index = Math.floor(Math.random() * backgrounds.length);
+        return [backgrounds[index], text[index]];
+    };
+
+    Categories.copySettingsFrom = async function (fromCid, toCid, copyParent) {
+        const [source, destination] = await Promise.all([
+            db.getObject(`category:${fromCid}`),
+            db.getObject(`category:${toCid}`),
+        ]);
+        if (!source) {
+            throw new Error(&#039;[[error:invalid-cid]]&#039;);
+        }
+
+        const oldParent = parseInt(destination.parentCid, 10) || 0;
+        const newParent = parseInt(source.parentCid, 10) || 0;
+        if (copyParent &amp;&amp; newParent !== parseInt(toCid, 10)) {
+            await db.sortedSetRemove(`cid:${oldParent}:children`, toCid);
+            await db.sortedSetAdd(`cid:${newParent}:children`, source.order, toCid);
+            cache.del([
+                `cid:${oldParent}:children`,
+                `cid:${oldParent}:children:all`,
+                `cid:${newParent}:children`,
+                `cid:${newParent}:children:all`,
+            ]);
+        }
+
+        destination.description = source.description;
+        destination.descriptionParsed = source.descriptionParsed;
+        destination.icon = source.icon;
+        destination.bgColor = source.bgColor;
+        destination.color = source.color;
+        destination.link = source.link;
+        destination.numRecentReplies = source.numRecentReplies;
+        destination.class = source.class;
+        destination.image = source.image;
+        destination.imageClass = source.imageClass;
+        destination.minTags = source.minTags;
+        destination.maxTags = source.maxTags;
+
+        if (copyParent) {
+            destination.parentCid = source.parentCid || 0;
+        }
+        await plugins.hooks.fire(&#039;filter:categories.copySettingsFrom&#039;, {
+            source: source,
+            destination: destination,
+            copyParent: copyParent,
+        });
+
+        await db.setObject(`category:${toCid}`, destination);
+
+        await copyTagWhitelist(fromCid, toCid);
+
+        await Categories.copyPrivilegesFrom(fromCid, toCid);
+
+        return destination;
+    };
+
+    async function copyTagWhitelist(fromCid, toCid) {
+        const data = await db.getSortedSetRangeWithScores(`cid:${fromCid}:tag:whitelist`, 0, -1);
+        await db.delete(`cid:${toCid}:tag:whitelist`);
+        await db.sortedSetAdd(`cid:${toCid}:tag:whitelist`, data.map(item =&gt; item.score), data.map(item =&gt; item.value));
+        cache.del(`cid:${toCid}:tag:whitelist`);
+    }
+
+    Categories.copyPrivilegesFrom = async function (fromCid, toCid, group, filter = []) {
+        group = group || &#039;&#039;;
+        let privsToCopy;
+        if (group) {
+            const groupPrivilegeList = await privileges.categories.getGroupPrivilegeList();
+            privsToCopy = groupPrivilegeList.slice(...filter);
+        } else {
+            const privs = await privileges.categories.getPrivilegeList();
+            const halfIdx = privs.length / 2;
+            privsToCopy = privs.slice(0, halfIdx).slice(...filter).concat(privs.slice(halfIdx).slice(...filter));
+        }
+
+        const data = await plugins.hooks.fire(&#039;filter:categories.copyPrivilegesFrom&#039;, {
+            privileges: privsToCopy,
+            fromCid: fromCid,
+            toCid: toCid,
+            group: group,
+        });
+        if (group) {
+            await copyPrivilegesByGroup(data.privileges, data.fromCid, data.toCid, group);
+        } else {
+            await copyPrivileges(data.privileges, data.fromCid, data.toCid);
+        }
+    };
+
+    async function copyPrivileges(privileges, fromCid, toCid) {
+        const toGroups = privileges.map(privilege =&gt; `group:cid:${toCid}:privileges:${privilege}:members`);
+        const fromGroups = privileges.map(privilege =&gt; `group:cid:${fromCid}:privileges:${privilege}:members`);
+
+        const currentMembers = await db.getSortedSetsMembers(toGroups.concat(fromGroups));
+        const copyGroups = _.uniq(_.flatten(currentMembers));
+        await async.each(copyGroups, async (group) =&gt; {
+            await copyPrivilegesByGroup(privileges, fromCid, toCid, group);
+        });
+    }
+
+    async function copyPrivilegesByGroup(privilegeList, fromCid, toCid, group) {
+        const fromGroups = privilegeList.map(privilege =&gt; `group:cid:${fromCid}:privileges:${privilege}:members`);
+        const toGroups = privilegeList.map(privilege =&gt; `group:cid:${toCid}:privileges:${privilege}:members`);
+        const [fromChecks, toChecks] = await Promise.all([
+            db.isMemberOfSortedSets(fromGroups, group),
+            db.isMemberOfSortedSets(toGroups, group),
+        ]);
+        const givePrivs = privilegeList.filter((priv, index) =&gt; fromChecks[index] &amp;&amp; !toChecks[index]);
+        const rescindPrivs = privilegeList.filter((priv, index) =&gt; !fromChecks[index] &amp;&amp; toChecks[index]);
+        await privileges.categories.give(givePrivs, toCid, group);
+        await privileges.categories.rescind(rescindPrivs, toCid, group);
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

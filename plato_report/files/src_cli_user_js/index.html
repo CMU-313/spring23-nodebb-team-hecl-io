@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/cli/user.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/cli/user.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.93</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">311</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">42.30</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.28</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const { Command, Option } = require(&#039;commander&#039;);
+
+module.exports = () =&gt; {
+    const userCmd = new Command(&#039;user&#039;)
+        .description(&#039;Manage users&#039;)
+        .arguments(&#039;[command]&#039;);
+
+    userCmd.configureHelp(require(&#039;./colors&#039;));
+    const userCommands = UserCommands();
+
+    userCmd
+        .command(&#039;info&#039;)
+        .description(&#039;Display user info by uid/username/userslug.&#039;)
+        .option(&#039;-i, --uid &lt;uid&gt;&#039;, &#039;Retrieve user by uid&#039;)
+        .option(&#039;-u, --username &lt;username&gt;&#039;, &#039;Retrieve user by username&#039;)
+        .option(&#039;-s, --userslug &lt;userslug&gt;&#039;, &#039;Retrieve user by userslug&#039;)
+        .action((...args) =&gt; execute(userCommands.info, args));
+    userCmd
+        .command(&#039;create&#039;)
+        .description(&#039;Create a new user.&#039;)
+        .arguments(&#039;&lt;username&gt;&#039;)
+        .option(&#039;-p, --password &lt;password&gt;&#039;, &#039;Set a new password. (Auto-generates if omitted)&#039;)
+        .option(&#039;-e, --email &lt;email&gt;&#039;, &#039;Associate with an email.&#039;)
+        .action((...args) =&gt; execute(userCommands.create, args));
+    userCmd
+        .command(&#039;reset&#039;)
+        .description(&#039;Reset a user\&#039;s password or send a password reset email.&#039;)
+        .arguments(&#039;&lt;uid&gt;&#039;)
+        .option(&#039;-p, --password &lt;password&gt;&#039;, &#039;Set a new password. (Auto-generates if passed empty)&#039;, false)
+        .option(&#039;-s, --send-reset-email&#039;, &#039;Send a password reset email.&#039;, false)
+        .action((...args) =&gt; execute(userCommands.reset, args));
+    userCmd
+        .command(&#039;delete&#039;)
+        .description(&#039;Delete user(s) and/or their content&#039;)
+        .arguments(&#039;&lt;uids...&gt;&#039;)
+        .addOption(
+            new Option(&#039;-t, --type [operation]&#039;, &#039;Delete user content ([purge]), leave content ([account]), or delete content only ([content])&#039;)
+                .choices([&#039;purge&#039;, &#039;account&#039;, &#039;content&#039;]).default(&#039;purge&#039;)
+        )
+        .action((...args) =&gt; execute(userCommands.deleteUser, args));
+
+    const make = userCmd.command(&#039;make&#039;)
+        .description(&#039;Make user(s) admin, global mod, moderator or a regular user.&#039;)
+        .arguments(&#039;[command]&#039;);
+
+    make.command(&#039;admin&#039;)
+        .description(&#039;Make user(s) an admin&#039;)
+        .arguments(&#039;&lt;uids...&gt;&#039;)
+        .action((...args) =&gt; execute(userCommands.makeAdmin, args));
+    make.command(&#039;global-mod&#039;)
+        .description(&#039;Make user(s) a global moderator&#039;)
+        .arguments(&#039;&lt;uids...&gt;&#039;)
+        .action((...args) =&gt; execute(userCommands.makeGlobalMod, args));
+    make.command(&#039;mod&#039;)
+        .description(&#039;Make uid(s) of user(s) moderator of given category IDs (cids)&#039;)
+        .arguments(&#039;&lt;uids...&gt;&#039;)
+        .requiredOption(&#039;-c, --cid &lt;cids...&gt;&#039;, &#039;ID(s) of categories to make the user a moderator of&#039;)
+        .action((...args) =&gt; execute(userCommands.makeMod, args));
+    make.command(&#039;regular&#039;)
+        .description(&#039;Make user(s) a non-privileged user&#039;)
+        .arguments(&#039;&lt;uids...&gt;&#039;)
+        .action((...args) =&gt; execute(userCommands.makeRegular, args));
+
+    return userCmd;
+};
+
+let db;
+let user;
+let groups;
+let privileges;
+let privHelpers;
+let utils;
+let winston;
+
+async function init() {
+    db = require(&#039;../database&#039;);
+    await db.init();
+
+    user = require(&#039;../user&#039;);
+    groups = require(&#039;../groups&#039;);
+    privileges = require(&#039;../privileges&#039;);
+    privHelpers = require(&#039;../privileges/helpers&#039;);
+    utils = require(&#039;../utils&#039;);
+    winston = require(&#039;winston&#039;);
+}
+
+async function execute(cmd, args) {
+    await init();
+    try {
+        await cmd(...args);
+    } catch (err) {
+        const userError = err.name === &#039;UserError&#039;;
+        winston.error(`[userCmd/${cmd.name}] ${userError ? `${err.message}` : &#039;Command failed.&#039;}`, userError ? &#039;&#039; : err);
+        process.exit(1);
+    }
+
+    process.exit();
+}
+
+function UserCmdHelpers() {
+    async function getAdminUidOrFail() {
+        const adminUid = await user.getFirstAdminUid();
+        if (!adminUid) {
+            const err = new Error(&#039;An admin account does not exists to execute the operation.&#039;);
+            err.name = &#039;UserError&#039;;
+            throw err;
+        }
+        return adminUid;
+    }
+
+    async function setupApp() {
+        const nconf = require(&#039;nconf&#039;);
+        const Benchpress = require(&#039;benchpressjs&#039;);
+
+        const meta = require(&#039;../meta&#039;);
+        await meta.configs.init();
+
+        const webserver = require(&#039;../webserver&#039;);
+        const viewsDir = nconf.get(&#039;views_dir&#039;);
+
+        webserver.app.engine(&#039;tpl&#039;, (filepath, data, next) =&gt; {
+            filepath = filepath.replace(/\.tpl$/, &#039;.js&#039;);
+
+            Benchpress.__express(filepath, data, next);
+        });
+        webserver.app.set(&#039;view engine&#039;, &#039;tpl&#039;);
+        webserver.app.set(&#039;views&#039;, viewsDir);
+
+        const emailer = require(&#039;../emailer&#039;);
+        emailer.registerApp(webserver.app);
+    }
+
+    const argParsers = {
+        intParse: (value, varName) =&gt; {
+            const parsedValue = parseInt(value, 10);
+            if (isNaN(parsedValue)) {
+                const err = new Error(`&quot;${varName}&quot; expected to be a number.`);
+                err.name = &#039;UserError&#039;;
+                throw err;
+            }
+            return parsedValue;
+        },
+        intArrayParse: (values, varName) =&gt; values.map(value =&gt; argParsers.intParse(value, varName)),
+    };
+
+    return {
+        argParsers,
+        getAdminUidOrFail,
+        setupApp,
+    };
+}
+
+function UserCommands() {
+    const { argParsers, getAdminUidOrFail, setupApp } = UserCmdHelpers();
+
+    async function info({ uid, username, userslug }) {
+        if (!uid &amp;&amp; !username &amp;&amp; !userslug) {
+            return winston.error(&#039;[userCmd/info] At least one option has to be passed (--uid, --username or --userslug).&#039;);
+        }
+
+        if (uid) {
+            uid = argParsers.intParse(uid, &#039;uid&#039;);
+        } else if (username) {
+            uid = await user.getUidByUsername(username);
+        } else {
+            uid = await user.getUidByUserslug(userslug);
+        }
+
+        const userData = await user.getUserData(uid);
+        winston.info(&#039;[userCmd/info] User info retrieved:&#039;);
+        console.log(userData);
+    }
+
+    async function create(username, { password, email }) {
+        let pwGenerated = false;
+        if (password === undefined) {
+            password = utils.generateUUID().slice(0, 8);
+            pwGenerated = true;
+        }
+
+        const userExists = await user.getUidByUsername(username);
+        if (userExists) {
+            return winston.error(`[userCmd/create] A user with username &#039;${username}&#039; already exists`);
+        }
+
+        const uid = await user.create({
+            username,
+            password,
+            email,
+        });
+
+        winston.info(`[userCmd/create] User &#039;${username}&#039;${password ? &#039;&#039; : &#039; without a password&#039;} has been created with uid: ${uid}.\
+${pwGenerated ? ` Generated password: ${password}` : &#039;&#039;}`);
+    }
+
+    async function reset(uid, { password, sendResetEmail }) {
+        uid = argParsers.intParse(uid, &#039;uid&#039;);
+
+        if (password === false &amp;&amp; sendResetEmail === false) {
+            return winston.error(&#039;[userCmd/reset] At least one option has to be passed (--password or --send-reset-email).&#039;);
+        }
+
+        const userExists = await user.exists(uid);
+        if (!userExists) {
+            return winston.error(`[userCmd/reset] A user with given uid does not exists.`);
+        }
+
+        let pwGenerated = false;
+        if (password === &#039;&#039;) {
+            password = utils.generateUUID().slice(0, 8);
+            pwGenerated = true;
+        }
+
+        const adminUid = await getAdminUidOrFail();
+
+        if (password) {
+            await user.setUserField(uid, &#039;password&#039;, &#039;&#039;);
+            await user.changePassword(adminUid, {
+                newPassword: password,
+                uid,
+            });
+            winston.info(`[userCmd/reset] ${password ? &#039;User password changed.&#039; : &#039;&#039;}${pwGenerated ? ` Generated password: ${password}` : &#039;&#039;}`);
+        }
+
+        if (sendResetEmail) {
+            const userEmail = await user.getUserField(uid, &#039;email&#039;);
+            if (!userEmail) {
+                return winston.error(&#039;User doesn\&#039;t have an email address to send reset email.&#039;);
+            }
+            await setupApp();
+            await user.reset.send(userEmail);
+            winston.info(&#039;[userCmd/reset] Password reset email has been sent.&#039;);
+        }
+    }
+
+    async function deleteUser(uids, { type }) {
+        uids = argParsers.intArrayParse(uids, &#039;uids&#039;);
+
+        const userExists = await user.exists(uids);
+        if (!userExists || userExists.some(r =&gt; r === false)) {
+            return winston.error(`[userCmd/reset] A user with given uid does not exists.`);
+        }
+
+        await db.initSessionStore();
+        const adminUid = await getAdminUidOrFail();
+
+        switch (type) {
+        case &#039;purge&#039;:
+            await Promise.all(uids.map(uid =&gt; user.delete(adminUid, uid)));
+            winston.info(`[userCmd/delete] User(s) with their content has been deleted.`);
+            break;
+        case &#039;account&#039;:
+            await Promise.all(uids.map(uid =&gt; user.deleteAccount(uid)));
+            winston.info(`[userCmd/delete] User(s) has been deleted, their content left intact.`);
+            break;
+        case &#039;content&#039;:
+            await Promise.all(uids.map(uid =&gt; user.deleteContent(adminUid, uid)));
+            winston.info(`[userCmd/delete] User(s)&#039; content has been deleted.`);
+            break;
+        }
+    }
+
+    async function makeAdmin(uids) {
+        uids = argParsers.intArrayParse(uids, &#039;uids&#039;);
+        await Promise.all(uids.map(uid =&gt; groups.join(&#039;administrators&#039;, uid)));
+
+        winston.info(&#039;[userCmd/make/admin] User(s) added as administrators.&#039;);
+    }
+
+    async function makeGlobalMod(uids) {
+        uids = argParsers.intArrayParse(uids, &#039;uids&#039;);
+        await Promise.all(uids.map(uid =&gt; groups.join(&#039;Global Moderators&#039;, uid)));
+
+        winston.info(&#039;[userCmd/make/globalMod] User(s) added as global moderators.&#039;);
+    }
+
+    async function makeMod(uids, { cid: cids }) {
+        uids = argParsers.intArrayParse(uids, &#039;uids&#039;);
+        cids = argParsers.intArrayParse(cids, &#039;cids&#039;);
+
+        const categoryPrivList = await privileges.categories.getPrivilegeList();
+        await privHelpers.giveOrRescind(groups.join, categoryPrivList, cids, uids);
+
+        winston.info(&#039;[userCmd/make/mod] User(s) added as moderators to given categories.&#039;);
+    }
+
+    async function makeRegular(uids) {
+        uids = argParsers.intArrayParse(uids, &#039;uids&#039;);
+
+        await Promise.all(uids.map(uid =&gt; groups.leave([&#039;administrators&#039;, &#039;Global Moderators&#039;], uid)));
+
+        const categoryPrivList = await privileges.categories.getPrivilegeList();
+        const cids = await db.getSortedSetRevRange(&#039;categories:cid&#039;, 0, -1);
+        await privHelpers.giveOrRescind(groups.leave, categoryPrivList, cids, uids);
+
+        winston.info(&#039;[userCmd/make/regular] User(s) made regular/non-privileged.&#039;);
+    }
+
+    return {
+        info,
+        create,
+        reset,
+        deleteUser,
+        makeAdmin,
+        makeGlobalMod,
+        makeMod,
+        makeRegular,
+    };
+}</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

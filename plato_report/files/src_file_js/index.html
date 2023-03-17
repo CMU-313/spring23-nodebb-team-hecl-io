@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/file.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/file.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">158</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">33.40</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.53</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const fs = require(&#039;fs&#039;);
+const nconf = require(&#039;nconf&#039;);
+const path = require(&#039;path&#039;);
+const winston = require(&#039;winston&#039;);
+const mkdirp = require(&#039;mkdirp&#039;);
+const mime = require(&#039;mime&#039;);
+const graceful = require(&#039;graceful-fs&#039;);
+
+const slugify = require(&#039;./slugify&#039;);
+
+graceful.gracefulify(fs);
+
+const file = module.exports;
+
+file.saveFileToLocal = async function (filename, folder, tempPath) {
+    /*
+     * remarkable doesn&#039;t allow spaces in hyperlinks, once that&#039;s fixed, remove this.
+     */
+    filename = filename.split(&#039;.&#039;).map(name =&gt; slugify(name)).join(&#039;.&#039;);
+
+    const uploadPath = path.join(nconf.get(&#039;upload_path&#039;), folder, filename);
+    if (!uploadPath.startsWith(nconf.get(&#039;upload_path&#039;))) {
+        throw new Error(&#039;[[error:invalid-path]]&#039;);
+    }
+
+    winston.verbose(`Saving file ${filename} to : ${uploadPath}`);
+    await mkdirp(path.dirname(uploadPath));
+    await fs.promises.copyFile(tempPath, uploadPath);
+    return {
+        url: `/assets/uploads/${folder ? `${folder}/` : &#039;&#039;}${filename}`,
+        path: uploadPath,
+    };
+};
+
+file.base64ToLocal = async function (imageData, uploadPath) {
+    const buffer = Buffer.from(imageData.slice(imageData.indexOf(&#039;base64&#039;) + 7), &#039;base64&#039;);
+    uploadPath = path.join(nconf.get(&#039;upload_path&#039;), uploadPath);
+
+    await fs.promises.writeFile(uploadPath, buffer, {
+        encoding: &#039;base64&#039;,
+    });
+    return uploadPath;
+};
+
+// https://stackoverflow.com/a/31205878/583363
+file.appendToFileName = function (filename, string) {
+    const dotIndex = filename.lastIndexOf(&#039;.&#039;);
+    if (dotIndex === -1) {
+        return filename + string;
+    }
+    return filename.substring(0, dotIndex) + string + filename.substring(dotIndex);
+};
+
+file.allowedExtensions = function () {
+    const meta = require(&#039;./meta&#039;);
+    let allowedExtensions = (meta.config.allowedFileExtensions || &#039;&#039;).trim();
+    if (!allowedExtensions) {
+        return [];
+    }
+    allowedExtensions = allowedExtensions.split(&#039;,&#039;);
+    allowedExtensions = allowedExtensions.filter(Boolean).map((extension) =&gt; {
+        extension = extension.trim();
+        if (!extension.startsWith(&#039;.&#039;)) {
+            extension = `.${extension}`;
+        }
+        return extension.toLowerCase();
+    });
+
+    if (allowedExtensions.includes(&#039;.jpg&#039;) &amp;&amp; !allowedExtensions.includes(&#039;.jpeg&#039;)) {
+        allowedExtensions.push(&#039;.jpeg&#039;);
+    }
+
+    return allowedExtensions;
+};
+
+file.exists = async function (path) {
+    try {
+        await fs.promises.stat(path);
+    } catch (err) {
+        if (err.code === &#039;ENOENT&#039;) {
+            return false;
+        }
+        throw err;
+    }
+    return true;
+};
+
+file.existsSync = function (path) {
+    try {
+        fs.statSync(path);
+    } catch (err) {
+        if (err.code === &#039;ENOENT&#039;) {
+            return false;
+        }
+        throw err;
+    }
+
+    return true;
+};
+
+file.delete = async function (path) {
+    if (!path) {
+        return;
+    }
+    try {
+        await fs.promises.unlink(path);
+    } catch (err) {
+        if (err.code === &#039;ENOENT&#039;) {
+            winston.verbose(`[file] Attempted to delete non-existent file: ${path}`);
+            return;
+        }
+
+        winston.warn(err);
+    }
+};
+
+file.link = async function link(filePath, destPath, relative) {
+    if (relative &amp;&amp; process.platform !== &#039;win32&#039;) {
+        filePath = path.relative(path.dirname(destPath), filePath);
+    }
+
+    if (process.platform === &#039;win32&#039;) {
+        await fs.promises.link(filePath, destPath);
+    } else {
+        await fs.promises.symlink(filePath, destPath, &#039;file&#039;);
+    }
+};
+
+file.linkDirs = async function linkDirs(sourceDir, destDir, relative) {
+    if (relative &amp;&amp; process.platform !== &#039;win32&#039;) {
+        sourceDir = path.relative(path.dirname(destDir), sourceDir);
+    }
+
+    const type = (process.platform === &#039;win32&#039;) ? &#039;junction&#039; : &#039;dir&#039;;
+    await fs.promises.symlink(sourceDir, destDir, type);
+};
+
+file.typeToExtension = function (type) {
+    let extension = &#039;&#039;;
+    if (type) {
+        extension = `.${mime.getExtension(type)}`;
+    }
+    return extension;
+};
+
+// Adapted from http://stackoverflow.com/questions/5827612/node-js-fs-readdir-recursive-directory-search
+file.walk = async function (dir) {
+    const subdirs = await fs.promises.readdir(dir);
+    const files = await Promise.all(subdirs.map(async (subdir) =&gt; {
+        const res = path.resolve(dir, subdir);
+        return (await fs.promises.stat(res)).isDirectory() ? file.walk(res) : res;
+    }));
+    return files.reduce((a, f) =&gt; a.concat(f), []);
+};
+
+require(&#039;./promisify&#039;)(file);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

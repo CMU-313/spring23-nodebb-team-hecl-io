@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/upgrade.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/upgrade.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">64.55</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">203</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">50.20</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.56</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const path = require(&#039;path&#039;);
+const util = require(&#039;util&#039;);
+const semver = require(&#039;semver&#039;);
+const readline = require(&#039;readline&#039;);
+const winston = require(&#039;winston&#039;);
+const chalk = require(&#039;chalk&#039;);
+
+const plugins = require(&#039;./plugins&#039;);
+const db = require(&#039;./database&#039;);
+const file = require(&#039;./file&#039;);
+const { paths } = require(&#039;./constants&#039;);
+/*
+ * Need to write an upgrade script for NodeBB? Cool.
+ *
+ * 1. Copy TEMPLATE to a unique file name of your choice. Try to be succinct.
+ * 2. Open up that file and change the user-friendly name (can be longer/more descriptive than the file name)
+ *    and timestamp (don&#039;t forget the timestamp!)
+ * 3. Add your script under the &quot;method&quot; property
+ */
+
+const Upgrade = module.exports;
+
+Upgrade.getAll = async function () {
+    let files = await file.walk(path.join(__dirname, &#039;./upgrades&#039;));
+
+    // Sort the upgrade scripts based on version
+    files = files.filter(file =&gt; path.basename(file) !== &#039;TEMPLATE&#039;).sort((a, b) =&gt; {
+        const versionA = path.dirname(a).split(path.sep).pop();
+        const versionB = path.dirname(b).split(path.sep).pop();
+        const semverCompare = semver.compare(versionA, versionB);
+        if (semverCompare) {
+            return semverCompare;
+        }
+        const timestampA = require(a).timestamp;
+        const timestampB = require(b).timestamp;
+        return timestampA - timestampB;
+    });
+
+    await Upgrade.appendPluginScripts(files);
+
+    // check duplicates and error
+    const seen = {};
+    const dupes = [];
+    files.forEach((file) =&gt; {
+        if (seen[file]) {
+            dupes.push(file);
+        } else {
+            seen[file] = true;
+        }
+    });
+    if (dupes.length) {
+        winston.error(`Found duplicate upgrade scripts\n${dupes}`);
+        throw new Error(&#039;[[error:duplicate-upgrade-scripts]]&#039;);
+    }
+
+    return files;
+};
+
+Upgrade.appendPluginScripts = async function (files) {
+    // Find all active plugins
+    const activePlugins = await plugins.getActive();
+    activePlugins.forEach((plugin) =&gt; {
+        const configPath = path.join(paths.nodeModules, plugin, &#039;plugin.json&#039;);
+        try {
+            const pluginConfig = require(configPath);
+            if (pluginConfig.hasOwnProperty(&#039;upgrades&#039;) &amp;&amp; Array.isArray(pluginConfig.upgrades)) {
+                pluginConfig.upgrades.forEach((script) =&gt; {
+                    files.push(path.join(path.dirname(configPath), script));
+                });
+            }
+        } catch (e) {
+            if (e.code !== &#039;MODULE_NOT_FOUND&#039;) {
+                winston.error(e.stack);
+            }
+        }
+    });
+    return files;
+};
+
+Upgrade.check = async function () {
+    // Throw &#039;schema-out-of-date&#039; if not all upgrade scripts have run
+    const files = await Upgrade.getAll();
+    const executed = await db.getSortedSetRange(&#039;schemaLog&#039;, 0, -1);
+    const remainder = files.filter(name =&gt; !executed.includes(path.basename(name, &#039;.js&#039;)));
+    if (remainder.length &gt; 0) {
+        throw new Error(&#039;schema-out-of-date&#039;);
+    }
+};
+
+Upgrade.run = async function () {
+    console.log(&#039;\nParsing upgrade scripts... &#039;);
+
+    const [completed, available] = await Promise.all([
+        db.getSortedSetRange(&#039;schemaLog&#039;, 0, -1),
+        Upgrade.getAll(),
+    ]);
+
+    let skipped = 0;
+    const queue = available.filter((cur) =&gt; {
+        const upgradeRan = completed.includes(path.basename(cur, &#039;.js&#039;));
+        if (upgradeRan) {
+            skipped += 1;
+        }
+        return !upgradeRan;
+    });
+
+    await Upgrade.process(queue, skipped);
+};
+
+Upgrade.runParticular = async function (names) {
+    console.log(&#039;\nParsing upgrade scripts... &#039;);
+    const files = await file.walk(path.join(__dirname, &#039;./upgrades&#039;));
+    await Upgrade.appendPluginScripts(files);
+    const upgrades = files.filter(file =&gt; names.includes(path.basename(file, &#039;.js&#039;)));
+    await Upgrade.process(upgrades, 0);
+};
+
+Upgrade.process = async function (files, skipCount) {
+    console.log(`${chalk.green(&#039;OK&#039;)} | ${chalk.cyan(`${files.length} script(s) found`)}${skipCount &gt; 0 ? chalk.cyan(`, ${skipCount} skipped`) : &#039;&#039;}`);
+    const [schemaDate, schemaLogCount] = await Promise.all([
+        db.get(&#039;schemaDate&#039;),
+        db.sortedSetCard(&#039;schemaLog&#039;),
+    ]);
+
+    for (const file of files) {
+        /* eslint-disable no-await-in-loop */
+        const scriptExport = require(file);
+        const date = new Date(scriptExport.timestamp);
+        const version = path.dirname(file).split(&#039;/&#039;).pop();
+        const progress = {
+            current: 0,
+            counter: 0,
+            total: 0,
+            incr: Upgrade.incrementProgress,
+            script: scriptExport,
+            date: date,
+        };
+
+        process.stdout.write(`${chalk.white(&#039;  → &#039;) + chalk.gray(`[${[date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()].join(&#039;/&#039;)}] `) + scriptExport.name}...`);
+
+        // For backwards compatibility, cross-reference with schemaDate (if found). If a script&#039;s date is older, skip it
+        if ((!schemaDate &amp;&amp; !schemaLogCount) || (scriptExport.timestamp &lt;= schemaDate &amp;&amp; semver.lt(version, &#039;1.5.0&#039;))) {
+            process.stdout.write(chalk.grey(&#039; skipped\n&#039;));
+
+            await db.sortedSetAdd(&#039;schemaLog&#039;, Date.now(), path.basename(file, &#039;.js&#039;));
+            // eslint-disable-next-line no-continue
+            continue;
+        }
+
+        // Promisify method if necessary
+        if (scriptExport.method.constructor &amp;&amp; scriptExport.method.constructor.name !== &#039;AsyncFunction&#039;) {
+            scriptExport.method = util.promisify(scriptExport.method);
+        }
+
+        // Do the upgrade...
+        const upgradeStart = Date.now();
+        try {
+            await scriptExport.method.bind({
+                progress: progress,
+            })();
+        } catch (err) {
+            console.error(&#039;Error occurred&#039;);
+            throw err;
+        }
+        const upgradeDuration = ((Date.now() - upgradeStart) / 1000).toFixed(2);
+        process.stdout.write(chalk.green(` OK (${upgradeDuration} seconds)\n`));
+
+        // Record success in schemaLog
+        await db.sortedSetAdd(&#039;schemaLog&#039;, Date.now(), path.basename(file, &#039;.js&#039;));
+    }
+
+    console.log(chalk.green(&#039;Schema update complete!\n&#039;));
+};
+
+Upgrade.incrementProgress = function (value) {
+    // Newline on first invocation
+    if (this.current === 0) {
+        process.stdout.write(&#039;\n&#039;);
+    }
+
+    this.current += value || 1;
+    this.counter += value || 1;
+    const step = (this.total ? Math.floor(this.total / 100) : 100);
+
+    if (this.counter &gt; step || this.current &gt;= this.total) {
+        this.counter -= step;
+        let percentage = 0;
+        let filled = 0;
+        let unfilled = 15;
+        if (this.total) {
+            percentage = `${Math.floor((this.current / this.total) * 100)}%`;
+            filled = Math.floor((this.current / this.total) * 15);
+            unfilled = Math.max(0, 15 - filled);
+        }
+
+        readline.cursorTo(process.stdout, 0);
+        process.stdout.write(`    [${filled ? new Array(filled).join(&#039;#&#039;) : &#039;&#039;}${new Array(unfilled).join(&#039; &#039;)}] (${this.current}/${this.total || &#039;??&#039;}) ${percentage} `);
+    }
+};
+
+require(&#039;./promisify&#039;)(Upgrade);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

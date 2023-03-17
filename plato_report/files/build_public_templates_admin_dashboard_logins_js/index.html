@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/dashboard/logins.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/dashboard/logins.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.09</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">120</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">60.40</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.89</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;row dashboard\&quot;&gt;\n    &lt;div class=\&quot;col-xs-12\&quot;&gt;\n        &lt;a class=\&quot;btn btn-link\&quot; href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/admin/dashboard\&quot;&gt;\n            &lt;i class=\&quot;fa fa-chevron-left\&quot;&gt;&lt;/i&gt;\n            [[admin/dashboard:back-to-dashboard]]\n        &lt;/a&gt;\n\n        &lt;div class=\&quot;panel panel-default\&quot; id=\&quot;analytics-panel\&quot;&gt;\n    &lt;div class=\&quot;panel-heading\&quot;&gt;\n        [[admin/dashboard:forum-traffic]]\n        &lt;div class=\&quot;pull-right\&quot;&gt;\n            &lt;a href=\&quot;#\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-expand\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/div&gt;\n        &lt;div class=\&quot;pull-right\&quot;&gt;\n            &lt;a target=\&quot;_blank\&quot; id=\&quot;view-as-json\&quot; href=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/api/v3/admin/analytics/&quot; + 
+      __escape(guard((context != null) ? context[&#039;set&#039;] : null)) + 
+      &quot;?type=hourly\&quot;&gt;&lt;i class=\&quot;fa fa-fw fa-terminal\&quot;&gt;&lt;/i&gt;&lt;/a&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n    &lt;div class=\&quot;panel-body\&quot;&gt;\n        &lt;div class=\&quot;graph-container\&quot; id=\&quot;analytics-traffic-container\&quot;&gt;\n            &lt;canvas id=\&quot;analytics-traffic\&quot; width=\&quot;100%\&quot; height=\&quot;400\&quot;&gt;&lt;/canvas&gt;\n        &lt;/div&gt;\n        &lt;hr/&gt;\n        &lt;div class=\&quot;row\&quot;&gt;\n            &lt;div class=\&quot;col-sm-3 hidden-xs text-center pageview-stats\&quot;&gt;\n                &lt;div&gt;&lt;strong id=\&quot;pageViewsThirty\&quot;&gt;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;month&#039;] : null) ?
+        __escape(guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;month&#039;] : null)) :
+        &quot;0&quot;) + 
+      &quot;&lt;/strong&gt;&lt;/div&gt;\n                &lt;div&gt;&lt;a href=\&quot;#\&quot; class=\&quot;updatePageviewsGraph\&quot; data-action=\&quot;updateGraph\&quot; data-units=\&quot;days\&quot; data-amount=\&quot;30\&quot;&gt;[[admin/dashboard:page-views-thirty]]&lt;/a&gt;&lt;/div&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;col-sm-3 text-center pageview-stats\&quot;&gt;\n                &lt;div&gt;&lt;strong id=\&quot;pageViewsSeven\&quot;&gt;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;week&#039;] : null) ?
+        __escape(guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;week&#039;] : null)) :
+        &quot;0&quot;) + 
+      &quot;&lt;/strong&gt;&lt;/div&gt;\n                &lt;div&gt;&lt;a href=\&quot;#\&quot; class=\&quot;updatePageviewsGraph\&quot; data-action=\&quot;updateGraph\&quot; data-units=\&quot;days\&quot; data-amount=\&quot;7\&quot;&gt;[[admin/dashboard:page-views-seven]]&lt;/a&gt;&lt;/div&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;col-sm-3 hidden-xs text-center pageview-stats\&quot;&gt;\n                &lt;div&gt;&lt;strong id=\&quot;pageViewsPastDay\&quot;&gt;&quot; + 
+      (guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;day&#039;] : null) ?
+        __escape(guard((context != null &amp;&amp; context[&#039;summary&#039;] != null) ? context[&#039;summary&#039;][&#039;day&#039;] : null)) :
+        &quot;0&quot;) + 
+      &quot;&lt;/strong&gt;&lt;/div&gt;\n                &lt;div&gt;&lt;a href=\&quot;#\&quot; class=\&quot;updatePageviewsGraph\&quot; data-action=\&quot;updateGraph\&quot; data-units=\&quot;hours\&quot; data-amount=\&quot;24\&quot;&gt;[[admin/dashboard:page-views-last-day]]&lt;/a&gt;&lt;/div&gt;\n            &lt;/div&gt;\n            &lt;div class=\&quot;col-sm-3 text-center pageview-stats\&quot;&gt;\n                &lt;div&gt;&lt;strong&gt;&lt;i class=\&quot;fa fa-clock-o\&quot;&gt;&lt;/i&gt;&lt;/strong&gt;&lt;/div&gt;\n                &lt;div&gt;&lt;a href=\&quot;#\&quot; class=\&quot;updatePageviewsGraph\&quot; data-action=\&quot;updateGraph\&quot; data-units=\&quot;custom\&quot;&gt;[[admin/dashboard:page-views-custom]]&lt;/a&gt;&lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n        &lt;div class=\&quot;table-responsive\&quot;&gt;\n    &lt;table class=\&quot;table table-striped\&quot;&gt;\n        &lt;thead&gt;\n            &lt;tr&gt;\n                &lt;th&gt;&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.yesterday]]&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.today]]&lt;/th&gt;\n                &lt;th&gt;&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.last-week]]&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.this-week]]&lt;/th&gt;\n                &lt;th&gt;&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.last-month]]&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.this-month]]&lt;/th&gt;\n                &lt;th&gt;&lt;/th&gt;\n                &lt;th class=\&quot;text-right\&quot;&gt;[[admin/dashboard:stats.all]]&lt;/th&gt;\n            &lt;/tr&gt;\n        &lt;/thead&gt;\n        &lt;tbody&gt;\n            &quot; + 
+      compiled.blocks[&#039;stats&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n        &lt;/tbody&gt;\n    &lt;/table&gt;\n&lt;/div&gt;\n\n        &lt;div class=\&quot;alert alert-info\&quot;&gt;[[admin/dashboard:details.logins-static, &quot; + 
+      __escape(guard((context != null) ? context[&#039;loginDays&#039;] : null)) + 
+      &quot;]]&lt;/div&gt;\n        &lt;table class=\&quot;table table-striped\&quot;&gt;\n            &lt;thead&gt;\n                &lt;th class=\&quot;text-muted\&quot;&gt;[[admin/manage/users:users.username]]&lt;/th&gt;\n                &lt;th data-sort=\&quot;joindate\&quot;&gt;[[admin/dashboard:details.logins-login-time]]&lt;/th&gt;\n            &lt;/thead&gt;\n            &lt;tbody&gt;\n                &quot; + 
+      (guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null) ? context[&#039;sessions&#039;][&#039;length&#039;] : null) ?
+        &quot;&quot; :
+        &quot;\n                &lt;tr&gt;\n                    &lt;td colspan=4\&quot; class=\&quot;text-center\&quot;&gt;&lt;em&gt;[[admin/dashboard:details.no-logins]]&lt;/em&gt;&lt;/td&gt;\n                &lt;/tr&gt;\n                &quot;) + 
+      &quot;\n                &quot; + 
+      compiled.blocks[&#039;sessions&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n            &lt;/tbody&gt;\n        &lt;/table&gt;\n    &lt;/div&gt;\n&lt;/div&gt;&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;stats&#039;: function stats(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;stats&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n            &lt;tr&gt;\n                &lt;td&gt;\n                    &lt;strong&gt;\n                        &quot; + 
+          (guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;href&#039;] : null) ?
+            &quot;\n                            &lt;a href=\&quot;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;href&#039;] : null)) + 
+              &quot;\&quot;&gt;&quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;name&#039;] : null)) + 
+              &quot;&lt;/a&gt;\n                        &quot; :
+            &quot;\n                            &quot; + 
+              __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;name&#039;] : null)) + 
+              &quot;\n                        &quot;) + 
+          &quot;\n                    &lt;/strong&gt;\n                &lt;/td&gt;\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;yesterday&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;today&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;dayTextClass&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;small&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;dayIncrease&#039;] : null)) + 
+          &quot;%&lt;/small&gt;&lt;/td&gt;\n\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;lastweek&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;thisweek&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;weekTextClass&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;small&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;weekIncrease&#039;] : null)) + 
+          &quot;%&lt;/small&gt;&lt;/td&gt;\n\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;lastmonth&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;thismonth&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n                &lt;td class=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;monthTextClass&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;small&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;monthIncrease&#039;] : null)) + 
+          &quot;%&lt;/small&gt;&lt;/td&gt;\n\n                &lt;td class=\&quot;text-right formatted-number\&quot;&gt;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;stats&#039;] != null &amp;&amp; context[&#039;stats&#039;][key0] != null) ? context[&#039;stats&#039;][key0][&#039;alltime&#039;] : null)) + 
+          &quot;&lt;/td&gt;\n            &lt;/tr&gt;\n            &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    },
+    &#039;sessions&#039;: function sessions(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;sessions&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n                &lt;tr&gt;\n                    &lt;td&gt;\n                        &lt;a href=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+          &quot;/uid/&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null &amp;&amp; context[&#039;sessions&#039;][key0][&#039;user&#039;] != null) ? context[&#039;sessions&#039;][key0][&#039;user&#039;][&#039;uid&#039;] : null)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(helper(context, helpers, &#039;buildAvatar&#039;, [guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;user&#039;] : null), &quot;sm&quot;, guard((context != null) ? context[&#039;true&#039;] : null)])) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;username&#039;] : null)) + 
+          &quot;&lt;/a&gt;\n                        &quot; + 
+          __escape(helper(context, helpers, &#039;userAgentIcons&#039;, [guard(value)])) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;browser&#039;] : null)) + 
+          &quot; &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;version&#039;] : null)) + 
+          &quot; on &quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;platform&#039;] : null)) + 
+          &quot;\n                    &lt;/td&gt;\n                    &lt;td&gt;&lt;span class=\&quot;timeago\&quot; title=\&quot;&quot; + 
+          __escape(guard((context != null &amp;&amp; context[&#039;sessions&#039;] != null &amp;&amp; context[&#039;sessions&#039;][key0] != null) ? context[&#039;sessions&#039;][key0][&#039;datetimeISO&#039;] : null)) + 
+          &quot;\&quot;&gt;&lt;/span&gt;&lt;/td&gt;\n                &lt;/tr&gt;\n                &quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/posts/summary.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/posts/summary.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.14</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">104</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">25.73</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.37</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const topics = require(&#039;../topics&#039;);
+const user = require(&#039;../user&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const categories = require(&#039;../categories&#039;);
+const utils = require(&#039;../utils&#039;);
+
+module.exports = function (Posts) {
+    Posts.getPostSummaryByPids = async function (pids, uid, options) {
+        if (!Array.isArray(pids) || !pids.length) {
+            return [];
+        }
+
+        options.stripTags = options.hasOwnProperty(&#039;stripTags&#039;) ? options.stripTags : false;
+        options.parse = options.hasOwnProperty(&#039;parse&#039;) ? options.parse : true;
+        options.extraFields = options.hasOwnProperty(&#039;extraFields&#039;) ? options.extraFields : [];
+
+        const fields = [&#039;pid&#039;, &#039;tid&#039;, &#039;content&#039;, &#039;uid&#039;, &#039;timestamp&#039;, &#039;deleted&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;, &#039;replies&#039;, &#039;handle&#039;].concat(options.extraFields);
+
+        let posts = await Posts.getPostsFields(pids, fields);
+        posts = posts.filter(Boolean);
+        posts = await user.blocks.filter(uid, posts);
+
+        const uids = _.uniq(posts.map(p =&gt; p &amp;&amp; p.uid));
+        const tids = _.uniq(posts.map(p =&gt; p &amp;&amp; p.tid));
+
+        const [users, topicsAndCategories] = await Promise.all([
+            user.getUsersFields(uids, [&#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;, &#039;status&#039;]),
+            getTopicAndCategories(tids),
+        ]);
+
+        const uidToUser = toObject(&#039;uid&#039;, users);
+        const tidToTopic = toObject(&#039;tid&#039;, topicsAndCategories.topics);
+        const cidToCategory = toObject(&#039;cid&#039;, topicsAndCategories.categories);
+
+        posts.forEach((post) =&gt; {
+            // If the post author isn&#039;t represented in the retrieved users&#039; data,
+            // then it means they were deleted, assume guest.
+            if (!uidToUser.hasOwnProperty(post.uid)) {
+                post.uid = 0;
+            }
+            post.user = uidToUser[post.uid];
+            Posts.overrideGuestHandle(post, post.handle);
+            post.handle = undefined;
+            post.topic = tidToTopic[post.tid];
+            post.category = post.topic &amp;&amp; cidToCategory[post.topic.cid];
+            post.isMainPost = post.topic &amp;&amp; post.pid === post.topic.mainPid;
+            post.deleted = post.deleted === 1;
+            post.timestampISO = utils.toISOString(post.timestamp);
+        });
+
+        posts = posts.filter(post =&gt; tidToTopic[post.tid]);
+
+        posts = await parsePosts(posts, options);
+        const result = await plugins.hooks.fire(&#039;filter:post.getPostSummaryByPids&#039;, { posts: posts, uid: uid });
+        return result.posts;
+    };
+
+    async function parsePosts(posts, options) {
+        return await Promise.all(posts.map(async (post) =&gt; {
+            if (!post.content || !options.parse) {
+                post.content = post.content ? validator.escape(String(post.content)) : post.content;
+                return post;
+            }
+            post = await Posts.parsePost(post);
+            if (options.stripTags) {
+                post.content = stripTags(post.content);
+            }
+            return post;
+        }));
+    }
+
+    async function getTopicAndCategories(tids) {
+        const topicsData = await topics.getTopicsFields(tids, [
+            &#039;uid&#039;, &#039;tid&#039;, &#039;title&#039;, &#039;cid&#039;, &#039;tags&#039;, &#039;slug&#039;,
+            &#039;deleted&#039;, &#039;scheduled&#039;, &#039;postcount&#039;, &#039;mainPid&#039;, &#039;teaserPid&#039;,
+        ]);
+        const cids = _.uniq(topicsData.map(topic =&gt; topic &amp;&amp; topic.cid));
+        const categoriesData = await categories.getCategoriesFields(cids, [
+            &#039;cid&#039;, &#039;name&#039;, &#039;icon&#039;, &#039;slug&#039;, &#039;parentCid&#039;,
+            &#039;bgColor&#039;, &#039;color&#039;, &#039;backgroundImage&#039;, &#039;imageClass&#039;,
+        ]);
+        return { topics: topicsData, categories: categoriesData };
+    }
+
+    function toObject(key, data) {
+        const obj = {};
+        for (let i = 0; i &lt; data.length; i += 1) {
+            obj[data[i][key]] = data[i];
+        }
+        return obj;
+    }
+
+    function stripTags(content) {
+        if (content) {
+            return utils.stripHTMLTags(content, utils.stripTags);
+        }
+        return content;
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/install.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/install.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">59.21</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">618</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">44.88</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.20</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const fs = require(&#039;fs&#039;);
+const url = require(&#039;url&#039;);
+const path = require(&#039;path&#039;);
+const prompt = require(&#039;prompt&#039;);
+const winston = require(&#039;winston&#039;);
+const nconf = require(&#039;nconf&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const utils = require(&#039;./utils&#039;);
+
+const install = module.exports;
+const questions = {};
+
+questions.main = [
+    {
+        name: &#039;url&#039;,
+        description: &#039;URL used to access this NodeBB&#039;,
+        default:
+            nconf.get(&#039;url&#039;) || &#039;http://127.0.0.1:4567&#039;,
+        pattern: /^http(?:s)?:\/\//,
+        message: &#039;Base URL must begin with \&#039;http://\&#039; or \&#039;https://\&#039;&#039;,
+    },
+    {
+        name: &#039;secret&#039;,
+        description: &#039;Please enter a NodeBB secret&#039;,
+        default: nconf.get(&#039;secret&#039;) || utils.generateUUID(),
+    },
+    {
+        name: &#039;submitPluginUsage&#039;,
+        description: &#039;Would you like to submit anonymous plugin usage to nbbpm?&#039;,
+        default: &#039;yes&#039;,
+    },
+    {
+        name: &#039;database&#039;,
+        description: &#039;Which database to use&#039;,
+        default: nconf.get(&#039;database&#039;) || &#039;mongo&#039;,
+    },
+];
+
+questions.optional = [
+    {
+        name: &#039;port&#039;,
+        default: nconf.get(&#039;port&#039;) || 4567,
+    },
+];
+
+function checkSetupFlagEnv() {
+    let setupVal = install.values;
+
+    const envConfMap = {
+        NODEBB_URL: &#039;url&#039;,
+        NODEBB_PORT: &#039;port&#039;,
+        NODEBB_ADMIN_USERNAME: &#039;admin:username&#039;,
+        NODEBB_ADMIN_PASSWORD: &#039;admin:password&#039;,
+        NODEBB_ADMIN_EMAIL: &#039;admin:email&#039;,
+        NODEBB_DB: &#039;database&#039;,
+        NODEBB_DB_HOST: &#039;host&#039;,
+        NODEBB_DB_PORT: &#039;port&#039;,
+        NODEBB_DB_USER: &#039;username&#039;,
+        NODEBB_DB_PASSWORD: &#039;password&#039;,
+        NODEBB_DB_NAME: &#039;database&#039;,
+        NODEBB_DB_SSL: &#039;ssl&#039;,
+    };
+
+    // Set setup values from env vars (if set)
+    const envKeys = Object.keys(process.env);
+    if (Object.keys(envConfMap).some(key =&gt; envKeys.includes(key))) {
+        winston.info(&#039;[install/checkSetupFlagEnv] checking env vars for setup info...&#039;);
+        setupVal = setupVal || {};
+
+        Object.entries(process.env).forEach(([evName, evValue]) =&gt; { // get setup values from env
+            if (evName.startsWith(&#039;NODEBB_DB_&#039;)) {
+                setupVal[`${process.env.NODEBB_DB}:${envConfMap[evName]}`] = evValue;
+            } else if (evName.startsWith(&#039;NODEBB_&#039;)) {
+                setupVal[envConfMap[evName]] = evValue;
+            }
+        });
+
+        setupVal[&#039;admin:password:confirm&#039;] = setupVal[&#039;admin:password&#039;];
+    }
+
+    // try to get setup values from json, if successful this overwrites all values set by env
+    // TODO: better behaviour would be to support overrides per value, i.e. in order of priority (generic pattern):
+    //       flag, env, config file, default
+    try {
+        if (nconf.get(&#039;setup&#039;)) {
+            const setupJSON = JSON.parse(nconf.get(&#039;setup&#039;));
+            setupVal = { ...setupVal, ...setupJSON };
+        }
+    } catch (err) {
+        winston.error(&#039;[install/checkSetupFlagEnv] invalid json in nconf.get(\&#039;setup\&#039;), ignoring setup values from json&#039;);
+    }
+
+    if (setupVal &amp;&amp; typeof setupVal === &#039;object&#039;) {
+        if (setupVal[&#039;admin:username&#039;] &amp;&amp; setupVal[&#039;admin:password&#039;] &amp;&amp; setupVal[&#039;admin:password:confirm&#039;] &amp;&amp; setupVal[&#039;admin:email&#039;]) {
+            install.values = setupVal;
+        } else {
+            winston.error(&#039;[install/checkSetupFlagEnv] required values are missing for automated setup:&#039;);
+            if (!setupVal[&#039;admin:username&#039;]) {
+                winston.error(&#039;  admin:username&#039;);
+            }
+            if (!setupVal[&#039;admin:password&#039;]) {
+                winston.error(&#039;  admin:password&#039;);
+            }
+            if (!setupVal[&#039;admin:password:confirm&#039;]) {
+                winston.error(&#039;  admin:password:confirm&#039;);
+            }
+            if (!setupVal[&#039;admin:email&#039;]) {
+                winston.error(&#039;  admin:email&#039;);
+            }
+
+            process.exit();
+        }
+    } else if (nconf.get(&#039;database&#039;)) {
+        install.values = install.values || {};
+        install.values.database = nconf.get(&#039;database&#039;);
+    }
+}
+
+function checkCIFlag() {
+    let ciVals;
+    try {
+        ciVals = JSON.parse(nconf.get(&#039;ci&#039;));
+    } catch (e) {
+        ciVals = undefined;
+    }
+
+    if (ciVals &amp;&amp; ciVals instanceof Object) {
+        if (ciVals.hasOwnProperty(&#039;host&#039;) &amp;&amp; ciVals.hasOwnProperty(&#039;port&#039;) &amp;&amp; ciVals.hasOwnProperty(&#039;database&#039;)) {
+            install.ciVals = ciVals;
+        } else {
+            winston.error(&#039;[install/checkCIFlag] required values are missing for automated CI integration:&#039;);
+            if (!ciVals.hasOwnProperty(&#039;host&#039;)) {
+                winston.error(&#039;  host&#039;);
+            }
+            if (!ciVals.hasOwnProperty(&#039;port&#039;)) {
+                winston.error(&#039;  port&#039;);
+            }
+            if (!ciVals.hasOwnProperty(&#039;database&#039;)) {
+                winston.error(&#039;  database&#039;);
+            }
+
+            process.exit();
+        }
+    }
+}
+
+async function setupConfig() {
+    const configureDatabases = require(&#039;../install/databases&#039;);
+
+    // prompt prepends &quot;prompt: &quot; to questions, let&#039;s clear that.
+    prompt.start();
+    prompt.message = &#039;&#039;;
+    prompt.delimiter = &#039;&#039;;
+    prompt.colors = false;
+    let config = {};
+
+    if (install.values) {
+        // Use provided values, fall back to defaults
+        const redisQuestions = require(&#039;./database/redis&#039;).questions;
+        const mongoQuestions = require(&#039;./database/mongo&#039;).questions;
+        const postgresQuestions = require(&#039;./database/postgres&#039;).questions;
+        const allQuestions = [
+            ...questions.main,
+            ...questions.optional,
+            ...redisQuestions,
+            ...mongoQuestions,
+            ...postgresQuestions,
+        ];
+
+        allQuestions.forEach((question) =&gt; {
+            if (install.values.hasOwnProperty(question.name)) {
+                config[question.name] = install.values[question.name];
+            } else if (question.hasOwnProperty(&#039;default&#039;)) {
+                config[question.name] = question.default;
+            } else {
+                config[question.name] = undefined;
+            }
+        });
+    } else {
+        config = await prompt.get(questions.main);
+    }
+    await configureDatabases(config);
+    await completeConfigSetup(config);
+}
+
+async function completeConfigSetup(config) {
+    // Add CI object
+    if (install.ciVals) {
+        config.test_database = { ...install.ciVals };
+    }
+
+    // Add package_manager object if set
+    if (nconf.get(&#039;package_manager&#039;)) {
+        config.package_manager = nconf.get(&#039;package_manager&#039;);
+    }
+    nconf.overrides(config);
+    const db = require(&#039;./database&#039;);
+    await db.init();
+    if (db.hasOwnProperty(&#039;createIndices&#039;)) {
+        await db.createIndices();
+    }
+
+    // Sanity-check/fix url/port
+    if (!/^http(?:s)?:\/\//.test(config.url)) {
+        config.url = `http://${config.url}`;
+    }
+
+    // If port is explicitly passed via install vars, use it. Otherwise, glean from url if set.
+    const urlObj = url.parse(config.url);
+    if (urlObj.port &amp;&amp; (!install.values || !install.values.hasOwnProperty(&#039;port&#039;))) {
+        config.port = urlObj.port;
+    }
+
+    // Remove trailing slash from non-subfolder installs
+    if (urlObj.path === &#039;/&#039;) {
+        urlObj.path = &#039;&#039;;
+        urlObj.pathname = &#039;&#039;;
+    }
+
+    config.url = url.format(urlObj);
+
+    // ref: https://github.com/indexzero/nconf/issues/300
+    delete config.type;
+
+    const meta = require(&#039;./meta&#039;);
+    await meta.configs.set(&#039;submitPluginUsage&#039;, config.submitPluginUsage === &#039;yes&#039; ? 1 : 0);
+    delete config.submitPluginUsage;
+
+    await install.save(config);
+}
+
+async function setupDefaultConfigs() {
+    console.log(&#039;Populating database with default configs, if not already set...&#039;);
+    const meta = require(&#039;./meta&#039;);
+    const defaults = require(path.join(__dirname, &#039;../&#039;, &#039;install/data/defaults.json&#039;));
+
+    await meta.configs.setOnEmpty(defaults);
+    await meta.configs.init();
+}
+
+async function enableDefaultTheme() {
+    const meta = require(&#039;./meta&#039;);
+
+    const id = await meta.configs.get(&#039;theme:id&#039;);
+    if (id) {
+        console.log(&#039;Previous theme detected, skipping enabling default theme&#039;);
+        return;
+    }
+
+    const defaultTheme = nconf.get(&#039;defaultTheme&#039;) || &#039;nodebb-theme-persona&#039;;
+    console.log(`Enabling default theme: ${defaultTheme}`);
+    await meta.themes.set({
+        type: &#039;local&#039;,
+        id: defaultTheme,
+    });
+}
+
+async function createDefaultUserGroups() {
+    const groups = require(&#039;./groups&#039;);
+    async function createGroup(name) {
+        await groups.create({
+            name: name,
+            hidden: 1,
+            private: 1,
+            system: 1,
+            disableLeave: 1,
+            disableJoinRequests: 1,
+        });
+    }
+
+    const [verifiedExists, unverifiedExists, bannedExists] = await groups.exists([
+        &#039;verified-users&#039;, &#039;unverified-users&#039;, &#039;banned-users&#039;,
+    ]);
+    if (!verifiedExists) {
+        await createGroup(&#039;verified-users&#039;);
+    }
+
+    if (!unverifiedExists) {
+        await createGroup(&#039;unverified-users&#039;);
+    }
+
+    if (!bannedExists) {
+        await createGroup(&#039;banned-users&#039;);
+    }
+}
+
+async function createAdministrator() {
+    const Groups = require(&#039;./groups&#039;);
+    const memberCount = await Groups.getMemberCount(&#039;administrators&#039;);
+    if (memberCount &gt; 0) {
+        console.log(&#039;Administrator found, skipping Admin setup&#039;);
+        return;
+    }
+    return await createAdmin();
+}
+
+async function createAdmin() {
+    const User = require(&#039;./user&#039;);
+    const Groups = require(&#039;./groups&#039;);
+    let password;
+
+    winston.warn(&#039;No administrators have been detected, running initial user setup\n&#039;);
+
+    let questions = [{
+        name: &#039;username&#039;,
+        description: &#039;Administrator username&#039;,
+        required: true,
+        type: &#039;string&#039;,
+    }, {
+        name: &#039;email&#039;,
+        description: &#039;Administrator email address&#039;,
+        pattern: /.+@.+/,
+        required: true,
+    }];
+    const passwordQuestions = [{
+        name: &#039;password&#039;,
+        description: &#039;Password&#039;,
+        required: true,
+        hidden: true,
+        type: &#039;string&#039;,
+    }, {
+        name: &#039;password:confirm&#039;,
+        description: &#039;Confirm Password&#039;,
+        required: true,
+        hidden: true,
+        type: &#039;string&#039;,
+    }];
+
+    async function success(results) {
+        if (!results) {
+            throw new Error(&#039;aborted&#039;);
+        }
+
+        if (results[&#039;password:confirm&#039;] !== results.password) {
+            winston.warn(&#039;Passwords did not match, please try again&#039;);
+            return await retryPassword(results);
+        }
+
+        try {
+            User.isPasswordValid(results.password);
+        } catch (err) {
+            const [namespace, key] = err.message.slice(2, -2).split(&#039;:&#039;, 2);
+            if (namespace &amp;&amp; key &amp;&amp; err.message.startsWith(&#039;[[&#039;) &amp;&amp; err.message.endsWith(&#039;]]&#039;)) {
+                const lang = require(path.join(__dirname, `../public/language/en-GB/${namespace}`));
+                if (lang &amp;&amp; lang[key]) {
+                    err.message = lang[key];
+                }
+            }
+
+            winston.warn(`Password error, please try again. ${err.message}`);
+            return await retryPassword(results);
+        }
+
+        const adminUid = await User.create({
+            username: results.username,
+            password: results.password,
+            email: results.email,
+        });
+        await Groups.join(&#039;administrators&#039;, adminUid);
+        await Groups.show(&#039;administrators&#039;);
+        await Groups.ownership.grant(adminUid, &#039;administrators&#039;);
+
+        return password ? results : undefined;
+    }
+
+    async function retryPassword(originalResults) {
+        // Ask only the password questions
+        const results = await prompt.get(passwordQuestions);
+
+        // Update the original data with newly collected password
+        originalResults.password = results.password;
+        originalResults[&#039;password:confirm&#039;] = results[&#039;password:confirm&#039;];
+
+        // Send back to success to handle
+        return await success(originalResults);
+    }
+
+    // Add the password questions
+    questions = questions.concat(passwordQuestions);
+
+    if (!install.values) {
+        const results = await prompt.get(questions);
+        return await success(results);
+    }
+    // If automated setup did not provide a user password, generate one,
+    // it will be shown to the user upon setup completion
+    if (!install.values.hasOwnProperty(&#039;admin:password&#039;) &amp;&amp; !nconf.get(&#039;admin:password&#039;)) {
+        console.log(&#039;Password was not provided during automated setup, generating one...&#039;);
+        password = utils.generateUUID().slice(0, 8);
+    }
+
+    const results = {
+        username: install.values[&#039;admin:username&#039;] || nconf.get(&#039;admin:username&#039;) || &#039;admin&#039;,
+        email: install.values[&#039;admin:email&#039;] || nconf.get(&#039;admin:email&#039;) || &#039;&#039;,
+        password: install.values[&#039;admin:password&#039;] || nconf.get(&#039;admin:password&#039;) || password,
+        &#039;password:confirm&#039;: install.values[&#039;admin:password:confirm&#039;] || nconf.get(&#039;admin:password&#039;) || password,
+    };
+
+    return await success(results);
+}
+
+async function createGlobalModeratorsGroup() {
+    const groups = require(&#039;./groups&#039;);
+    const exists = await groups.exists(&#039;Global Moderators&#039;);
+    if (exists) {
+        winston.info(&#039;Global Moderators group found, skipping creation!&#039;);
+    } else {
+        await groups.create({
+            name: &#039;Global Moderators&#039;,
+            userTitle: &#039;Global Moderator&#039;,
+            description: &#039;Forum wide moderators&#039;,
+            hidden: 0,
+            private: 1,
+            disableJoinRequests: 1,
+        });
+    }
+    await groups.show(&#039;Global Moderators&#039;);
+}
+
+async function giveGlobalPrivileges() {
+    const privileges = require(&#039;./privileges&#039;);
+    const defaultPrivileges = [
+        &#039;groups:chat&#039;, &#039;groups:upload:post:image&#039;, &#039;groups:signature&#039;, &#039;groups:search:content&#039;,
+        &#039;groups:search:users&#039;, &#039;groups:search:tags&#039;, &#039;groups:view:users&#039;, &#039;groups:view:tags&#039;, &#039;groups:view:groups&#039;,
+        &#039;groups:local:login&#039;,
+    ];
+    await privileges.global.give(defaultPrivileges, &#039;registered-users&#039;);
+    await privileges.global.give(defaultPrivileges.concat([
+        &#039;groups:ban&#039;, &#039;groups:upload:post:file&#039;, &#039;groups:view:users:info&#039;,
+    ]), &#039;Global Moderators&#039;);
+    await privileges.global.give([&#039;groups:view:users&#039;, &#039;groups:view:tags&#039;, &#039;groups:view:groups&#039;], &#039;guests&#039;);
+    await privileges.global.give([&#039;groups:view:users&#039;, &#039;groups:view:tags&#039;, &#039;groups:view:groups&#039;], &#039;spiders&#039;);
+}
+
+async function createCategories() {
+    const Categories = require(&#039;./categories&#039;);
+    const db = require(&#039;./database&#039;);
+    const cids = await db.getSortedSetRange(&#039;categories:cid&#039;, 0, -1);
+    if (Array.isArray(cids) &amp;&amp; cids.length) {
+        console.log(`Categories OK. Found ${cids.length} categories.`);
+        return;
+    }
+
+    console.log(&#039;No categories found, populating instance with default categories&#039;);
+
+    const default_categories = JSON.parse(
+        await fs.promises.readFile(path.join(__dirname, &#039;../&#039;, &#039;install/data/categories.json&#039;), &#039;utf8&#039;)
+    );
+    for (const categoryData of default_categories) {
+        // eslint-disable-next-line no-await-in-loop
+        await Categories.create(categoryData);
+    }
+}
+
+async function createMenuItems() {
+    const db = require(&#039;./database&#039;);
+
+    const exists = await db.exists(&#039;navigation:enabled&#039;);
+    if (exists) {
+        return;
+    }
+    const navigation = require(&#039;./navigation/admin&#039;);
+    const data = require(&#039;../install/data/navigation.json&#039;);
+    await navigation.save(data);
+}
+
+async function createWelcomePost() {
+    const db = require(&#039;./database&#039;);
+    const Topics = require(&#039;./topics&#039;);
+
+    const [content, numTopics] = await Promise.all([
+        fs.promises.readFile(path.join(__dirname, &#039;../&#039;, &#039;install/data/welcome.md&#039;), &#039;utf8&#039;),
+        db.getObjectField(&#039;global&#039;, &#039;topicCount&#039;),
+    ]);
+
+    if (!parseInt(numTopics, 10)) {
+        console.log(&#039;Creating welcome post!&#039;);
+        await Topics.post({
+            uid: 1,
+            cid: 2,
+            title: &#039;Welcome to your NodeBB!&#039;,
+            content: content,
+        });
+    }
+}
+
+async function enableDefaultPlugins() {
+    console.log(&#039;Enabling default plugins&#039;);
+
+    let defaultEnabled = [
+        &#039;nodebb-plugin-composer-default&#039;,
+        &#039;nodebb-plugin-markdown&#039;,
+        &#039;nodebb-plugin-mentions&#039;,
+        &#039;nodebb-widget-essentials&#039;,
+        &#039;nodebb-rewards-essentials&#039;,
+        &#039;nodebb-plugin-emoji&#039;,
+        &#039;nodebb-plugin-emoji-android&#039;,
+    ];
+    let customDefaults = nconf.get(&#039;defaultplugins&#039;) || nconf.get(&#039;defaultPlugins&#039;);
+
+    winston.info(`[install/defaultPlugins] customDefaults ${String(customDefaults)}`);
+
+    if (customDefaults &amp;&amp; customDefaults.length) {
+        try {
+            customDefaults = Array.isArray(customDefaults) ? customDefaults : JSON.parse(customDefaults);
+            defaultEnabled = defaultEnabled.concat(customDefaults);
+        } catch (e) {
+            // Invalid value received
+            winston.info(&#039;[install/enableDefaultPlugins] Invalid defaultPlugins value received. Ignoring.&#039;);
+        }
+    }
+
+    defaultEnabled = _.uniq(defaultEnabled);
+
+    winston.info(&#039;[install/enableDefaultPlugins] activating default plugins&#039;, defaultEnabled);
+
+    const db = require(&#039;./database&#039;);
+    const order = defaultEnabled.map((plugin, index) =&gt; index);
+    await db.sortedSetAdd(&#039;plugins:active&#039;, order, defaultEnabled);
+}
+
+async function setCopyrightWidget() {
+    const db = require(&#039;./database&#039;);
+    const [footerJSON, footer] = await Promise.all([
+        fs.promises.readFile(path.join(__dirname, &#039;../&#039;, &#039;install/data/footer.json&#039;), &#039;utf8&#039;),
+        db.getObjectField(&#039;widgets:global&#039;, &#039;footer&#039;),
+    ]);
+
+    if (!footer &amp;&amp; footerJSON) {
+        await db.setObjectField(&#039;widgets:global&#039;, &#039;footer&#039;, footerJSON);
+    }
+}
+
+async function copyFavicon() {
+    const file = require(&#039;./file&#039;);
+    const pathToIco = path.join(nconf.get(&#039;upload_path&#039;), &#039;system&#039;, &#039;favicon.ico&#039;);
+    const defaultIco = path.join(nconf.get(&#039;base_dir&#039;), &#039;public&#039;, &#039;favicon.ico&#039;);
+    const targetExists = await file.exists(pathToIco);
+    const defaultExists = await file.exists(defaultIco);
+
+    if (defaultExists &amp;&amp; !targetExists) {
+        try {
+            await fs.promises.copyFile(defaultIco, pathToIco);
+        } catch (err) {
+            winston.error(`Cannot copy favicon.ico\n${err.stack}`);
+        }
+    }
+}
+
+async function checkUpgrade() {
+    const upgrade = require(&#039;./upgrade&#039;);
+    try {
+        await upgrade.check();
+    } catch (err) {
+        if (err.message === &#039;schema-out-of-date&#039;) {
+            await upgrade.run();
+            return;
+        }
+        throw err;
+    }
+}
+
+install.setup = async function () {
+    try {
+        checkSetupFlagEnv();
+        checkCIFlag();
+        await setupConfig();
+        await setupDefaultConfigs();
+        await enableDefaultTheme();
+        await createCategories();
+        await createDefaultUserGroups();
+        const adminInfo = await createAdministrator();
+        await createGlobalModeratorsGroup();
+        await giveGlobalPrivileges();
+        await createMenuItems();
+        await createWelcomePost();
+        await enableDefaultPlugins();
+        await setCopyrightWidget();
+        await copyFavicon();
+        await checkUpgrade();
+
+        const data = {
+            ...adminInfo,
+        };
+        return data;
+    } catch (err) {
+        if (err) {
+            winston.warn(`NodeBB Setup Aborted.\n ${err.stack}`);
+            process.exit(1);
+        }
+    }
+};
+
+install.save = async function (server_conf) {
+    let serverConfigPath = path.join(__dirname, &#039;../config.json&#039;);
+
+    if (nconf.get(&#039;config&#039;)) {
+        serverConfigPath = path.resolve(__dirname, &#039;../&#039;, nconf.get(&#039;config&#039;));
+    }
+
+    let currentConfig = {};
+    try {
+        currentConfig = require(serverConfigPath);
+    } catch (err) {
+        if (err.code !== &#039;MODULE_NOT_FOUND&#039;) {
+            throw err;
+        }
+    }
+
+    await fs.promises.writeFile(serverConfigPath, JSON.stringify({ ...currentConfig, ...server_conf }, null, 4));
+    console.log(&#039;Configuration Saved OK&#039;);
+    nconf.file({
+        file: serverConfigPath,
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

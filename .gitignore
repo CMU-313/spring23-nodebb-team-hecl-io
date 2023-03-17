@@ -72,6 +72,8 @@ package-lock.json
 link-plugins.sh
 test.sh
 
+plato_report/*
+
 # Theme ignore
 theme/*.css
 !theme/less/bootstrap-flipped.css

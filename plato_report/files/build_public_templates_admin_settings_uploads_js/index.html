@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/settings/uploads.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/settings/uploads.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.05</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">21</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">14.66</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.14</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;settings\&quot;&gt;\n    &lt;div class=\&quot;row\&quot;&gt;\n        &lt;div class=\&quot;col-sm-2 col-xs-12 content-header\&quot;&gt;\n            [[admin/admin:settings-header-contents]]\n        &lt;/div&gt;\n        &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n            &lt;nav class=\&quot;section-content\&quot;&gt;\n                &lt;ul&gt;&lt;/ul&gt;\n            &lt;/nav&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;\n        [[admin/settings/uploads:posts]]\n    &lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;stripEXIFData\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:strip-exif-data]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;privateUploads\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:private]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;privateUploadsExtensions\&quot;&gt;[[admin/settings/uploads:private-extensions]]&lt;/label&gt;\n                &lt;input id=\&quot;privateUploadsExtensions\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;\&quot; data-field=\&quot;privateUploadsExtensions\&quot; placeholder=\&quot;\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:private-uploads-extensions-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;row\&quot;&gt;\n                &lt;div class=\&quot;col-xs-6\&quot;&gt;\n                    &lt;div class=\&quot;form-group\&quot;&gt;\n                        &lt;label for=\&quot;resizeImageWidthThreshold\&quot;&gt;[[admin/settings/uploads:resize-image-width-threshold]]&lt;/label&gt;\n                        &lt;input id=\&quot;resizeImageWidthThreshold\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;2000\&quot; data-field=\&quot;resizeImageWidthThreshold\&quot; placeholder=\&quot;2000\&quot;&gt;\n                        &lt;p class=\&quot;help-block\&quot;&gt;\n                            [[admin/settings/uploads:resize-image-width-threshold-help]]\n                        &lt;/p&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n\n                &lt;div class=\&quot;col-xs-6\&quot;&gt;\n                    &lt;div class=\&quot;form-group\&quot;&gt;\n                        &lt;label for=\&quot;resizeImageWidth\&quot;&gt;[[admin/settings/uploads:resize-image-width]]&lt;/label&gt;\n                        &lt;input id=\&quot;resizeImageWidth\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;760\&quot; data-field=\&quot;resizeImageWidth\&quot; placeholder=\&quot;760\&quot;&gt;\n                        &lt;p class=\&quot;help-block\&quot;&gt;\n                            [[admin/settings/uploads:resize-image-width-help]]\n                        &lt;/p&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;resizeImageQuality\&quot;&gt;[[admin/settings/uploads:resize-image-quality]]&lt;/label&gt;\n                &lt;input id=\&quot;resizeImageQuality\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;60\&quot; data-field=\&quot;resizeImageQuality\&quot; placeholder=\&quot;60\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:resize-image-quality-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maximumFileSize\&quot;&gt;[[admin/settings/uploads:max-file-size]]&lt;/label&gt;\n                &lt;input id=\&quot;maximumFileSize\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;2048\&quot; data-field=\&quot;maximumFileSize\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:max-file-size-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;rejectImageWidth\&quot;&gt;[[admin/settings/uploads:reject-image-width]]&lt;/label&gt;\n                &lt;input id=\&quot;rejectImageWidth\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;5000\&quot; data-field=\&quot;rejectImageWidth\&quot; placeholder=\&quot;5000\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:reject-image-width-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;rejectImageHeight\&quot;&gt;[[admin/settings/uploads:reject-image-height]]&lt;/label&gt;\n                &lt;input id=\&quot;rejectImageHeight\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;5000\&quot; data-field=\&quot;rejectImageHeight\&quot; placeholder=\&quot;5000\&quot;&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:reject-image-height-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;allowTopicsThumbnail\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:allow-topic-thumbnails]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;topicThumbSize\&quot;&gt;[[admin/settings/uploads:topic-thumb-size]]&lt;/label&gt;\n                &lt;input id=\&quot;topicThumbSize\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;120\&quot; data-field=\&quot;topicThumbSize\&quot;&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;allowedFileExtensions\&quot;&gt;[[admin/settings/uploads:allowed-file-extensions]]&lt;/label&gt;\n                &lt;input id=\&quot;allowedFileExtensions\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; value=\&quot;\&quot; data-field=\&quot;allowedFileExtensions\&quot; data-field-type=\&quot;tagsinput\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:allowed-file-extensions-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;uploadRateLimitThreshold\&quot;&gt;[[admin/settings/uploads:upload-limit-threshold]]&lt;/label&gt;\n                &lt;div id=\&quot;uploadRateLimitThreshold\&quot; class=\&quot;row\&quot;&gt;\n                    &lt;div class=\&quot;col-xs-2\&quot;&gt;\n                        &lt;input type=\&quot;text\&quot; class=\&quot;form-control\&quot; data-field=\&quot;uploadRateLimitThreshold\&quot; /&gt;\n                    &lt;/div&gt;\n                    &lt;div class=\&quot;col-xs-2\&quot;&gt;\n                        &lt;select class=\&quot;form-control\&quot; data-field=\&quot;uploadRateLimitCooldown\&quot;&gt;\n                            &lt;option value=\&quot;60\&quot;&gt;[[admin/settings/uploads:upload-limit-threshold-per-minute, 1]]&lt;/option&gt;\n                            &lt;option value=\&quot;300\&quot;&gt;[[admin/settings/uploads:upload-limit-threshold-per-minutes, 5]]&lt;/option&gt;\n                            &lt;option value=\&quot;900\&quot;&gt;[[admin/settings/uploads:upload-limit-threshold-per-minutes, 15]]&lt;/option&gt;\n                            &lt;option value=\&quot;3600\&quot;&gt;[[admin/settings/uploads:upload-limit-threshold-per-minutes, 60]]&lt;/option&gt;\n                        &lt;/select&gt;\n                    &lt;/div&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;\n        [[admin/settings/uploads:orphans]]\n    &lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;div class=\&quot;checkbox\&quot;&gt;\n            &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;preserveOrphanedUploads\&quot;&gt;\n                &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:preserve-orphaned-uploads]]&lt;/strong&gt;&lt;/span&gt;\n            &lt;/label&gt;\n        &lt;/div&gt;\n\n        &lt;div class=\&quot;row\&quot;&gt;\n            &lt;div class=\&quot;form-group col-sm-6\&quot;&gt;\n                &lt;label for=\&quot;orphanExpiryDays\&quot;&gt;[[admin/settings/uploads:orphanExpiryDays]]&lt;/label&gt;\n                &lt;input id=\&quot;orphanExpiryDays\&quot; type=\&quot;number\&quot; min=\&quot;0\&quot; placeholder=\&quot;0\&quot; class=\&quot;form-control\&quot; data-field=\&quot;orphanExpiryDays\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;[[admin/settings/uploads:orphanExpiryDays-help]]&lt;/p&gt;\n            &lt;/div&gt;\n        &lt;/div&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;\n        [[admin/settings/uploads:profile-avatars]]\n    &lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;allowProfileImageUploads\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:allow-profile-image-uploads]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;profile:convertProfileImageToPNG\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:convert-profile-image-png]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label&gt;[[admin/settings/uploads:default-avatar]]&lt;/label&gt;\n                &lt;div class=\&quot;input-group\&quot;&gt;\n                    &lt;input id=\&quot;defaultAvatar\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; placeholder=\&quot;A custom image to use instead of user icons\&quot; data-field=\&quot;defaultAvatar\&quot; /&gt;\n                    &lt;span class=\&quot;input-group-btn\&quot;&gt;\n                        &lt;input data-action=\&quot;upload\&quot; data-target=\&quot;defaultAvatar\&quot; data-route=\&quot;&quot; + 
+      __escape(guard((context != null &amp;&amp; context[&#039;config&#039;] != null) ? context[&#039;config&#039;][&#039;relative_path&#039;] : null)) + 
+      &quot;/api/admin/uploadDefaultAvatar\&quot; type=\&quot;button\&quot; class=\&quot;btn btn-default\&quot; value=\&quot;[[admin/settings/uploads:upload]]\&quot; /&gt;\n                    &lt;/span&gt;\n                &lt;/div&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;profileImageDimension\&quot;&gt;[[admin/settings/uploads:profile-image-dimension]]&lt;/label&gt;\n                &lt;input id=\&quot;profileImageDimension\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; data-field=\&quot;profileImageDimension\&quot; placeholder=\&quot;200\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:profile-image-dimension-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maximumProfileImageSize\&quot;&gt;[[admin/settings/uploads:max-profile-image-size]]&lt;/label&gt;\n                &lt;input id=\&quot;maximumProfileImageSize\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; placeholder=\&quot;Maximum size of uploaded user images in kibibytes\&quot; data-field=\&quot;maximumProfileImageSize\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:max-profile-image-size-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;form-group\&quot;&gt;\n                &lt;label for=\&quot;maximumCoverImageSize\&quot;&gt;[[admin/settings/uploads:max-cover-image-size]]&lt;/label&gt;\n                &lt;input id=\&quot;maximumCoverImageSize\&quot; type=\&quot;text\&quot; class=\&quot;form-control\&quot; placeholder=\&quot;Maximum size of uploaded cover images in kibibytes\&quot; data-field=\&quot;maximumCoverImageSize\&quot; /&gt;\n                &lt;p class=\&quot;help-block\&quot;&gt;\n                    [[admin/settings/uploads:max-cover-image-size-help]]\n                &lt;/p&gt;\n            &lt;/div&gt;\n\n            &lt;div class=\&quot;checkbox\&quot;&gt;\n                &lt;label class=\&quot;mdl-switch mdl-js-switch mdl-js-ripple-effect\&quot;&gt;\n                    &lt;input class=\&quot;mdl-switch__input\&quot; type=\&quot;checkbox\&quot; data-field=\&quot;profile:keepAllUserImages\&quot;&gt;\n                    &lt;span class=\&quot;mdl-switch__label\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:keep-all-user-images]]&lt;/strong&gt;&lt;/span&gt;\n                &lt;/label&gt;\n            &lt;/div&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;div class=\&quot;row\&quot;&gt;\n    &lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;[[admin/settings/uploads:profile-covers]]&lt;/div&gt;\n    &lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n        &lt;form&gt;\n            &lt;label for=\&quot;profile:defaultCovers\&quot;&gt;&lt;strong&gt;[[admin/settings/uploads:default-covers]]&lt;/strong&gt;&lt;/label&gt;\n            &lt;p class=\&quot;help-block\&quot;&gt;\n                [[admin/settings/uploads:default-covers-help]]\n            &lt;/p&gt;\n            &lt;input type=\&quot;text\&quot; class=\&quot;form-control input-lg\&quot; id=\&quot;profile:defaultCovers\&quot; data-field=\&quot;profile:defaultCovers\&quot; data-field-type=\&quot;tagsinput\&quot; value=\&quot;/assets/images/cover-default.png\&quot; placeholder=\&quot;https://example.com/group1.png, https://example.com/group2.png\&quot; /&gt;\n        &lt;/form&gt;\n    &lt;/div&gt;\n&lt;/div&gt;\n\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n    &lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;\n\n&quot;;
+  }
+
+  compiled.blocks = {
+    
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

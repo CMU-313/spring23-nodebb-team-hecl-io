@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/topics.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/topics.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">60.17</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">374</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">56.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.32</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const nconf = require(&#039;nconf&#039;);
+const qs = require(&#039;querystring&#039;);
+
+const user = require(&#039;../user&#039;);
+const meta = require(&#039;../meta&#039;);
+const topics = require(&#039;../topics&#039;);
+const categories = require(&#039;../categories&#039;);
+const posts = require(&#039;../posts&#039;);
+const privileges = require(&#039;../privileges&#039;);
+const helpers = require(&#039;./helpers&#039;);
+const pagination = require(&#039;../pagination&#039;);
+const utils = require(&#039;../utils&#039;);
+const analytics = require(&#039;../analytics&#039;);
+
+const topicsController = module.exports;
+
+const url = nconf.get(&#039;url&#039;);
+const relative_path = nconf.get(&#039;relative_path&#039;);
+const upload_url = nconf.get(&#039;upload_url&#039;);
+
+topicsController.get = async function getTopic(req, res, next) {
+    const tid = req.params.topic_id;
+
+    if (
+        (req.params.post_index &amp;&amp; !utils.isNumber(req.params.post_index) &amp;&amp; req.params.post_index !== &#039;unread&#039;) ||
+        !utils.isNumber(tid)
+    ) {
+        return next();
+    }
+    let postIndex = parseInt(req.params.post_index, 10) || 1;
+    const [
+        userPrivileges,
+        settings,
+        topicData,
+        rssToken,
+    ] = await Promise.all([
+        privileges.topics.get(tid, req.uid),
+        user.getSettings(req.uid),
+        topics.getTopicData(tid),
+        user.auth.getFeedToken(req.uid),
+    ]);
+
+    let currentPage = parseInt(req.query.page, 10) || 1;
+    const pageCount = Math.max(1, Math.ceil((topicData &amp;&amp; topicData.postcount) / settings.postsPerPage));
+    const invalidPagination = (settings.usePagination &amp;&amp; (currentPage &lt; 1 || currentPage &gt; pageCount));
+    if (
+        !topicData ||
+        userPrivileges.disabled ||
+        invalidPagination ||
+        (topicData.scheduled &amp;&amp; !userPrivileges.view_scheduled)
+    ) {
+        return next();
+    }
+
+    if (!userPrivileges[&#039;topics:read&#039;] || (!topicData.scheduled &amp;&amp; topicData.deleted &amp;&amp; !userPrivileges.view_deleted)) {
+        return helpers.notAllowed(req, res);
+    }
+
+    if (req.params.post_index === &#039;unread&#039;) {
+        postIndex = await topics.getUserBookmark(tid, req.uid);
+    }
+
+    if (!res.locals.isAPI &amp;&amp; (!req.params.slug || topicData.slug !== `${tid}/${req.params.slug}`) &amp;&amp; (topicData.slug &amp;&amp; topicData.slug !== `${tid}/`)) {
+        return helpers.redirect(res, `/topic/${topicData.slug}${postIndex ? `/${postIndex}` : &#039;&#039;}${generateQueryString(req.query)}`, true);
+    }
+
+    if (utils.isNumber(postIndex) &amp;&amp; topicData.postcount &gt; 0 &amp;&amp; (postIndex &lt; 1 || postIndex &gt; topicData.postcount)) {
+        return helpers.redirect(res, `/topic/${tid}/${req.params.slug}${postIndex &gt; topicData.postcount ? `/${topicData.postcount}` : &#039;&#039;}${generateQueryString(req.query)}`);
+    }
+    postIndex = Math.max(1, postIndex);
+    const sort = req.query.sort || settings.topicPostSort;
+    const set = sort === &#039;most_votes&#039; ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
+    const reverse = sort === &#039;newest_to_oldest&#039; || sort === &#039;most_votes&#039;;
+    if (settings.usePagination &amp;&amp; !req.query.page) {
+        currentPage = calculatePageFromIndex(postIndex, settings);
+    }
+    const { start, stop } = calculateStartStop(currentPage, postIndex, settings);
+
+    await topics.getTopicWithPosts(topicData, set, req.uid, start, stop, reverse);
+
+    topics.modifyPostsByPrivilege(topicData, userPrivileges);
+    topicData.tagWhitelist = categories.filterTagWhitelist(topicData.tagWhitelist, userPrivileges.isAdminOrMod);
+
+    topicData.privileges = userPrivileges;
+    topicData.topicStaleDays = meta.config.topicStaleDays;
+    topicData[&#039;reputation:disabled&#039;] = meta.config[&#039;reputation:disabled&#039;];
+    topicData[&#039;downvote:disabled&#039;] = meta.config[&#039;downvote:disabled&#039;];
+    topicData[&#039;feeds:disableRSS&#039;] = meta.config[&#039;feeds:disableRSS&#039;] || 0;
+    topicData[&#039;signatures:hideDuplicates&#039;] = meta.config[&#039;signatures:hideDuplicates&#039;];
+    topicData.bookmarkThreshold = meta.config.bookmarkThreshold;
+    topicData.necroThreshold = meta.config.necroThreshold;
+    topicData.postEditDuration = meta.config.postEditDuration;
+    topicData.postDeleteDuration = meta.config.postDeleteDuration;
+    topicData.scrollToMyPost = settings.scrollToMyPost;
+    topicData.updateUrlWithPostIndex = settings.updateUrlWithPostIndex;
+    topicData.allowMultipleBadges = meta.config.allowMultipleBadges === 1;
+    topicData.privateUploads = meta.config.privateUploads === 1;
+    topicData.showPostPreviewsOnHover = meta.config.showPostPreviewsOnHover === 1;
+    topicData.rssFeedUrl = `${relative_path}/topic/${topicData.tid}.rss`;
+    if (req.loggedIn) {
+        topicData.rssFeedUrl += `?uid=${req.uid}&amp;token=${rssToken}`;
+    }
+
+    topicData.postIndex = postIndex;
+
+    await Promise.all([
+        buildBreadcrumbs(topicData),
+        addOldCategory(topicData, userPrivileges),
+        addTags(topicData, req, res),
+        incrementViewCount(req, tid),
+        markAsRead(req, tid),
+        analytics.increment([`pageviews:byCid:${topicData.category.cid}`]),
+    ]);
+
+    topicData.pagination = pagination.create(currentPage, pageCount, req.query);
+    topicData.pagination.rel.forEach((rel) =&gt; {
+        rel.href = `${url}/topic/${topicData.slug}${rel.href}`;
+        res.locals.linkTags.push(rel);
+    });
+
+    res.render(&#039;topic&#039;, topicData);
+};
+
+function generateQueryString(query) {
+    const qString = qs.stringify(query);
+    return qString.length ? `?${qString}` : &#039;&#039;;
+}
+
+function calculatePageFromIndex(postIndex, settings) {
+    return 1 + Math.floor((postIndex - 1) / settings.postsPerPage);
+}
+
+function calculateStartStop(page, postIndex, settings) {
+    let startSkip = 0;
+
+    if (!settings.usePagination) {
+        if (postIndex &gt; 1) {
+            page = 1;
+        }
+        startSkip = Math.max(0, postIndex - Math.ceil(settings.postsPerPage / 2));
+    }
+
+    const start = ((page - 1) * settings.postsPerPage) + startSkip;
+    const stop = start + settings.postsPerPage - 1;
+    return { start: Math.max(0, start), stop: Math.max(0, stop) };
+}
+
+async function incrementViewCount(req, tid) {
+    const allow = req.uid &gt; 0 || (meta.config.guestsIncrementTopicViews &amp;&amp; req.uid === 0);
+    if (allow) {
+        req.session.tids_viewed = req.session.tids_viewed || {};
+        const now = Date.now();
+        const interval = meta.config.incrementTopicViewsInterval * 60000;
+        if (!req.session.tids_viewed[tid] || req.session.tids_viewed[tid] &lt; now - interval) {
+            await topics.increaseViewCount(tid);
+            req.session.tids_viewed[tid] = now;
+        }
+    }
+}
+
+async function markAsRead(req, tid) {
+    if (req.loggedIn) {
+        const markedRead = await topics.markAsRead([tid], req.uid);
+        const promises = [topics.markTopicNotificationsRead([tid], req.uid)];
+        if (markedRead) {
+            promises.push(topics.pushUnreadCount(req.uid));
+        }
+        await Promise.all(promises);
+    }
+}
+
+async function buildBreadcrumbs(topicData) {
+    const breadcrumbs = [
+        {
+            text: topicData.category.name,
+            url: `${relative_path}/category/${topicData.category.slug}`,
+            cid: topicData.category.cid,
+        },
+        {
+            text: topicData.title,
+        },
+    ];
+    const parentCrumbs = await helpers.buildCategoryBreadcrumbs(topicData.category.parentCid);
+    topicData.breadcrumbs = parentCrumbs.concat(breadcrumbs);
+}
+
+async function addOldCategory(topicData, userPrivileges) {
+    if (userPrivileges.isAdminOrMod &amp;&amp; topicData.oldCid) {
+        topicData.oldCategory = await categories.getCategoryFields(
+            topicData.oldCid, [&#039;cid&#039;, &#039;name&#039;, &#039;icon&#039;, &#039;bgColor&#039;, &#039;color&#039;, &#039;slug&#039;]
+        );
+    }
+}
+
+async function addTags(topicData, req, res) {
+    const postIndex = parseInt(req.params.post_index, 10) || 0;
+    const postAtIndex = topicData.posts.find(p =&gt; parseInt(p.index, 10) === parseInt(Math.max(0, postIndex - 1), 10));
+    let description = &#039;&#039;;
+    if (postAtIndex &amp;&amp; postAtIndex.content) {
+        description = utils.stripHTMLTags(utils.decodeHTMLEntities(postAtIndex.content));
+    }
+
+    if (description.length &gt; 255) {
+        description = `${description.slice(0, 255)}...`;
+    }
+    description = description.replace(/\n/g, &#039; &#039;);
+
+    res.locals.metaTags = [
+        {
+            name: &#039;title&#039;,
+            content: topicData.titleRaw,
+        },
+        {
+            name: &#039;description&#039;,
+            content: description,
+        },
+        {
+            property: &#039;og:title&#039;,
+            content: topicData.titleRaw,
+        },
+        {
+            property: &#039;og:description&#039;,
+            content: description,
+        },
+        {
+            property: &#039;og:type&#039;,
+            content: &#039;article&#039;,
+        },
+        {
+            property: &#039;article:published_time&#039;,
+            content: utils.toISOString(topicData.timestamp),
+        },
+        {
+            property: &#039;article:modified_time&#039;,
+            content: utils.toISOString(topicData.lastposttime),
+        },
+        {
+            property: &#039;article:section&#039;,
+            content: topicData.category ? topicData.category.name : &#039;&#039;,
+        },
+    ];
+
+    await addOGImageTags(res, topicData, postAtIndex);
+
+    res.locals.linkTags = [
+        {
+            rel: &#039;canonical&#039;,
+            href: `${url}/topic/${topicData.slug}`,
+        },
+    ];
+
+    if (!topicData[&#039;feeds:disableRSS&#039;]) {
+        res.locals.linkTags.push({
+            rel: &#039;alternate&#039;,
+            type: &#039;application/rss+xml&#039;,
+            href: topicData.rssFeedUrl,
+        });
+    }
+
+    if (topicData.category) {
+        res.locals.linkTags.push({
+            rel: &#039;up&#039;,
+            href: `${url}/category/${topicData.category.slug}`,
+        });
+    }
+}
+
+async function addOGImageTags(res, topicData, postAtIndex) {
+    const uploads = postAtIndex ? await posts.uploads.listWithSizes(postAtIndex.pid) : [];
+    const images = uploads.map((upload) =&gt; {
+        upload.name = `${url + upload_url}/${upload.name}`;
+        return upload;
+    });
+    if (topicData.thumbs) {
+        const path = require(&#039;path&#039;);
+        const thumbs = topicData.thumbs.filter(
+            t =&gt; t &amp;&amp; images.every(img =&gt; path.normalize(img.name) !== path.normalize(url + t.url))
+        );
+        images.push(...thumbs.map(thumbObj =&gt; ({ name: url + thumbObj.url })));
+    }
+    if (topicData.category.backgroundImage &amp;&amp; (!postAtIndex || !postAtIndex.index)) {
+        images.push(topicData.category.backgroundImage);
+    }
+    if (postAtIndex &amp;&amp; postAtIndex.user &amp;&amp; postAtIndex.user.picture) {
+        images.push(postAtIndex.user.picture);
+    }
+    images.forEach(path =&gt; addOGImageTag(res, path));
+}
+
+function addOGImageTag(res, image) {
+    let imageUrl;
+    if (typeof image === &#039;string&#039; &amp;&amp; !image.startsWith(&#039;http&#039;)) {
+        imageUrl = url + image.replace(new RegExp(`^${relative_path}`), &#039;&#039;);
+    } else if (typeof image === &#039;object&#039;) {
+        imageUrl = image.name;
+    } else {
+        imageUrl = image;
+    }
+
+    res.locals.metaTags.push({
+        property: &#039;og:image&#039;,
+        content: imageUrl,
+        noEscape: true,
+    }, {
+        property: &#039;og:image:url&#039;,
+        content: imageUrl,
+        noEscape: true,
+    });
+
+    if (typeof image === &#039;object&#039; &amp;&amp; image.width &amp;&amp; image.height) {
+        res.locals.metaTags.push({
+            property: &#039;og:image:width&#039;,
+            content: String(image.width),
+        }, {
+            property: &#039;og:image:height&#039;,
+            content: String(image.height),
+        });
+    }
+}
+
+topicsController.teaser = async function (req, res, next) {
+    const tid = req.params.topic_id;
+    if (!utils.isNumber(tid)) {
+        return next();
+    }
+    const canRead = await privileges.topics.can(&#039;topics:read&#039;, tid, req.uid);
+    if (!canRead) {
+        return res.status(403).json(&#039;[[error:no-privileges]]&#039;);
+    }
+    const pid = await topics.getLatestUndeletedPid(tid);
+    if (!pid) {
+        return res.status(404).json(&#039;not-found&#039;);
+    }
+    const postData = await posts.getPostSummaryByPids([pid], req.uid, { stripTags: false });
+    if (!postData.length) {
+        return res.status(404).json(&#039;not-found&#039;);
+    }
+    res.json(postData[0]);
+};
+
+topicsController.pagination = async function (req, res, next) {
+    const tid = req.params.topic_id;
+    const currentPage = parseInt(req.query.page, 10) || 1;
+
+    if (!utils.isNumber(tid)) {
+        return next();
+    }
+
+    const [userPrivileges, settings, topic] = await Promise.all([
+        privileges.topics.get(tid, req.uid),
+        user.getSettings(req.uid),
+        topics.getTopicData(tid),
+    ]);
+
+    if (!topic) {
+        return next();
+    }
+
+    if (!userPrivileges.read || !privileges.topics.canViewDeletedScheduled(topic, userPrivileges)) {
+        return helpers.notAllowed(req, res);
+    }
+
+    const postCount = topic.postcount;
+    const pageCount = Math.max(1, Math.ceil(postCount / settings.postsPerPage));
+
+    const paginationData = pagination.create(currentPage, pageCount);
+    paginationData.rel.forEach((rel) =&gt; {
+        rel.href = `${url}/topic/${topic.slug}${rel.href}`;
+    });
+
+    res.json({ pagination: paginationData });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/meta/css.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/meta/css.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.72</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">154</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">23.00</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.53</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const winston = require(&#039;winston&#039;);
+const nconf = require(&#039;nconf&#039;);
+const fs = require(&#039;fs&#039;);
+const util = require(&#039;util&#039;);
+const path = require(&#039;path&#039;);
+const rimraf = require(&#039;rimraf&#039;);
+
+const rimrafAsync = util.promisify(rimraf);
+
+const plugins = require(&#039;../plugins&#039;);
+const db = require(&#039;../database&#039;);
+const file = require(&#039;../file&#039;);
+const minifier = require(&#039;./minifier&#039;);
+
+const CSS = module.exports;
+
+CSS.supportedSkins = [
+    &#039;cerulean&#039;, &#039;cyborg&#039;, &#039;flatly&#039;, &#039;journal&#039;, &#039;lumen&#039;, &#039;paper&#039;, &#039;simplex&#039;,
+    &#039;spacelab&#039;, &#039;united&#039;, &#039;cosmo&#039;, &#039;darkly&#039;, &#039;readable&#039;, &#039;sandstone&#039;,
+    &#039;slate&#039;, &#039;superhero&#039;, &#039;yeti&#039;,
+];
+
+const buildImports = {
+    client: function (source) {
+        return `@import &quot;./theme&quot;;\n${source}\n${[
+            &#039;@import &quot;../public/vendor/fontawesome/less/regular.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/solid.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/brands.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/fontawesome.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/v4-shims.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/nodebb-shims.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/jquery-ui.less&quot;;&#039;,
+            &#039;@import (inline) &quot;../node_modules/@adactive/bootstrap-tagsinput/src/bootstrap-tagsinput.css&quot;;&#039;,
+            &#039;@import (inline) &quot;../node_modules/cropperjs/dist/cropper.css&quot;;&#039;,
+            &#039;@import &quot;../../public/less/flags.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/generics.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/mixins.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/global.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/modals.less&quot;;&#039;,
+        ].map(str =&gt; str.replace(/\//g, path.sep)).join(&#039;\n&#039;)}`;
+    },
+    admin: function (source) {
+        return `${source}\n${[
+            &#039;@import &quot;../public/vendor/fontawesome/less/regular.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/solid.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/brands.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/fontawesome.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/v4-shims.less&quot;;&#039;,
+            &#039;@import &quot;../public/vendor/fontawesome/less/nodebb-shims.less&quot;;&#039;,
+            &#039;@import &quot;../public/less/admin/admin&quot;;&#039;,
+            &#039;@import &quot;../public/less/generics.less&quot;;&#039;,
+            &#039;@import &quot;../../public/less/jquery-ui.less&quot;;&#039;,
+            &#039;@import (inline) &quot;../node_modules/@adactive/bootstrap-tagsinput/src/bootstrap-tagsinput.css&quot;;&#039;,
+            &#039;@import (inline) &quot;../public/vendor/mdl/material.css&quot;;&#039;,
+        ].map(str =&gt; str.replace(/\//g, path.sep)).join(&#039;\n&#039;)}`;
+    },
+};
+
+async function filterMissingFiles(filepaths) {
+    const exists = await Promise.all(
+        filepaths.map(async (filepath) =&gt; {
+            const exists = await file.exists(path.join(__dirname, &#039;../../node_modules&#039;, filepath));
+            if (!exists) {
+                winston.warn(`[meta/css] File not found! ${filepath}`);
+            }
+            return exists;
+        })
+    );
+    return filepaths.filter((filePath, i) =&gt; exists[i]);
+}
+
+async function getImports(files, prefix, extension) {
+    const pluginDirectories = [];
+    let source = &#039;&#039;;
+
+    files.forEach((styleFile) =&gt; {
+        if (styleFile.endsWith(extension)) {
+            source += `${prefix + path.sep + styleFile}&quot;;`;
+        } else {
+            pluginDirectories.push(styleFile);
+        }
+    });
+    await Promise.all(pluginDirectories.map(async (directory) =&gt; {
+        const styleFiles = await file.walk(directory);
+        styleFiles.forEach((styleFile) =&gt; {
+            source += `${prefix + path.sep + styleFile}&quot;;`;
+        });
+    }));
+    return source;
+}
+
+async function getBundleMetadata(target) {
+    const paths = [
+        path.join(__dirname, &#039;../../node_modules&#039;),
+        path.join(__dirname, &#039;../../public/less&#039;),
+        path.join(__dirname, &#039;../../public/vendor/fontawesome/less&#039;),
+    ];
+
+    // Skin support
+    let skin;
+    if (target.startsWith(&#039;client-&#039;)) {
+        skin = target.split(&#039;-&#039;)[1];
+
+        if (CSS.supportedSkins.includes(skin)) {
+            target = &#039;client&#039;;
+        }
+    }
+    let skinImport = [];
+    if (target === &#039;client&#039;) {
+        const themeData = await db.getObjectFields(&#039;config&#039;, [&#039;theme:type&#039;, &#039;theme:id&#039;, &#039;bootswatchSkin&#039;]);
+        const themeId = (themeData[&#039;theme:id&#039;] || &#039;nodebb-theme-persona&#039;);
+        const baseThemePath = path.join(nconf.get(&#039;themes_path&#039;), (themeData[&#039;theme:type&#039;] &amp;&amp; themeData[&#039;theme:type&#039;] === &#039;local&#039; ? themeId : &#039;nodebb-theme-vanilla&#039;));
+        paths.unshift(baseThemePath);
+
+        themeData.bootswatchSkin = skin || themeData.bootswatchSkin;
+        if (themeData &amp;&amp; themeData.bootswatchSkin) {
+            skinImport.push(`\n@import &quot;./@nodebb/bootswatch/${themeData.bootswatchSkin}/variables.less&quot;;`);
+            skinImport.push(`\n@import &quot;./@nodebb/bootswatch/${themeData.bootswatchSkin}/bootswatch.less&quot;;`);
+        }
+        skinImport = skinImport.join(&#039;&#039;);
+    }
+
+    const [lessImports, cssImports, acpLessImports] = await Promise.all([
+        filterGetImports(plugins.lessFiles, &#039;\n@import &quot;.&#039;, &#039;.less&#039;),
+        filterGetImports(plugins.cssFiles, &#039;\n@import (inline) &quot;.&#039;, &#039;.css&#039;),
+        target === &#039;client&#039; ? &#039;&#039; : filterGetImports(plugins.acpLessFiles, &#039;\n@import &quot;.&#039;, &#039;.less&#039;),
+    ]);
+
+    async function filterGetImports(files, prefix, extension) {
+        const filteredFiles = await filterMissingFiles(files);
+        return await getImports(filteredFiles, prefix, extension);
+    }
+
+    let imports = `${skinImport}\n${cssImports}\n${lessImports}\n${acpLessImports}`;
+    imports = buildImports[target](imports);
+
+    return { paths: paths, imports: imports };
+}
+
+CSS.buildBundle = async function (target, fork) {
+    if (target === &#039;client&#039;) {
+        await rimrafAsync(path.join(__dirname, &#039;../../build/public/client*&#039;));
+    }
+
+    const data = await getBundleMetadata(target);
+    const minify = process.env.NODE_ENV !== &#039;development&#039;;
+    const bundle = await minifier.css.bundle(data.imports, data.paths, minify, fork);
+
+    const filename = `${target}.css`;
+    await fs.promises.writeFile(path.join(__dirname, &#039;../../build/public&#039;, filename), bundle.code);
+    return bundle.code;
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/write/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/write/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.52</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">356</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">59.94</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">5.26</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const util = require(&#039;util&#039;);
+const nconf = require(&#039;nconf&#039;);
+const path = require(&#039;path&#039;);
+const crypto = require(&#039;crypto&#039;);
+const fs = require(&#039;fs&#039;).promises;
+
+const db = require(&#039;../../database&#039;);
+const api = require(&#039;../../api&#039;);
+const groups = require(&#039;../../groups&#039;);
+const meta = require(&#039;../../meta&#039;);
+const privileges = require(&#039;../../privileges&#039;);
+const user = require(&#039;../../user&#039;);
+const utils = require(&#039;../../utils&#039;);
+
+const helpers = require(&#039;../helpers&#039;);
+
+const Users = module.exports;
+
+const exportMetadata = new Map([
+    [&#039;posts&#039;, [&#039;csv&#039;, &#039;text/csv&#039;]],
+    [&#039;uploads&#039;, [&#039;zip&#039;, &#039;application/zip&#039;]],
+    [&#039;profile&#039;, [&#039;json&#039;, &#039;application/json&#039;]],
+]);
+
+const hasAdminPrivilege = async (uid, privilege) =&gt; {
+    const ok = await privileges.admin.can(`admin:${privilege}`, uid);
+    if (!ok) {
+        throw new Error(&#039;[[error:no-privileges]]&#039;);
+    }
+};
+
+Users.redirectBySlug = async (req, res) =&gt; {
+    const uid = await user.getUidByUserslug(req.params.userslug);
+
+    if (uid) {
+        const path = req.path.split(&#039;/&#039;).slice(3).join(&#039;/&#039;);
+        const urlObj = new URL(nconf.get(&#039;url&#039;) + req.url);
+        res.redirect(308, nconf.get(&#039;relative_path&#039;) + encodeURI(`/api/v3/users/${uid}/${path}${urlObj.search}`));
+    } else {
+        helpers.formatApiResponse(404, res);
+    }
+};
+
+Users.create = async (req, res) =&gt; {
+    await hasAdminPrivilege(req.uid, &#039;users&#039;);
+    const userObj = await api.users.create(req, req.body);
+    helpers.formatApiResponse(200, res, userObj);
+};
+
+Users.exists = async (req, res) =&gt; {
+    helpers.formatApiResponse(200, res);
+};
+
+Users.get = async (req, res) =&gt; {
+    const userData = await user.getUserData(req.params.uid);
+    const publicUserData = await user.hidePrivateData(userData, req.uid);
+    helpers.formatApiResponse(200, res, publicUserData);
+};
+
+Users.update = async (req, res) =&gt; {
+    const userObj = await api.users.update(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res, userObj);
+};
+
+Users.delete = async (req, res) =&gt; {
+    await api.users.delete(req, { ...req.params, password: req.body.password });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.deleteContent = async (req, res) =&gt; {
+    await api.users.deleteContent(req, { ...req.params, password: req.body.password });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.deleteAccount = async (req, res) =&gt; {
+    await api.users.deleteAccount(req, { ...req.params, password: req.body.password });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.deleteMany = async (req, res) =&gt; {
+    await hasAdminPrivilege(req.uid, &#039;users&#039;);
+    await api.users.deleteMany(req, req.body);
+    helpers.formatApiResponse(200, res);
+};
+
+Users.changePicture = async (req, res) =&gt; {
+    await api.users.changePicture(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.updateSettings = async (req, res) =&gt; {
+    const settings = await api.users.updateSettings(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res, settings);
+};
+
+Users.changePassword = async (req, res) =&gt; {
+    await api.users.changePassword(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.follow = async (req, res) =&gt; {
+    await api.users.follow(req, req.params);
+    helpers.formatApiResponse(200, res);
+};
+
+Users.unfollow = async (req, res) =&gt; {
+    await api.users.unfollow(req, req.params);
+    helpers.formatApiResponse(200, res);
+};
+
+Users.ban = async (req, res) =&gt; {
+    await api.users.ban(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.unban = async (req, res) =&gt; {
+    await api.users.unban(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.mute = async (req, res) =&gt; {
+    await api.users.mute(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.unmute = async (req, res) =&gt; {
+    await api.users.unmute(req, { ...req.body, uid: req.params.uid });
+    helpers.formatApiResponse(200, res);
+};
+
+Users.generateToken = async (req, res) =&gt; {
+    await hasAdminPrivilege(req.uid, &#039;settings&#039;);
+    if (parseInt(req.params.uid, 10) !== parseInt(req.user.uid, 10)) {
+        return helpers.formatApiResponse(401, res);
+    }
+
+    const settings = await meta.settings.get(&#039;core.api&#039;);
+    settings.tokens = settings.tokens || [];
+
+    const newToken = {
+        token: utils.generateUUID(),
+        uid: req.user.uid,
+        description: req.body.description || &#039;&#039;,
+        timestamp: Date.now(),
+    };
+    settings.tokens.push(newToken);
+    await meta.settings.set(&#039;core.api&#039;, settings);
+    helpers.formatApiResponse(200, res, newToken);
+};
+
+Users.deleteToken = async (req, res) =&gt; {
+    await hasAdminPrivilege(req.uid, &#039;settings&#039;);
+    if (parseInt(req.params.uid, 10) !== parseInt(req.user.uid, 10)) {
+        return helpers.formatApiResponse(401, res);
+    }
+
+    const settings = await meta.settings.get(&#039;core.api&#039;);
+    const beforeLen = settings.tokens.length;
+    settings.tokens = settings.tokens.filter(tokenObj =&gt; tokenObj.token !== req.params.token);
+    if (beforeLen !== settings.tokens.length) {
+        await meta.settings.set(&#039;core.api&#039;, settings);
+        helpers.formatApiResponse(200, res);
+    } else {
+        helpers.formatApiResponse(404, res);
+    }
+};
+
+const getSessionAsync = util.promisify((sid, callback) =&gt; {
+    db.sessionStore.get(sid, (err, sessionObj) =&gt; callback(err, sessionObj || null));
+});
+
+Users.revokeSession = async (req, res) =&gt; {
+    // Only admins or global mods (besides the user themselves) can revoke sessions
+    if (parseInt(req.params.uid, 10) !== req.uid &amp;&amp; !await user.isAdminOrGlobalMod(req.uid)) {
+        return helpers.formatApiResponse(404, res);
+    }
+
+    const sids = await db.getSortedSetRange(`uid:${req.params.uid}:sessions`, 0, -1);
+    let _id;
+    for (const sid of sids) {
+        /* eslint-disable no-await-in-loop */
+        const sessionObj = await getSessionAsync(sid);
+        if (sessionObj &amp;&amp; sessionObj.meta &amp;&amp; sessionObj.meta.uuid === req.params.uuid) {
+            _id = sid;
+            break;
+        }
+    }
+
+    if (!_id) {
+        throw new Error(&#039;[[error:no-session-found]]&#039;);
+    }
+
+    await user.auth.revokeSession(_id, req.params.uid);
+    helpers.formatApiResponse(200, res);
+};
+
+Users.invite = async (req, res) =&gt; {
+    const { emails, groupsToJoin = [] } = req.body;
+
+    if (!emails || !Array.isArray(groupsToJoin)) {
+        return helpers.formatApiResponse(400, res, new Error(&#039;[[error:invalid-data]]&#039;));
+    }
+
+    // For simplicity, this API route is restricted to self-use only. This can change if needed.
+    if (parseInt(req.user.uid, 10) !== parseInt(req.params.uid, 10)) {
+        return helpers.formatApiResponse(403, res, new Error(&#039;[[error:no-privileges]]&#039;));
+    }
+
+    const canInvite = await privileges.users.hasInvitePrivilege(req.uid);
+    if (!canInvite) {
+        return helpers.formatApiResponse(403, res, new Error(&#039;[[error:no-privileges]]&#039;));
+    }
+
+    const { registrationType } = meta.config;
+    const isAdmin = await user.isAdministrator(req.uid);
+    if (registrationType === &#039;admin-invite-only&#039; &amp;&amp; !isAdmin) {
+        return helpers.formatApiResponse(403, res, new Error(&#039;[[error:no-privileges]]&#039;));
+    }
+
+    const inviteGroups = (await groups.getUserInviteGroups(req.uid)).map(group =&gt; group.name);
+    const cannotInvite = groupsToJoin.some(group =&gt; !inviteGroups.includes(group));
+    if (groupsToJoin.length &gt; 0 &amp;&amp; cannotInvite) {
+        return helpers.formatApiResponse(403, res, new Error(&#039;[[error:no-privileges]]&#039;));
+    }
+
+    const max = meta.config.maximumInvites;
+    const emailsArr = emails.split(&#039;,&#039;).map(email =&gt; email.trim()).filter(Boolean);
+
+    for (const email of emailsArr) {
+        /* eslint-disable no-await-in-loop */
+        let invites = 0;
+        if (max) {
+            invites = await user.getInvitesNumber(req.uid);
+        }
+        if (!isAdmin &amp;&amp; max &amp;&amp; invites &gt;= max) {
+            return helpers.formatApiResponse(403, res, new Error(`[[error:invite-maximum-met, ${invites}, ${max}]]`));
+        }
+
+        await user.sendInvitationEmail(req.uid, email, groupsToJoin);
+    }
+
+    return helpers.formatApiResponse(200, res);
+};
+
+Users.getInviteGroups = async function (req, res) {
+    if (parseInt(req.params.uid, 10) !== parseInt(req.user.uid, 10)) {
+        return helpers.formatApiResponse(401, res);
+    }
+
+    const userInviteGroups = await groups.getUserInviteGroups(req.params.uid);
+    return helpers.formatApiResponse(200, res, userInviteGroups.map(group =&gt; group.displayName));
+};
+
+Users.listEmails = async (req, res) =&gt; {
+    const [isPrivileged, { showemail }] = await Promise.all([
+        user.isPrivileged(req.uid),
+        user.getSettings(req.params.uid),
+    ]);
+    const isSelf = req.uid === parseInt(req.params.uid, 10);
+
+    if (isSelf || isPrivileged || showemail) {
+        const emails = await db.getSortedSetRangeByScore(&#039;email:uid&#039;, 0, 500, req.params.uid, req.params.uid);
+        helpers.formatApiResponse(200, res, { emails });
+    } else {
+        helpers.formatApiResponse(204, res);
+    }
+};
+
+Users.getEmail = async (req, res) =&gt; {
+    const [isPrivileged, { showemail }, exists] = await Promise.all([
+        user.isPrivileged(req.uid),
+        user.getSettings(req.params.uid),
+        db.isSortedSetMember(&#039;email:uid&#039;, req.params.email.toLowerCase()),
+    ]);
+    const isSelf = req.uid === parseInt(req.params.uid, 10);
+
+    if (exists &amp;&amp; (isSelf || isPrivileged || showemail)) {
+        helpers.formatApiResponse(204, res);
+    } else {
+        helpers.formatApiResponse(404, res);
+    }
+};
+
+Users.confirmEmail = async (req, res) =&gt; {
+    const [pending, current, canManage] = await Promise.all([
+        user.email.isValidationPending(req.params.uid, req.params.email),
+        user.getUserField(req.params.uid, &#039;email&#039;),
+        privileges.admin.can(&#039;admin:users&#039;, req.uid),
+    ]);
+
+    if (!canManage) {
+        return helpers.notAllowed(req, res);
+    }
+
+    if (pending) { // has active confirmation request
+        const code = await db.get(`confirm:byUid:${req.params.uid}`);
+        await user.email.confirmByCode(code, req.session.id);
+        helpers.formatApiResponse(200, res);
+    } else if (current &amp;&amp; current === req.params.email) { // email in user hash (i.e. email passed into user.create)
+        await user.email.confirmByUid(req.params.uid);
+        helpers.formatApiResponse(200, res);
+    } else {
+        helpers.formatApiResponse(404, res);
+    }
+};
+
+const prepareExport = async (req, res) =&gt; {
+    const [extension] = exportMetadata.get(req.params.type);
+    const filename = `${req.params.uid}_${req.params.type}.${extension}`;
+    try {
+        const stat = await fs.stat(path.join(__dirname, &#039;../../../build/export&#039;, filename));
+        const modified = new Date(stat.mtimeMs);
+        res.set(&#039;Last-Modified&#039;, modified.toUTCString());
+        res.set(&#039;ETag&#039;, `&quot;${crypto.createHash(&#039;md5&#039;).update(String(stat.mtimeMs)).digest(&#039;hex&#039;)}&quot;`);
+        res.status(204);
+        return true;
+    } catch (e) {
+        res.status(404);
+        return false;
+    }
+};
+
+Users.checkExportByType = async (req, res) =&gt; {
+    await prepareExport(req, res);
+    res.end();
+};
+
+Users.getExportByType = async (req, res) =&gt; {
+    const [extension, mime] = exportMetadata.get(req.params.type);
+    const filename = `${req.params.uid}_${req.params.type}.${extension}`;
+
+    const exists = await prepareExport(req, res);
+    if (!exists) {
+        return res.end();
+    }
+
+    res.status(200);
+    res.sendFile(filename, {
+        root: path.join(__dirname, &#039;../../../build/export&#039;),
+        headers: {
+            &#039;Content-Type&#039;: mime,
+            &#039;Content-Disposition&#039;: `attachment; filename=${filename}`,
+        },
+    }, (err) =&gt; {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+Users.generateExportsByType = async (req, res) =&gt; {
+    await api.users.generateExport(req, req.params);
+    helpers.formatApiResponse(202, res);
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

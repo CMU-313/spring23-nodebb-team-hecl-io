@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/chats.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/chats.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.58</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">521</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">50.52</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.33</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/chats&#039;, [
+    &#039;components&#039;,
+    &#039;translator&#039;,
+    &#039;mousetrap&#039;,
+    &#039;forum/chats/recent&#039;,
+    &#039;forum/chats/search&#039;,
+    &#039;forum/chats/messages&#039;,
+    &#039;composer/autocomplete&#039;,
+    &#039;hooks&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+    &#039;chat&#039;,
+    &#039;api&#039;,
+    &#039;uploadHelpers&#039;,
+], function (
+    components, translator, mousetrap,
+    recentChats, search, messages,
+    autocomplete, hooks, bootbox, alerts, chatModule,
+    api, uploadHelpers
+) {
+    const Chats = {
+        initialised: false,
+    };
+
+    let newMessage = false;
+
+    Chats.init = function () {
+        const env = utils.findBootstrapEnvironment();
+
+        if (!Chats.initialised) {
+            Chats.addSocketListeners();
+            Chats.addGlobalEventListeners();
+        }
+
+        recentChats.init();
+
+        Chats.addEventListeners();
+        Chats.setActive();
+
+        if (env === &#039;md&#039; || env === &#039;lg&#039;) {
+            Chats.addHotkeys();
+        }
+
+        $(document).ready(function () {
+            hooks.fire(&#039;action:chat.loaded&#039;, $(&#039;.chats-full&#039;));
+        });
+
+        Chats.initialised = true;
+        messages.scrollToBottom($(&#039;.expanded-chat ul.chat-content&#039;));
+
+        search.init();
+
+        if (ajaxify.data.hasOwnProperty(&#039;roomId&#039;)) {
+            components.get(&#039;chat/input&#039;).focus();
+        }
+    };
+
+    Chats.addEventListeners = function () {
+        Chats.addSendHandlers(ajaxify.data.roomId, $(&#039;.chat-input&#039;), $(&#039;.expanded-chat button[data-action=&quot;send&quot;]&#039;));
+        Chats.addPopoutHandler();
+        Chats.addActionHandlers(components.get(&#039;chat/messages&#039;), ajaxify.data.roomId);
+        Chats.addMemberHandler(ajaxify.data.roomId, components.get(&#039;chat/controls&#039;).find(&#039;[data-action=&quot;members&quot;]&#039;));
+        Chats.addRenameHandler(ajaxify.data.roomId, components.get(&#039;chat/controls&#039;).find(&#039;[data-action=&quot;rename&quot;]&#039;));
+        Chats.addLeaveHandler(ajaxify.data.roomId, components.get(&#039;chat/controls&#039;).find(&#039;[data-action=&quot;leave&quot;]&#039;));
+        Chats.addScrollHandler(ajaxify.data.roomId, ajaxify.data.uid, $(&#039;.chat-content&#039;));
+        Chats.addScrollBottomHandler($(&#039;.chat-content&#039;));
+        Chats.addCharactersLeftHandler($(&#039;[component=&quot;chat/main-wrapper&quot;]&#039;));
+        Chats.addIPHandler($(&#039;[component=&quot;chat/main-wrapper&quot;]&#039;));
+        Chats.createAutoComplete($(&#039;[component=&quot;chat/input&quot;]&#039;));
+        Chats.addUploadHandler({
+            dragDropAreaEl: $(&#039;.chats-full&#039;),
+            pasteEl: $(&#039;[component=&quot;chat/input&quot;]&#039;),
+            uploadFormEl: $(&#039;[component=&quot;chat/upload&quot;]&#039;),
+            inputEl: $(&#039;[component=&quot;chat/input&quot;]&#039;),
+        });
+
+        $(&#039;[data-action=&quot;close&quot;]&#039;).on(&#039;click&#039;, function () {
+            Chats.switchChat();
+        });
+    };
+
+    Chats.addUploadHandler = function (options) {
+        uploadHelpers.init({
+            dragDropAreaEl: options.dragDropAreaEl,
+            pasteEl: options.pasteEl,
+            uploadFormEl: options.uploadFormEl,
+            route: &#039;/api/post/upload&#039;, // using same route as post uploads
+            callback: function (uploads) {
+                const inputEl = options.inputEl;
+                let text = inputEl.val();
+                uploads.forEach((upload) =&gt; {
+                    text = text + (text ? &#039;\n&#039; : &#039;&#039;) + (upload.isImage ? &#039;!&#039; : &#039;&#039;) + `[${upload.filename}](${upload.url})`;
+                });
+                inputEl.val(text);
+            },
+        });
+    };
+
+    Chats.addIPHandler = function (container) {
+        container.on(&#039;click&#039;, &#039;.chat-ip-button&#039;, function () {
+            const ipEl = $(this).parent();
+            const mid = ipEl.parents(&#039;[data-mid]&#039;).attr(&#039;data-mid&#039;);
+            socket.emit(&#039;modules.chats.getIP&#039;, mid, function (err, ip) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                ipEl.html(ip);
+            });
+        });
+    };
+
+    Chats.addPopoutHandler = function () {
+        $(&#039;[data-action=&quot;pop-out&quot;]&#039;).on(&#039;click&#039;, function () {
+            const text = components.get(&#039;chat/input&#039;).val();
+            const roomId = ajaxify.data.roomId;
+
+            if (app.previousUrl &amp;&amp; app.previousUrl.match(/chats/)) {
+                ajaxify.go(&#039;user/&#039; + ajaxify.data.userslug + &#039;/chats&#039;, function () {
+                    chatModule.openChat(roomId, ajaxify.data.uid);
+                }, true);
+            } else {
+                window.history.go(-1);
+                chatModule.openChat(roomId, ajaxify.data.uid);
+            }
+
+            $(window).one(&#039;action:chat.loaded&#039;, function () {
+                components.get(&#039;chat/input&#039;).val(text);
+            });
+        });
+    };
+
+    Chats.addScrollHandler = function (roomId, uid, el) {
+        let loading = false;
+        el.off(&#039;scroll&#039;).on(&#039;scroll&#039;, function () {
+            messages.toggleScrollUpAlert(el);
+            if (loading) {
+                return;
+            }
+
+            const top = (el[0].scrollHeight - el.height()) * 0.1;
+            if (el.scrollTop() &gt;= top) {
+                return;
+            }
+            loading = true;
+            const start = parseInt(el.children(&#039;[data-mid]&#039;).length, 10);
+            api.get(`/chats/${roomId}/messages`, { uid, start }).then((data) =&gt; {
+                data = data.messages;
+
+                if (!data) {
+                    loading = false;
+                    return;
+                }
+                data = data.filter(function (chatMsg) {
+                    return !$(&#039;[component=&quot;chat/message&quot;][data-mid=&quot;&#039; + chatMsg.messageId + &#039;&quot;]&#039;).length;
+                });
+                if (!data.length) {
+                    loading = false;
+                    return;
+                }
+                messages.parseMessage(data, function (html) {
+                    const currentScrollTop = el.scrollTop();
+                    const previousHeight = el[0].scrollHeight;
+                    html = $(html);
+                    el.prepend(html);
+                    html.find(&#039;.timeago&#039;).timeago();
+                    html.find(&#039;img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+                    el.scrollTop((el[0].scrollHeight - previousHeight) + currentScrollTop);
+                    loading = false;
+                });
+            }).catch(alerts.error);
+        });
+    };
+
+    Chats.addScrollBottomHandler = function (chatContent) {
+        chatContent.parent()
+            .find(&#039;[component=&quot;chat/messages/scroll-up-alert&quot;]&#039;)
+            .off(&#039;click&#039;).on(&#039;click&#039;, function () {
+                messages.scrollToBottom(chatContent);
+            });
+    };
+
+    Chats.addCharactersLeftHandler = function (parent) {
+        const element = parent.find(&#039;[component=&quot;chat/input&quot;]&#039;);
+        element.on(&#039;change keyup paste&#039;, function () {
+            messages.updateRemainingLength(parent);
+        });
+    };
+
+    Chats.addActionHandlers = function (element, roomId) {
+        element.on(&#039;click&#039;, &#039;[data-action]&#039;, function () {
+            const messageId = $(this).parents(&#039;[data-mid]&#039;).attr(&#039;data-mid&#039;);
+            const action = this.getAttribute(&#039;data-action&#039;);
+
+            switch (action) {
+            case &#039;edit&#039;: {
+                const inputEl = $(&#039;[data-roomid=&quot;&#039; + roomId + &#039;&quot;] [component=&quot;chat/input&quot;]&#039;);
+                messages.prepEdit(inputEl, messageId, roomId);
+                break;
+            }
+            case &#039;delete&#039;:
+                messages.delete(messageId, roomId);
+                break;
+
+            case &#039;restore&#039;:
+                messages.restore(messageId, roomId);
+                break;
+            }
+        });
+    };
+
+    Chats.addHotkeys = function () {
+        mousetrap.bind(&#039;ctrl+up&#039;, function () {
+            const activeContact = $(&#039;.chats-list .bg-info&#039;);
+            const prev = activeContact.prev();
+
+            if (prev.length) {
+                Chats.switchChat(prev.attr(&#039;data-roomid&#039;));
+            }
+        });
+        mousetrap.bind(&#039;ctrl+down&#039;, function () {
+            const activeContact = $(&#039;.chats-list .bg-info&#039;);
+            const next = activeContact.next();
+
+            if (next.length) {
+                Chats.switchChat(next.attr(&#039;data-roomid&#039;));
+            }
+        });
+        mousetrap.bind(&#039;up&#039;, function (e) {
+            if (e.target === components.get(&#039;chat/input&#039;).get(0)) {
+                // Retrieve message id from messages list
+                const message = components.get(&#039;chat/messages&#039;).find(&#039;.chat-message[data-self=&quot;1&quot;]&#039;).last();
+                if (!message.length) {
+                    return;
+                }
+                const lastMid = message.attr(&#039;data-mid&#039;);
+                const inputEl = components.get(&#039;chat/input&#039;);
+
+                messages.prepEdit(inputEl, lastMid, ajaxify.data.roomId);
+            }
+        });
+    };
+
+    Chats.addMemberHandler = function (roomId, buttonEl) {
+        let modal;
+
+        buttonEl.on(&#039;click&#039;, function () {
+            app.parseAndTranslate(&#039;partials/modals/manage_room&#039;, {}, function (html) {
+                modal = bootbox.dialog({
+                    title: &#039;[[modules:chat.manage-room]]&#039;,
+                    message: html,
+                });
+
+                modal.attr(&#039;component&#039;, &#039;chat/manage-modal&#039;);
+
+                Chats.refreshParticipantsList(roomId, modal);
+                Chats.addKickHandler(roomId, modal);
+
+                const searchInput = modal.find(&#039;input&#039;);
+                const errorEl = modal.find(&#039;.text-danger&#039;);
+                require([&#039;autocomplete&#039;, &#039;translator&#039;], function (autocomplete, translator) {
+                    autocomplete.user(searchInput, function (event, selected) {
+                        errorEl.text(&#039;&#039;);
+                        api.post(`/chats/${roomId}/users`, {
+                            uids: [selected.item.user.uid],
+                        }).then((body) =&gt; {
+                            Chats.refreshParticipantsList(roomId, modal, body);
+                            searchInput.val(&#039;&#039;);
+                        }).catch((err) =&gt; {
+                            translator.translate(err.message, function (translated) {
+                                errorEl.text(translated);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    };
+
+    Chats.addKickHandler = function (roomId, modal) {
+        modal.on(&#039;click&#039;, &#039;[data-action=&quot;kick&quot;]&#039;, function () {
+            const uid = parseInt(this.getAttribute(&#039;data-uid&#039;), 10);
+
+            api.delete(`/chats/${roomId}/users/${uid}`, {}).then((body) =&gt; {
+                Chats.refreshParticipantsList(roomId, modal, body);
+            }).catch(alerts.error);
+        });
+    };
+
+    Chats.addLeaveHandler = function (roomId, buttonEl) {
+        buttonEl.on(&#039;click&#039;, function () {
+            bootbox.confirm({
+                size: &#039;small&#039;,
+                title: &#039;[[modules:chat.leave]]&#039;,
+                message: &#039;&lt;p&gt;[[modules:chat.leave-prompt]]&lt;/p&gt;&lt;p class=&quot;help-block&quot;&gt;[[modules:chat.leave-help]]&lt;/p&gt;&#039;,
+                callback: function (ok) {
+                    if (ok) {
+                        api.delete(`/chats/${roomId}/users/${app.user.uid}`, {}).then(() =&gt; {
+                            // Return user to chats page. If modal, close modal.
+                            const modal = buttonEl.parents(&#039;.chat-modal&#039;);
+                            if (modal.length) {
+                                chatModule.close(modal);
+                            } else {
+                                ajaxify.go(&#039;chats&#039;);
+                            }
+                        }).catch(alerts.error);
+                    }
+                },
+            });
+        });
+    };
+
+    Chats.refreshParticipantsList = async (roomId, modal, data) =&gt; {
+        const listEl = modal.find(&#039;.list-group&#039;);
+
+        if (!data) {
+            try {
+                data = await api.get(`/chats/${roomId}/users`, {});
+            } catch (err) {
+                translator.translate(&#039;[[error:invalid-data]]&#039;, function (translated) {
+                    listEl.find(&#039;li&#039;).text(translated);
+                });
+            }
+        }
+
+        app.parseAndTranslate(&#039;partials/modals/manage_room_users&#039;, data, function (html) {
+            listEl.html(html);
+        });
+    };
+
+    Chats.addRenameHandler = function (roomId, buttonEl, roomName) {
+        let modal;
+
+        buttonEl.on(&#039;click&#039;, function () {
+            app.parseAndTranslate(&#039;partials/modals/rename_room&#039;, {
+                name: roomName || ajaxify.data.roomName,
+            }, function (html) {
+                modal = bootbox.dialog({
+                    title: &#039;[[modules:chat.rename-room]]&#039;,
+                    message: html,
+                    buttons: {
+                        save: {
+                            label: &#039;[[global:save]]&#039;,
+                            className: &#039;btn-primary&#039;,
+                            callback: submit,
+                        },
+                    },
+                });
+            });
+        });
+
+        function submit() {
+            api.put(`/chats/${roomId}`, {
+                name: modal.find(&#039;#roomName&#039;).val(),
+            }).catch(alerts.error);
+        }
+    };
+
+    Chats.addSendHandlers = function (roomId, inputEl, sendEl) {
+        inputEl.off(&#039;keypress&#039;).on(&#039;keypress&#039;, function (e) {
+            if (e.which === 13 &amp;&amp; !e.shiftKey) {
+                messages.sendMessage(roomId, inputEl);
+                return false;
+            }
+        });
+
+        sendEl.off(&#039;click&#039;).on(&#039;click&#039;, function () {
+            messages.sendMessage(roomId, inputEl);
+            inputEl.focus();
+            return false;
+        });
+    };
+
+    Chats.createAutoComplete = function (element) {
+        if (!element.length) {
+            return;
+        }
+
+        const data = {
+            element: element,
+            strategies: [],
+            options: {
+                style: {
+                    &#039;z-index&#039;: 20000,
+                    flex: 0,
+                    top: &#039;inherit&#039;,
+                },
+                placement: &#039;top&#039;,
+            },
+        };
+
+        $(window).trigger(&#039;chat:autocomplete:init&#039;, data);
+        if (data.strategies.length) {
+            autocomplete.setup(data);
+        }
+    };
+
+    Chats.leave = function (el) {
+        const roomId = el.attr(&#039;data-roomid&#039;);
+        api.delete(`/chats/${roomId}/users/${app.user.uid}`, {}).then(() =&gt; {
+            if (parseInt(roomId, 10) === parseInt(ajaxify.data.roomId, 10)) {
+                ajaxify.go(&#039;user/&#039; + ajaxify.data.userslug + &#039;/chats&#039;);
+            } else {
+                el.remove();
+            }
+
+            const modal = chatModule.getModal(roomId);
+            if (modal.length) {
+                chatModule.close(modal);
+            }
+        }).catch(alerts.error);
+    };
+
+    Chats.switchChat = function (roomid) {
+        // Allow empty arg for return to chat list/close chat
+        if (!roomid) {
+            roomid = &#039;&#039;;
+        }
+
+        const url = &#039;user/&#039; + ajaxify.data.userslug + &#039;/chats/&#039; + roomid + window.location.search;
+        if (self.fetch) {
+            fetch(config.relative_path + &#039;/api/&#039; + url, { credentials: &#039;include&#039; })
+                .then(function (response) {
+                    if (response.ok) {
+                        response.json().then(function (payload) {
+                            app.parseAndTranslate(&#039;partials/chats/message-window&#039;, payload, function (html) {
+                                components.get(&#039;chat/main-wrapper&#039;).html(html);
+                                html.find(&#039;.timeago&#039;).timeago();
+                                ajaxify.data = payload;
+                                Chats.setActive();
+                                Chats.addEventListeners();
+                                hooks.fire(&#039;action:chat.loaded&#039;, $(&#039;.chats-full&#039;));
+                                messages.scrollToBottom($(&#039;.expanded-chat ul.chat-content&#039;));
+                                if (history.pushState) {
+                                    history.pushState({
+                                        url: url,
+                                    }, null, window.location.protocol + &#039;//&#039; + window.location.host + config.relative_path + &#039;/&#039; + url);
+                                }
+                            });
+                        });
+                    } else {
+                        console.warn(&#039;[search] Received &#039; + response.status);
+                    }
+                })
+                .catch(function (error) {
+                    console.warn(&#039;[search] &#039; + error.message);
+                });
+        } else {
+            ajaxify.go(url);
+        }
+    };
+
+    Chats.addGlobalEventListeners = function () {
+        $(window).on(&#039;mousemove keypress click&#039;, function () {
+            if (newMessage &amp;&amp; ajaxify.data.roomId) {
+                socket.emit(&#039;modules.chats.markRead&#039;, ajaxify.data.roomId);
+                newMessage = false;
+            }
+        });
+    };
+
+    Chats.addSocketListeners = function () {
+        socket.on(&#039;event:chats.receive&#039;, function (data) {
+            if (parseInt(data.roomId, 10) === parseInt(ajaxify.data.roomId, 10)) {
+                newMessage = data.self === 0;
+                data.message.self = data.self;
+
+                messages.appendChatMessage($(&#039;.expanded-chat .chat-content&#039;), data.message);
+            } else if (ajaxify.data.template.chats) {
+                const roomEl = $(&#039;[data-roomid=&#039; + data.roomId + &#039;]&#039;);
+
+                if (roomEl.length &gt; 0) {
+                    roomEl.addClass(&#039;unread&#039;);
+                } else {
+                    const recentEl = components.get(&#039;chat/recent&#039;);
+                    app.parseAndTranslate(&#039;partials/chats/recent_room&#039;, {
+                        rooms: {
+                            roomId: data.roomId,
+                            lastUser: data.message.fromUser,
+                            usernames: data.message.fromUser.username,
+                            unread: true,
+                        },
+                    }, function (html) {
+                        recentEl.prepend(html);
+                    });
+                }
+            }
+        });
+
+        socket.on(&#039;event:user_status_change&#039;, function (data) {
+            app.updateUserStatus($(&#039;.chats-list [data-uid=&quot;&#039; + data.uid + &#039;&quot;] [component=&quot;user/status&quot;]&#039;), data.status);
+        });
+
+        messages.addSocketListeners();
+
+        socket.on(&#039;event:chats.roomRename&#039;, function (data) {
+            const roomEl = components.get(&#039;chat/recent/room&#039;, data.roomId);
+            const titleEl = roomEl.find(&#039;[component=&quot;chat/title&quot;]&#039;);
+            ajaxify.data.roomName = data.newName;
+
+            titleEl.text(data.newName);
+        });
+    };
+
+    Chats.setActive = function () {
+        if (ajaxify.data.roomId) {
+            socket.emit(&#039;modules.chats.markRead&#039;, ajaxify.data.roomId);
+            $(&#039;[data-roomid=&quot;&#039; + ajaxify.data.roomId + &#039;&quot;]&#039;).toggleClass(&#039;unread&#039;, false);
+            $(&#039;.expanded-chat [component=&quot;chat/input&quot;]&#039;).focus();
+        }
+        $(&#039;.chats-list li&#039;).removeClass(&#039;bg-info&#039;);
+        $(&#039;.chats-list li[data-roomid=&quot;&#039; + ajaxify.data.roomId + &#039;&quot;]&#039;).addClass(&#039;bg-info&#039;);
+
+        components.get(&#039;chat/nav-wrapper&#039;).attr(&#039;data-loaded&#039;, ajaxify.data.roomId ? &#039;1&#039; : &#039;0&#039;);
+    };
+
+
+    return Chats;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

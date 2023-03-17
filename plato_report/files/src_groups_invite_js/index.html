@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/groups/invite.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/groups/invite.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.88</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">117</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">34.08</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.35</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const slugify = require(&#039;../slugify&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const notifications = require(&#039;../notifications&#039;);
+
+module.exports = function (Groups) {
+    Groups.requestMembership = async function (groupName, uid) {
+        await inviteOrRequestMembership(groupName, uid, &#039;request&#039;);
+        const { displayname } = await user.getUserFields(uid, [&#039;username&#039;]);
+
+        const [notification, owners] = await Promise.all([
+            notifications.create({
+                type: &#039;group-request-membership&#039;,
+                bodyShort: `[[groups:request.notification_title, ${displayname}]]`,
+                bodyLong: `[[groups:request.notification_text, ${displayname}, ${groupName}]]`,
+                nid: `group:${groupName}:uid:${uid}:request`,
+                path: `/groups/${slugify(groupName)}`,
+                from: uid,
+            }),
+            Groups.getOwners(groupName),
+        ]);
+
+        await notifications.push(notification, owners);
+    };
+
+    Groups.acceptMembership = async function (groupName, uid) {
+        await db.setsRemove([`group:${groupName}:pending`, `group:${groupName}:invited`], uid);
+        await Groups.join(groupName, uid);
+
+        const notification = await notifications.create({
+            type: &#039;group-invite&#039;,
+            bodyShort: `[[groups:membership.accept.notification_title, ${groupName}]]`,
+            nid: `group:${groupName}:uid:${uid}:invite-accepted`,
+            path: `/groups/${slugify(groupName)}`,
+        });
+        await notifications.push(notification, [uid]);
+    };
+
+    Groups.rejectMembership = async function (groupNames, uid) {
+        if (!Array.isArray(groupNames)) {
+            groupNames = [groupNames];
+        }
+        const sets = [];
+        groupNames.forEach(groupName =&gt; sets.push(`group:${groupName}:pending`, `group:${groupName}:invited`));
+        await db.setsRemove(sets, uid);
+    };
+
+    Groups.invite = async function (groupName, uids) {
+        uids = Array.isArray(uids) ? uids : [uids];
+        uids = await inviteOrRequestMembership(groupName, uids, &#039;invite&#039;);
+
+        const notificationData = await Promise.all(uids.map(uid =&gt; notifications.create({
+            type: &#039;group-invite&#039;,
+            bodyShort: `[[groups:invited.notification_title, ${groupName}]]`,
+            bodyLong: &#039;&#039;,
+            nid: `group:${groupName}:uid:${uid}:invite`,
+            path: `/groups/${slugify(groupName)}`,
+        })));
+
+        await Promise.all(uids.map((uid, index) =&gt; notifications.push(notificationData[index], uid)));
+    };
+
+    async function inviteOrRequestMembership(groupName, uids, type) {
+        uids = Array.isArray(uids) ? uids : [uids];
+        uids = uids.filter(uid =&gt; parseInt(uid, 10) &gt; 0);
+        const [exists, isMember, isPending, isInvited] = await Promise.all([
+            Groups.exists(groupName),
+            Groups.isMembers(uids, groupName),
+            Groups.isPending(uids, groupName),
+            Groups.isInvited(uids, groupName),
+        ]);
+
+        if (!exists) {
+            throw new Error(&#039;[[error:no-group]]&#039;);
+        }
+
+        uids = uids.filter((uid, i) =&gt; !isMember[i] &amp;&amp; ((type === &#039;invite&#039; &amp;&amp; !isInvited[i]) || (type === &#039;request&#039; &amp;&amp; !isPending[i])));
+
+        const set = type === &#039;invite&#039; ? `group:${groupName}:invited` : `group:${groupName}:pending`;
+        await db.setAdd(set, uids);
+        const hookName = type === &#039;invite&#039; ? &#039;inviteMember&#039; : &#039;requestMembership&#039;;
+        plugins.hooks.fire(`action:group.${hookName}`, {
+            groupName: groupName,
+            uids: uids,
+        });
+        return uids;
+    }
+
+    Groups.isInvited = async function (uids, groupName) {
+        return await checkInvitePending(uids, `group:${groupName}:invited`);
+    };
+
+    Groups.isPending = async function (uids, groupName) {
+        return await checkInvitePending(uids, `group:${groupName}:pending`);
+    };
+
+    async function checkInvitePending(uids, set) {
+        const isArray = Array.isArray(uids);
+        uids = isArray ? uids : [uids];
+        const checkUids = uids.filter(uid =&gt; parseInt(uid, 10) &gt; 0);
+        const isMembers = await db.isSetMembers(set, checkUids);
+        const map = _.zipObject(checkUids, isMembers);
+        return isArray ? uids.map(uid =&gt; !!map[uid]) : !!map[uids[0]];
+    }
+
+    Groups.getPending = async function (groupName) {
+        if (!groupName) {
+            return [];
+        }
+        return await db.getSetMembers(`group:${groupName}:pending`);
+    };
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

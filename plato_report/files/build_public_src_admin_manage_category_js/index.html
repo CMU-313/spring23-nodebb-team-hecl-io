@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/manage/category.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/manage/category.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.01</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">310</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">41.21</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.71</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/manage/category&#039;, [
+    &#039;uploader&#039;,
+    &#039;iconSelect&#039;,
+    &#039;categorySelector&#039;,
+    &#039;benchpress&#039;,
+    &#039;api&#039;,
+    &#039;bootbox&#039;,
+    &#039;alerts&#039;,
+], function (uploader, iconSelect, categorySelector, Benchpress, api, bootbox, alerts) {
+    const Category = {};
+    let updateHash = {};
+
+    Category.init = function () {
+        $(&#039;#category-settings select&#039;).each(function () {
+            const $this = $(this);
+            $this.val($this.attr(&#039;data-value&#039;));
+        });
+
+        categorySelector.init($(&#039;[component=&quot;category-selector&quot;]&#039;), {
+            onSelect: function (selectedCategory) {
+                ajaxify.go(&#039;admin/manage/categories/&#039; + selectedCategory.cid);
+            },
+            showLinks: true,
+        });
+
+        handleTags();
+
+        $(&#039;#category-settings input, #category-settings select, #category-settings textarea&#039;).on(&#039;change&#039;, function (ev) {
+            modified(ev.target);
+        });
+
+        $(&#039;[data-name=&quot;imageClass&quot;]&#039;).on(&#039;change&#039;, function () {
+            $(&#039;.category-preview&#039;).css(&#039;background-size&#039;, $(this).val());
+        });
+
+        $(&#039;[data-name=&quot;bgColor&quot;], [data-name=&quot;color&quot;]&#039;).on(&#039;input&#039;, function () {
+            const $inputEl = $(this);
+            const previewEl = $inputEl.parents(&#039;[data-cid]&#039;).find(&#039;.category-preview&#039;);
+            if ($inputEl.attr(&#039;data-name&#039;) === &#039;bgColor&#039;) {
+                previewEl.css(&#039;background-color&#039;, $inputEl.val());
+            } else if ($inputEl.attr(&#039;data-name&#039;) === &#039;color&#039;) {
+                previewEl.css(&#039;color&#039;, $inputEl.val());
+            }
+
+            modified($inputEl[0]);
+        });
+
+        $(&#039;#save&#039;).on(&#039;click&#039;, function () {
+            const tags = $(&#039;#tag-whitelist&#039;).val() ? $(&#039;#tag-whitelist&#039;).val().split(&#039;,&#039;) : [];
+            if (tags.length &amp;&amp; tags.length &lt; parseInt($(&#039;#cid-min-tags&#039;).val(), 10)) {
+                return alerts.error(&#039;[[admin/manage/categories:alert.not-enough-whitelisted-tags]]&#039;);
+            }
+
+            const cid = ajaxify.data.category.cid;
+            api.put(&#039;/categories/&#039; + cid, updateHash).then((res) =&gt; {
+                app.flags._unsaved = false;
+                alerts.alert({
+                    title: &#039;Updated Categories&#039;,
+                    message: &#039;Category &quot;&#039; + res.name + &#039;&quot; was successfully updated.&#039;,
+                    type: &#039;success&#039;,
+                    timeout: 5000,
+                });
+                updateHash = {};
+            }).catch(alerts.error);
+
+            return false;
+        });
+
+        $(&#039;.purge&#039;).on(&#039;click&#039;, function (e) {
+            e.preventDefault();
+
+            Benchpress.render(&#039;admin/partials/categories/purge&#039;, {
+                name: ajaxify.data.category.name,
+                topic_count: ajaxify.data.category.topic_count,
+            }).then(function (html) {
+                const modal = bootbox.dialog({
+                    title: &#039;[[admin/manage/categories:purge]]&#039;,
+                    message: html,
+                    size: &#039;large&#039;,
+                    buttons: {
+                        save: {
+                            label: &#039;[[modules:bootbox.confirm]]&#039;,
+                            className: &#039;btn-primary&#039;,
+                            callback: function () {
+                                modal.find(&#039;.modal-footer button&#039;).prop(&#039;disabled&#039;, true);
+
+                                const intervalId = setInterval(function () {
+                                    socket.emit(&#039;categories.getTopicCount&#039;, ajaxify.data.category.cid, function (err, count) {
+                                        if (err) {
+                                            return alerts.error(err);
+                                        }
+
+                                        let percent = 0;
+                                        if (ajaxify.data.category.topic_count &gt; 0) {
+                                            percent =
+                                                Math.max(0, (1 - (count / ajaxify.data.category.topic_count))) * 100;
+                                        }
+
+                                        modal.find(&#039;.progress-bar&#039;).css({ width: percent + &#039;%&#039; });
+                                    });
+                                }, 1000);
+
+                                api.del(&#039;/categories/&#039; + ajaxify.data.category.cid).then(() =&gt; {
+                                    if (intervalId) {
+                                        clearInterval(intervalId);
+                                    }
+                                    modal.modal(&#039;hide&#039;);
+                                    alerts.success(&#039;[[admin/manage/categories:alert.purge-success]]&#039;);
+                                    ajaxify.go(&#039;admin/manage/categories&#039;);
+                                }).catch(alerts.error);
+
+                                return false;
+                            },
+                        },
+                    },
+                });
+            });
+        });
+
+        $(&#039;.copy-settings&#039;).on(&#039;click&#039;, function () {
+            Benchpress.render(&#039;admin/partials/categories/copy-settings&#039;, {}).then(function (html) {
+                let selectedCid;
+                const modal = bootbox.dialog({
+                    title: &#039;[[modules:composer.select_category]]&#039;,
+                    message: html,
+                    buttons: {
+                        save: {
+                            label: &#039;[[modules:bootbox.confirm]]&#039;,
+                            className: &#039;btn-primary&#039;,
+                            callback: function () {
+                                if (!selectedCid ||
+                                    parseInt(selectedCid, 10) === parseInt(ajaxify.data.category.cid, 10)) {
+                                    return;
+                                }
+
+                                socket.emit(&#039;admin.categories.copySettingsFrom&#039;, {
+                                    fromCid: selectedCid,
+                                    toCid: ajaxify.data.category.cid,
+                                    copyParent: modal.find(&#039;#copyParent&#039;).prop(&#039;checked&#039;),
+                                }, function (err) {
+                                    if (err) {
+                                        return alerts.error(err);
+                                    }
+
+                                    modal.modal(&#039;hide&#039;);
+                                    alert.success(&#039;[[admin/manage/categories:alert.copy-success]]&#039;);
+                                    ajaxify.refresh();
+                                });
+                                return false;
+                            },
+                        },
+                    },
+                });
+                modal.find(&#039;.modal-footer button&#039;).prop(&#039;disabled&#039;, true);
+                categorySelector.init(modal.find(&#039;[component=&quot;category-selector&quot;]&#039;), {
+                    onSelect: function (selectedCategory) {
+                        selectedCid = selectedCategory &amp;&amp; selectedCategory.cid;
+                        if (selectedCid) {
+                            modal.find(&#039;.modal-footer button&#039;).prop(&#039;disabled&#039;, false);
+                        }
+                    },
+                    showLinks: true,
+                });
+            });
+            return false;
+        });
+
+        $(&#039;.upload-button&#039;).on(&#039;click&#039;, function () {
+            const inputEl = $(this);
+            const cid = inputEl.attr(&#039;data-cid&#039;);
+
+            uploader.show({
+                title: &#039;[[admin/manage/categories:alert.upload-image]]&#039;,
+                route: config.relative_path + &#039;/api/admin/category/uploadpicture&#039;,
+                params: { cid: cid },
+            }, function (imageUrlOnServer) {
+                $(&#039;#category-image&#039;).val(imageUrlOnServer);
+                const previewBox = inputEl.parent().parent().siblings(&#039;.category-preview&#039;);
+                previewBox.css(&#039;background&#039;, &#039;url(&#039; + imageUrlOnServer + &#039;?&#039; + new Date().getTime() + &#039;)&#039;);
+
+                modified($(&#039;#category-image&#039;));
+            });
+        });
+
+        $(&#039;#category-image&#039;).on(&#039;change&#039;, function () {
+            $(&#039;.category-preview&#039;).css(&#039;background-image&#039;, $(this).val() ? (&#039;url(&quot;&#039; + $(this).val() + &#039;&quot;)&#039;) : &#039;&#039;);
+            modified($(&#039;#category-image&#039;));
+        });
+
+        $(&#039;.delete-image&#039;).on(&#039;click&#039;, function (e) {
+            e.preventDefault();
+
+            const inputEl = $(&#039;#category-image&#039;);
+            const previewBox = $(&#039;.category-preview&#039;);
+
+            inputEl.val(&#039;&#039;);
+            previewBox.css(&#039;background-image&#039;, &#039;&#039;);
+            modified(inputEl[0]);
+            $(this).parent().addClass(&#039;hide&#039;).hide();
+        });
+
+        $(&#039;.category-preview&#039;).on(&#039;click&#039;, function () {
+            iconSelect.init($(this).find(&#039;i&#039;), modified);
+        });
+
+        $(&#039;[type=&quot;checkbox&quot;]&#039;).on(&#039;change&#039;, function () {
+            modified($(this));
+        });
+
+        $(&#039;button[data-action=&quot;setParent&quot;], button[data-action=&quot;changeParent&quot;]&#039;).on(&#039;click&#039;, Category.launchParentSelector);
+        $(&#039;button[data-action=&quot;removeParent&quot;]&#039;).on(&#039;click&#039;, function () {
+            api.put(&#039;/categories/&#039; + ajaxify.data.category.cid, {
+                parentCid: 0,
+            }).then(() =&gt; {
+                $(&#039;button[data-action=&quot;removeParent&quot;]&#039;).parent().addClass(&#039;hide&#039;);
+                $(&#039;button[data-action=&quot;changeParent&quot;]&#039;).parent().addClass(&#039;hide&#039;);
+                $(&#039;button[data-action=&quot;setParent&quot;]&#039;).removeClass(&#039;hide&#039;);
+            }).catch(alerts.error);
+        });
+        $(&#039;button[data-action=&quot;toggle&quot;]&#039;).on(&#039;click&#039;, function () {
+            const $this = $(this);
+            const disabled = $this.attr(&#039;data-disabled&#039;) === &#039;1&#039;;
+            api.put(&#039;/categories/&#039; + ajaxify.data.category.cid, {
+                disabled: disabled ? 0 : 1,
+            }).then(() =&gt; {
+                $this.translateText(!disabled ? &#039;[[admin/manage/categories:enable]]&#039; : &#039;[[admin/manage/categories:disable]]&#039;);
+                $this.toggleClass(&#039;btn-primary&#039;, !disabled).toggleClass(&#039;btn-danger&#039;, disabled);
+                $this.attr(&#039;data-disabled&#039;, disabled ? 0 : 1);
+            }).catch(alerts.error);
+        });
+    };
+
+    function modified(el) {
+        let value;
+        if ($(el).is(&#039;:checkbox&#039;)) {
+            value = $(el).is(&#039;:checked&#039;) ? 1 : 0;
+        } else {
+            value = $(el).val();
+        }
+        const dataName = $(el).attr(&#039;data-name&#039;);
+        const fields = dataName.match(/[^\][.]+/g);
+
+        function setNestedFields(obj, index) {
+            if (index === fields.length) {
+                return;
+            }
+            obj[fields[index]] = obj[fields[index]] || {};
+            if (index === fields.length - 1) {
+                obj[fields[index]] = value;
+            }
+            setNestedFields(obj[fields[index]], index + 1);
+        }
+
+        if (fields &amp;&amp; fields.length) {
+            if (fields.length === 1) { // simple field name ie data-name=&quot;name&quot;
+                updateHash[fields[0]] = value;
+            } else if (fields.length &gt; 1) { // nested field name ie data-name=&quot;name[sub1][sub2]&quot;
+                setNestedFields(updateHash, 0);
+            }
+        }
+
+        app.flags = app.flags || {};
+        app.flags._unsaved = true;
+    }
+
+    function handleTags() {
+        const tagEl = $(&#039;#tag-whitelist&#039;);
+        tagEl.tagsinput({
+            confirmKeys: [13, 44],
+            trimValue: true,
+        });
+
+        ajaxify.data.category.tagWhitelist.forEach(function (tag) {
+            tagEl.tagsinput(&#039;add&#039;, tag);
+        });
+
+        tagEl.on(&#039;itemAdded itemRemoved&#039;, function () {
+            modified(tagEl);
+        });
+    }
+
+    Category.launchParentSelector = function () {
+        categorySelector.modal({
+            onSubmit: function (selectedCategory) {
+                const parentCid = selectedCategory.cid;
+                if (!parentCid) {
+                    return;
+                }
+                api.put(&#039;/categories/&#039; + ajaxify.data.category.cid, {
+                    parentCid: parentCid,
+                }).then(() =&gt; {
+                    api.get(`/categories/${parentCid}`, {}).then(function (parent) {
+                        if (parent &amp;&amp; parent.icon &amp;&amp; parent.name) {
+                            const buttonHtml = &#039;&lt;i class=&quot;fa &#039; + parent.icon + &#039;&quot;&gt;&lt;/i&gt; &#039; + parent.name;
+                            $(&#039;button[data-action=&quot;changeParent&quot;]&#039;).html(buttonHtml).parent().removeClass(&#039;hide&#039;);
+                        }
+                    });
+
+                    $(&#039;button[data-action=&quot;removeParent&quot;]&#039;).parent().removeClass(&#039;hide&#039;);
+                    $(&#039;button[data-action=&quot;setParent&quot;]&#039;).addClass(&#039;hide&#039;);
+                }).catch(alerts.error);
+            },
+            showLinks: true,
+        });
+    };
+
+    return Category;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

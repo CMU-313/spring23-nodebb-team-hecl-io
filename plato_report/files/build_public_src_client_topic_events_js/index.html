@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/topic/events.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/topic/events.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.45</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">253</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">35.05</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.71</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/topic/events&#039;, [
+    &#039;forum/topic/postTools&#039;,
+    &#039;forum/topic/threadTools&#039;,
+    &#039;forum/topic/posts&#039;,
+    &#039;forum/topic/images&#039;,
+    &#039;components&#039;,
+    &#039;translator&#039;,
+    &#039;benchpress&#039;,
+    &#039;hooks&#039;,
+], function (postTools, threadTools, posts, images, components, translator, Benchpress, hooks) {
+    const Events = {};
+
+    const events = {
+        &#039;event:user_status_change&#039;: onUserStatusChange,
+        &#039;event:voted&#039;: updatePostVotesAndUserReputation,
+        &#039;event:bookmarked&#039;: updateBookmarkCount,
+        &#039;event:endorsed&#039;: updateEndorsed,
+
+        &#039;event:topic_deleted&#039;: threadTools.setDeleteState,
+        &#039;event:topic_restored&#039;: threadTools.setDeleteState,
+        &#039;event:topic_purged&#039;: onTopicPurged,
+
+        &#039;event:topic_locked&#039;: threadTools.setLockedState,
+        &#039;event:topic_unlocked&#039;: threadTools.setLockedState,
+
+        &#039;event:topic_pinned&#039;: threadTools.setPinnedState,
+        &#039;event:topic_unpinned&#039;: threadTools.setPinnedState,
+
+        &#039;event:topic_resolved&#039;: threadTools.setResolvedState,
+        &#039;event:topic_unresolved&#039;: threadTools.setResolvedState,
+
+
+        &#039;event:topic_moved&#039;: onTopicMoved,
+
+        &#039;event:post_edited&#039;: onPostEdited,
+        &#039;event:post_purged&#039;: onPostPurged,
+
+        &#039;event:post_deleted&#039;: togglePostDeleteState,
+        &#039;event:post_restored&#039;: togglePostDeleteState,
+
+        &#039;posts.bookmark&#039;: togglePostBookmark,
+        &#039;posts.unbookmark&#039;: togglePostBookmark,
+
+        &#039;posts.upvote&#039;: togglePostVote,
+        &#039;posts.downvote&#039;: togglePostVote,
+        &#039;posts.unvote&#039;: togglePostVote,
+
+        &#039;event:new_notification&#039;: onNewNotification,
+        &#039;event:new_post&#039;: posts.onNewPost,
+    };
+
+    Events.init = function () {
+        Events.removeListeners();
+        for (const eventName in events) {
+            if (events.hasOwnProperty(eventName)) {
+                socket.on(eventName, events[eventName]);
+            }
+        }
+    };
+
+    Events.removeListeners = function () {
+        for (const eventName in events) {
+            if (events.hasOwnProperty(eventName)) {
+                socket.removeListener(eventName, events[eventName]);
+            }
+        }
+    };
+
+    function onUserStatusChange(data) {
+        app.updateUserStatus($(&#039;[data-uid=&quot;&#039; + data.uid + &#039;&quot;] [component=&quot;user/status&quot;]&#039;), data.status);
+    }
+
+    function updatePostVotesAndUserReputation(data) {
+        const votes = $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] [component=&quot;post/vote-count&quot;]&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        });
+        const reputationElements = $(&#039;.reputation[data-uid=&quot;&#039; + data.post.uid + &#039;&quot;]&#039;);
+        votes.html(data.post.votes).attr(&#039;data-votes&#039;, data.post.votes);
+        reputationElements.html(data.user.reputation).attr(&#039;data-reputation&#039;, data.user.reputation);
+    }
+
+    function updateBookmarkCount(data) {
+        $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] .bookmarkCount&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        }).html(data.post.bookmarks).attr(&#039;data-bookmarks&#039;, data.post.bookmarks);
+    }
+
+    function updateEndorsed(data) {
+        $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] .endorseBtn&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        }).html(data.isEndorsed ? &#039;Unendorse&#039; : &#039;Endorse&#039;).attr(&#039;data-endorsed&#039;, data.isEndorsed);
+        ajaxify.refresh();
+    }
+
+    function onTopicPurged(data) {
+        if (
+            ajaxify.data.category &amp;&amp;
+            ajaxify.data.category.slug &amp;&amp;
+            parseInt(data.tid, 10) === parseInt(ajaxify.data.tid, 10)
+        ) {
+            ajaxify.go(&#039;category/&#039; + ajaxify.data.category.slug, null, true);
+        }
+    }
+
+    function onTopicMoved(data) {
+        if (data &amp;&amp; data.slug &amp;&amp; parseInt(data.tid, 10) === parseInt(ajaxify.data.tid, 10)) {
+            ajaxify.go(&#039;topic/&#039; + data.slug, null, true);
+        }
+    }
+
+    function onPostEdited(data) {
+        if (!data || !data.post || parseInt(data.post.tid, 10) !== parseInt(ajaxify.data.tid, 10)) {
+            return;
+        }
+        const editedPostEl = components.get(&#039;post/content&#039;, data.post.pid).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        });
+
+        const editorEl = $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] [component=&quot;post/editor&quot;]&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        });
+        const topicTitle = components.get(&#039;topic/title&#039;);
+        const navbarTitle = components.get(&#039;navbar/title&#039;).find(&#039;span&#039;);
+        const breadCrumb = components.get(&#039;breadcrumb/current&#039;);
+
+        if (data.topic.rescheduled) {
+            return ajaxify.go(&#039;topic/&#039; + data.topic.slug, null, true);
+        }
+
+        if (topicTitle.length &amp;&amp; data.topic.title &amp;&amp; data.topic.renamed) {
+            ajaxify.data.title = data.topic.title;
+            const newUrl = &#039;topic/&#039; + data.topic.slug + (window.location.search ? window.location.search : &#039;&#039;);
+            history.replaceState({ url: newUrl }, null, window.location.protocol + &#039;//&#039; + window.location.host + config.relative_path + &#039;/&#039; + newUrl);
+
+            topicTitle.fadeOut(250, function () {
+                topicTitle.html(data.topic.title).fadeIn(250);
+            });
+            breadCrumb.fadeOut(250, function () {
+                breadCrumb.html(data.topic.title).fadeIn(250);
+            });
+            navbarTitle.fadeOut(250, function () {
+                navbarTitle.html(data.topic.title).fadeIn(250);
+            });
+        }
+
+        if (data.post.changed) {
+            editedPostEl.fadeOut(250, function () {
+                editedPostEl.html(translator.unescape(data.post.content));
+                editedPostEl.find(&#039;img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+                images.wrapImagesInLinks(editedPostEl.parent());
+                posts.addBlockquoteEllipses(editedPostEl.parent());
+                editedPostEl.fadeIn(250);
+
+                const editData = {
+                    editor: data.editor,
+                    editedISO: utils.toISOString(data.post.edited),
+                };
+
+                app.parseAndTranslate(&#039;partials/topic/post-editor&#039;, editData, function (html) {
+                    editorEl.replaceWith(html);
+                    $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] [component=&quot;post/editor&quot;] .timeago&#039;).timeago();
+                    hooks.fire(&#039;action:posts.edited&#039;, data);
+                });
+            });
+        } else {
+            hooks.fire(&#039;action:posts.edited&#039;, data);
+        }
+
+        if (data.topic.tags &amp;&amp; data.topic.tagsupdated) {
+            Benchpress.render(&#039;partials/topic/tags&#039;, { tags: data.topic.tags }).then(function (html) {
+                const tags = $(&#039;.tags&#039;);
+
+                tags.fadeOut(250, function () {
+                    tags.html(html).fadeIn(250);
+                });
+            });
+        }
+
+        postTools.removeMenu(components.get(&#039;post&#039;, &#039;pid&#039;, data.post.pid));
+    }
+
+    function onPostPurged(postData) {
+        if (!postData || parseInt(postData.tid, 10) !== parseInt(ajaxify.data.tid, 10)) {
+            return;
+        }
+        components.get(&#039;post&#039;, &#039;pid&#039;, postData.pid).fadeOut(500, function () {
+            $(this).remove();
+            posts.showBottomPostBar();
+        });
+        ajaxify.data.postcount -= 1;
+        postTools.updatePostCount(ajaxify.data.postcount);
+        require([&#039;forum/topic/replies&#039;], function (replies) {
+            replies.onPostPurged(postData);
+        });
+    }
+
+    function togglePostDeleteState(data) {
+        const postEl = components.get(&#039;post&#039;, &#039;pid&#039;, data.pid);
+
+        if (!postEl.length) {
+            return;
+        }
+
+        postEl.toggleClass(&#039;deleted&#039;);
+        const isDeleted = postEl.hasClass(&#039;deleted&#039;);
+        postTools.toggle(data.pid, isDeleted);
+
+        if (!ajaxify.data.privileges.isAdminOrMod &amp;&amp; parseInt(data.uid, 10) !== parseInt(app.user.uid, 10)) {
+            postEl.find(&#039;[component=&quot;post/tools&quot;]&#039;).toggleClass(&#039;hidden&#039;, isDeleted);
+            if (isDeleted) {
+                postEl.find(&#039;[component=&quot;post/content&quot;]&#039;).translateHtml(&#039;[[topic:post_is_deleted]]&#039;);
+            } else {
+                postEl.find(&#039;[component=&quot;post/content&quot;]&#039;).html(translator.unescape(data.content));
+            }
+        }
+    }
+
+    function togglePostBookmark(data) {
+        const el = $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;] [component=&quot;post/bookmark&quot;]&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        });
+        if (!el.length) {
+            return;
+        }
+
+        el.attr(&#039;data-bookmarked&#039;, data.isBookmarked);
+
+        el.find(&#039;[component=&quot;post/bookmark/on&quot;]&#039;).toggleClass(&#039;hidden&#039;, !data.isBookmarked);
+        el.find(&#039;[component=&quot;post/bookmark/off&quot;]&#039;).toggleClass(&#039;hidden&#039;, data.isBookmarked);
+    }
+
+    function togglePostVote(data) {
+        const post = $(&#039;[data-pid=&quot;&#039; + data.post.pid + &#039;&quot;]&#039;);
+        post.find(&#039;[component=&quot;post/upvote&quot;]&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        }).toggleClass(&#039;upvoted&#039;, data.upvote);
+        post.find(&#039;[component=&quot;post/downvote&quot;]&#039;).filter(function (index, el) {
+            return parseInt($(el).closest(&#039;[data-pid]&#039;).attr(&#039;data-pid&#039;), 10) === parseInt(data.post.pid, 10);
+        }).toggleClass(&#039;downvoted&#039;, data.downvote);
+    }
+
+    function onNewNotification(data) {
+        const tid = ajaxify.data.tid;
+        if (data &amp;&amp; data.tid &amp;&amp; parseInt(data.tid, 10) === parseInt(tid, 10)) {
+            socket.emit(&#039;topics.markTopicNotificationsRead&#039;, [tid]);
+        }
+    }
+
+    return Events;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/groups/index.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/groups/index.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.38</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">247</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">52.34</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.92</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const user = require(&#039;../user&#039;);
+const db = require(&#039;../database&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const slugify = require(&#039;../slugify&#039;);
+
+const Groups = module.exports;
+
+require(&#039;./data&#039;)(Groups);
+require(&#039;./create&#039;)(Groups);
+require(&#039;./delete&#039;)(Groups);
+require(&#039;./update&#039;)(Groups);
+require(&#039;./invite&#039;)(Groups);
+require(&#039;./membership&#039;)(Groups);
+require(&#039;./ownership&#039;)(Groups);
+require(&#039;./search&#039;)(Groups);
+require(&#039;./cover&#039;)(Groups);
+require(&#039;./posts&#039;)(Groups);
+require(&#039;./user&#039;)(Groups);
+require(&#039;./join&#039;)(Groups);
+require(&#039;./leave&#039;)(Groups);
+require(&#039;./cache&#039;)(Groups);
+
+Groups.BANNED_USERS = &#039;banned-users&#039;;
+
+Groups.ephemeralGroups = [&#039;guests&#039;, &#039;spiders&#039;];
+
+Groups.systemGroups = [
+    &#039;registered-users&#039;,
+    &#039;verified-users&#039;,
+    &#039;unverified-users&#039;,
+    Groups.BANNED_USERS,
+    &#039;administrators&#039;,
+    &#039;Global Moderators&#039;,
+];
+
+Groups.getEphemeralGroup = function (groupName) {
+    return {
+        name: groupName,
+        slug: slugify(groupName),
+        description: &#039;&#039;,
+        hidden: 0,
+        system: 1,
+    };
+};
+
+Groups.removeEphemeralGroups = function (groups) {
+    for (let x = groups.length; x &gt;= 0; x -= 1) {
+        if (Groups.ephemeralGroups.includes(groups[x])) {
+            groups.splice(x, 1);
+        }
+    }
+
+    return groups;
+};
+
+const isPrivilegeGroupRegex = /^cid:\d+:privileges:[\w\-:]+$/;
+Groups.isPrivilegeGroup = function (groupName) {
+    return isPrivilegeGroupRegex.test(groupName);
+};
+
+Groups.getGroupsFromSet = async function (set, start, stop) {
+    let groupNames;
+    if (set === &#039;groups:visible:name&#039;) {
+        groupNames = await db.getSortedSetRangeByLex(set, &#039;-&#039;, &#039;+&#039;, start, stop - start + 1);
+    } else {
+        groupNames = await db.getSortedSetRevRange(set, start, stop);
+    }
+    if (set === &#039;groups:visible:name&#039;) {
+        groupNames = groupNames.map(name =&gt; name.split(&#039;:&#039;)[1]);
+    }
+
+    return await Groups.getGroupsAndMembers(groupNames);
+};
+
+Groups.getGroupsBySort = async function (sort, start, stop) {
+    let set = &#039;groups:visible:name&#039;;
+    if (sort === &#039;count&#039;) {
+        set = &#039;groups:visible:memberCount&#039;;
+    } else if (sort === &#039;date&#039;) {
+        set = &#039;groups:visible:createtime&#039;;
+    }
+    return await Groups.getGroupsFromSet(set, start, stop);
+};
+
+Groups.getNonPrivilegeGroups = async function (set, start, stop) {
+    let groupNames = await db.getSortedSetRevRange(set, start, stop);
+    groupNames = groupNames.concat(Groups.ephemeralGroups).filter(groupName =&gt; !Groups.isPrivilegeGroup(groupName));
+    const groupsData = await Groups.getGroupsData(groupNames);
+    return groupsData.filter(Boolean);
+};
+
+Groups.getGroups = async function (set, start, stop) {
+    return await db.getSortedSetRevRange(set, start, stop);
+};
+
+Groups.getGroupsAndMembers = async function (groupNames) {
+    const [groups, members] = await Promise.all([
+        Groups.getGroupsData(groupNames),
+        Groups.getMemberUsers(groupNames, 0, 9),
+    ]);
+    groups.forEach((group, index) =&gt; {
+        if (group) {
+            group.members = members[index] || [];
+            group.truncated = group.memberCount &gt; group.members.length;
+        }
+    });
+    return groups;
+};
+
+Groups.get = async function (groupName, options) {
+    if (!groupName) {
+        throw new Error(&#039;[[error:invalid-group]]&#039;);
+    }
+
+    let stop = -1;
+
+    if (options.truncateUserList) {
+        stop = (parseInt(options.userListCount, 10) || 4) - 1;
+    }
+
+    const [groupData, members, pending, invited, isMember, isPending, isInvited, isOwner] = await Promise.all([
+        Groups.getGroupData(groupName),
+        Groups.getOwnersAndMembers(groupName, options.uid, 0, stop),
+        Groups.getUsersFromSet(`group:${groupName}:pending`, [&#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;]),
+        Groups.getUsersFromSet(`group:${groupName}:invited`, [&#039;username&#039;, &#039;userslug&#039;, &#039;picture&#039;]),
+        Groups.isMember(options.uid, groupName),
+        Groups.isPending(options.uid, groupName),
+        Groups.isInvited(options.uid, groupName),
+        Groups.ownership.isOwner(options.uid, groupName),
+    ]);
+
+    if (!groupData) {
+        return null;
+    }
+    const descriptionParsed = await plugins.hooks.fire(&#039;filter:parse.raw&#039;, String(groupData.description || &#039;&#039;));
+    groupData.descriptionParsed = descriptionParsed;
+    groupData.members = members;
+    groupData.membersNextStart = stop + 1;
+    groupData.pending = pending.filter(Boolean);
+    groupData.invited = invited.filter(Boolean);
+    groupData.isMember = isMember;
+    groupData.isPending = isPending;
+    groupData.isInvited = isInvited;
+    groupData.isOwner = isOwner;
+    const results = await plugins.hooks.fire(&#039;filter:group.get&#039;, { group: groupData });
+    return results.group;
+};
+
+Groups.getOwners = async function (groupName) {
+    return await db.getSetMembers(`group:${groupName}:owners`);
+};
+
+Groups.getOwnersAndMembers = async function (groupName, uid, start, stop) {
+    const ownerUids = await db.getSetMembers(`group:${groupName}:owners`);
+    const countToReturn = stop - start + 1;
+    const ownerUidsOnPage = ownerUids.slice(start, stop !== -1 ? stop + 1 : undefined);
+    const owners = await user.getUsers(ownerUidsOnPage, uid);
+    owners.forEach((user) =&gt; {
+        if (user) {
+            user.isOwner = true;
+        }
+    });
+
+    let done = false;
+    let returnUsers = owners;
+    let memberStart = start - ownerUids.length;
+    let memberStop = memberStart + countToReturn - 1;
+    memberStart = Math.max(0, memberStart);
+    memberStop = Math.max(0, memberStop);
+    async function addMembers(start, stop) {
+        let batch = await user.getUsersFromSet(`group:${groupName}:members`, uid, start, stop);
+        if (!batch.length) {
+            done = true;
+        }
+        batch = batch.filter(user =&gt; user &amp;&amp; user.uid &amp;&amp; !ownerUids.includes(user.uid.toString()));
+        returnUsers = returnUsers.concat(batch);
+    }
+
+    if (stop === -1) {
+        await addMembers(memberStart, -1);
+    } else {
+        while (returnUsers.length &lt; countToReturn &amp;&amp; !done) {
+            /* eslint-disable no-await-in-loop */
+            await addMembers(memberStart, memberStop);
+            memberStart = memberStop + 1;
+            memberStop = memberStart + countToReturn - 1;
+        }
+    }
+    returnUsers = countToReturn &gt; 0 ? returnUsers.slice(0, countToReturn) : returnUsers;
+    const result = await plugins.hooks.fire(&#039;filter:group.getOwnersAndMembers&#039;, {
+        users: returnUsers,
+        uid: uid,
+        start: start,
+        stop: stop,
+    });
+    return result.users;
+};
+
+Groups.getByGroupslug = async function (slug, options) {
+    options = options || {};
+    const groupName = await db.getObjectField(&#039;groupslug:groupname&#039;, slug);
+    if (!groupName) {
+        throw new Error(&#039;[[error:no-group]]&#039;);
+    }
+    return await Groups.get(groupName, options);
+};
+
+Groups.getGroupNameByGroupSlug = async function (slug) {
+    return await db.getObjectField(&#039;groupslug:groupname&#039;, slug);
+};
+
+Groups.isPrivate = async function (groupName) {
+    return await isFieldOn(groupName, &#039;private&#039;);
+};
+
+Groups.isHidden = async function (groupName) {
+    return await isFieldOn(groupName, &#039;hidden&#039;);
+};
+
+async function isFieldOn(groupName, field) {
+    const value = await db.getObjectField(`group:${groupName}`, field);
+    return parseInt(value, 10) === 1;
+}
+
+Groups.exists = async function (name) {
+    if (Array.isArray(name)) {
+        const slugs = name.map(groupName =&gt; slugify(groupName));
+        const isMembersOfRealGroups = await db.isSortedSetMembers(&#039;groups:createtime&#039;, name);
+        const isMembersOfEphemeralGroups = slugs.map(slug =&gt; Groups.ephemeralGroups.includes(slug));
+        return name.map((n, index) =&gt; isMembersOfRealGroups[index] || isMembersOfEphemeralGroups[index]);
+    }
+    const slug = slugify(name);
+    const isMemberOfRealGroups = await db.isSortedSetMember(&#039;groups:createtime&#039;, name);
+    const isMemberOfEphemeralGroups = Groups.ephemeralGroups.includes(slug);
+    return isMemberOfRealGroups || isMemberOfEphemeralGroups;
+};
+
+Groups.existsBySlug = async function (slug) {
+    if (Array.isArray(slug)) {
+        return await db.isObjectFields(&#039;groupslug:groupname&#039;, slug);
+    }
+    return await db.isObjectField(&#039;groupslug:groupname&#039;, slug);
+};
+
+require(&#039;../promisify&#039;)(Groups);</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

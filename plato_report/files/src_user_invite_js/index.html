@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/invite.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/invite.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.66</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">186</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">37.86</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.85</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const nconf = require(&#039;nconf&#039;);
+const validator = require(&#039;validator&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const emailer = require(&#039;../emailer&#039;);
+const groups = require(&#039;../groups&#039;);
+const translator = require(&#039;../translator&#039;);
+const utils = require(&#039;../utils&#039;);
+const plugins = require(&#039;../plugins&#039;);
+
+module.exports = function (User) {
+    User.getInvites = async function (uid) {
+        const emails = await db.getSetMembers(`invitation:uid:${uid}`);
+        return emails.map(email =&gt; validator.escape(String(email)));
+    };
+
+    User.getInvitesNumber = async function (uid) {
+        return await db.setCount(`invitation:uid:${uid}`);
+    };
+
+    User.getInvitingUsers = async function () {
+        return await db.getSetMembers(&#039;invitation:uids&#039;);
+    };
+
+    User.getAllInvites = async function () {
+        const uids = await User.getInvitingUsers();
+        const invitations = await async.map(uids, User.getInvites);
+        return invitations.map((invites, index) =&gt; ({
+            uid: uids[index],
+            invitations: invites,
+        }));
+    };
+
+    User.sendInvitationEmail = async function (uid, email, groupsToJoin) {
+        if (!uid) {
+            throw new Error(&#039;[[error:invalid-uid]]&#039;);
+        }
+
+        const email_exists = await User.getUidByEmail(email);
+        if (email_exists) {
+            // Silently drop the invitation if the invited email already exists locally
+            return true;
+        }
+
+        const invitation_exists = await db.exists(`invitation:uid:${uid}:invited:${email}`);
+        if (invitation_exists) {
+            throw new Error(&#039;[[error:email-invited]]&#039;);
+        }
+
+        const data = await prepareInvitation(uid, email, groupsToJoin);
+        await emailer.sendToEmail(&#039;invitation&#039;, email, meta.config.defaultLang, data);
+        plugins.hooks.fire(&#039;action:user.invite&#039;, { uid, email, groupsToJoin });
+    };
+
+    User.verifyInvitation = async function (query) {
+        if (!query.token) {
+            if (meta.config.registrationType.startsWith(&#039;admin-&#039;)) {
+                throw new Error(&#039;[[register:invite.error-admin-only]]&#039;);
+            } else {
+                throw new Error(&#039;[[register:invite.error-invite-only]]&#039;);
+            }
+        }
+        const token = await db.getObjectField(`invitation:token:${query.token}`, &#039;token&#039;);
+        if (!token || token !== query.token) {
+            throw new Error(&#039;[[register:invite.error-invalid-data]]&#039;);
+        }
+    };
+
+    User.confirmIfInviteEmailIsUsed = async function (token, enteredEmail, uid) {
+        if (!enteredEmail) {
+            return;
+        }
+        const email = await db.getObjectField(`invitation:token:${token}`, &#039;email&#039;);
+        // &quot;Confirm&quot; user&#039;s email if registration completed with invited address
+        if (email &amp;&amp; email === enteredEmail) {
+            await User.email.confirmByUid(uid);
+        }
+    };
+
+    User.joinGroupsFromInvitation = async function (uid, token) {
+        let groupsToJoin = await db.getObjectField(`invitation:token:${token}`, &#039;groupsToJoin&#039;);
+
+        try {
+            groupsToJoin = JSON.parse(groupsToJoin);
+        } catch (e) {
+            return;
+        }
+
+        if (!groupsToJoin || groupsToJoin.length &lt; 1) {
+            return;
+        }
+
+        await groups.join(groupsToJoin, uid);
+    };
+
+    User.deleteInvitation = async function (invitedBy, email) {
+        const invitedByUid = await User.getUidByUsername(invitedBy);
+        if (!invitedByUid) {
+            throw new Error(&#039;[[error:invalid-username]]&#039;);
+        }
+        const token = await db.get(`invitation:uid:${invitedByUid}:invited:${email}`);
+        await Promise.all([
+            deleteFromReferenceList(invitedByUid, email),
+            db.setRemove(`invitation:invited:${email}`, token),
+            db.delete(`invitation:token:${token}`),
+        ]);
+    };
+
+    User.deleteInvitationKey = async function (registrationEmail, token) {
+        if (registrationEmail) {
+            const uids = await User.getInvitingUsers();
+            await Promise.all(uids.map(uid =&gt; deleteFromReferenceList(uid, registrationEmail)));
+            // Delete all invites to an email address if it has joined
+            const tokens = await db.getSetMembers(`invitation:invited:${registrationEmail}`);
+            const keysToDelete = [`invitation:invited:${registrationEmail}`].concat(tokens.map(token =&gt; `invitation:token:${token}`));
+            await db.deleteAll(keysToDelete);
+        }
+        if (token) {
+            const invite = await db.getObject(`invitation:token:${token}`);
+            if (!invite) {
+                return;
+            }
+            await deleteFromReferenceList(invite.inviter, invite.email);
+            await db.deleteAll([
+                `invitation:invited:${invite.email}`,
+                `invitation:token:${token}`,
+            ]);
+        }
+    };
+
+    async function deleteFromReferenceList(uid, email) {
+        await Promise.all([
+            db.setRemove(`invitation:uid:${uid}`, email),
+            db.delete(`invitation:uid:${uid}:invited:${email}`),
+        ]);
+        const count = await db.setCount(`invitation:uid:${uid}`);
+        if (count === 0) {
+            await db.setRemove(&#039;invitation:uids&#039;, uid);
+        }
+    }
+
+    async function prepareInvitation(uid, email, groupsToJoin) {
+        const inviterExists = await User.exists(uid);
+        if (!inviterExists) {
+            throw new Error(&#039;[[error:invalid-uid]]&#039;);
+        }
+
+        const token = utils.generateUUID();
+        const registerLink = `${nconf.get(&#039;url&#039;)}/register?token=${token}`;
+
+        const expireDays = meta.config.inviteExpiration;
+        const expireIn = expireDays * 86400000;
+
+        await db.setAdd(`invitation:uid:${uid}`, email);
+        await db.setAdd(&#039;invitation:uids&#039;, uid);
+        // Referencing from uid and email to token
+        await db.set(`invitation:uid:${uid}:invited:${email}`, token);
+        // Keeping references for all invites to this email address
+        await db.setAdd(`invitation:invited:${email}`, token);
+        await db.setObject(`invitation:token:${token}`, {
+            email,
+            token,
+            groupsToJoin: JSON.stringify(groupsToJoin),
+            inviter: uid,
+        });
+        await db.pexpireAt(`invitation:token:${token}`, Date.now() + expireIn);
+
+        const username = await User.getUserField(uid, &#039;username&#039;);
+        const title = meta.config.title || meta.config.browserTitle || &#039;NodeBB&#039;;
+        const subject = await translator.translate(`[[email:invite, ${title}]]`, meta.config.defaultLang);
+
+        return {
+            ...emailer._defaultPayload, // Append default data to this email payload
+            site_title: title,
+            registerLink: registerLink,
+            subject: subject,
+            username: username,
+            template: &#039;invitation&#039;,
+            expireDays: expireDays,
+        };
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

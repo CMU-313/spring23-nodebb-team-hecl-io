@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/posts/user.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/posts/user.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">72.96</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">261</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">52.39</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.78</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const async = require(&#039;async&#039;);
+const validator = require(&#039;validator&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const user = require(&#039;../user&#039;);
+const topics = require(&#039;../topics&#039;);
+const groups = require(&#039;../groups&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const privileges = require(&#039;../privileges&#039;);
+
+module.exports = function (Posts) {
+    Posts.getUserInfoForPosts = async function (uids, uid) {
+        const [userData, userSettings, signatureUids] = await Promise.all([
+            getUserData(uids, uid),
+            user.getMultipleUserSettings(uids),
+            privileges.global.filterUids(&#039;signature&#039;, uids),
+        ]);
+        const uidsSignatureSet = new Set(signatureUids.map(uid =&gt; parseInt(uid, 10)));
+        const groupsMap = await getGroupsMap(userData);
+
+        userData.forEach((userData, index) =&gt; {
+            userData.signature = validator.escape(String(userData.signature || &#039;&#039;));
+            userData.fullname = userSettings[index].showfullname ? validator.escape(String(userData.fullname || &#039;&#039;)) : undefined;
+            userData.selectedGroups = [];
+
+            if (meta.config.hideFullname) {
+                userData.fullname = undefined;
+            }
+        });
+
+        const result = await Promise.all(userData.map(async (userData) =&gt; {
+            const [isMemberOfGroups, signature, customProfileInfo] = await Promise.all([
+                checkGroupMembership(userData.uid, userData.groupTitleArray),
+                parseSignature(userData, uid, uidsSignatureSet),
+                plugins.hooks.fire(&#039;filter:posts.custom_profile_info&#039;, { profile: [], uid: userData.uid }),
+            ]);
+
+            if (isMemberOfGroups &amp;&amp; userData.groupTitleArray) {
+                userData.groupTitleArray.forEach((userGroup, index) =&gt; {
+                    if (isMemberOfGroups[index] &amp;&amp; groupsMap[userGroup]) {
+                        userData.selectedGroups.push(groupsMap[userGroup]);
+                    }
+                });
+            }
+            userData.signature = signature;
+            userData.custom_profile_info = customProfileInfo.profile;
+
+            return await plugins.hooks.fire(&#039;filter:posts.modifyUserInfo&#039;, userData);
+        }));
+        const hookResult = await plugins.hooks.fire(&#039;filter:posts.getUserInfoForPosts&#039;, { users: result });
+        return hookResult.users;
+    };
+
+    Posts.overrideGuestHandle = function (postData, handle) {
+        if (meta.config.allowGuestHandles &amp;&amp; postData &amp;&amp; postData.user &amp;&amp; parseInt(postData.uid, 10) === 0 &amp;&amp; handle) {
+            postData.user.username = validator.escape(String(handle));
+            if (postData.user.hasOwnProperty(&#039;fullname&#039;)) {
+                postData.user.fullname = postData.user.username;
+            }
+            postData.user.displayname = postData.user.username;
+        }
+    };
+
+    async function checkGroupMembership(uid, groupTitleArray) {
+        if (!Array.isArray(groupTitleArray) || !groupTitleArray.length) {
+            return null;
+        }
+        return await groups.isMemberOfGroups(uid, groupTitleArray);
+    }
+
+    async function parseSignature(userData, uid, signatureUids) {
+        if (!userData.signature || !signatureUids.has(userData.uid) || meta.config.disableSignatures) {
+            return &#039;&#039;;
+        }
+        const result = await Posts.parseSignature(userData, uid);
+        return result.userData.signature;
+    }
+
+    async function getGroupsMap(userData) {
+        const groupTitles = _.uniq(_.flatten(userData.map(u =&gt; u &amp;&amp; u.groupTitleArray)));
+        const groupsMap = {};
+        const groupsData = await groups.getGroupsData(groupTitles);
+        groupsData.forEach((group) =&gt; {
+            if (group &amp;&amp; group.userTitleEnabled &amp;&amp; !group.hidden) {
+                groupsMap[group.name] = {
+                    name: group.name,
+                    slug: group.slug,
+                    labelColor: group.labelColor,
+                    textColor: group.textColor,
+                    icon: group.icon,
+                    userTitle: group.userTitle,
+                };
+            }
+        });
+        return groupsMap;
+    }
+
+    async function getUserData(uids, uid) {
+        const fields = [
+            &#039;uid&#039;, &#039;username&#039;, &#039;fullname&#039;, &#039;userslug&#039;,
+            &#039;reputation&#039;, &#039;postcount&#039;, &#039;topiccount&#039;, &#039;picture&#039;,
+            &#039;signature&#039;, &#039;banned&#039;, &#039;banned:expire&#039;, &#039;status&#039;,
+            &#039;lastonline&#039;, &#039;groupTitle&#039;, &#039;mutedUntil&#039;,
+        ];
+        const result = await plugins.hooks.fire(&#039;filter:posts.addUserFields&#039;, {
+            fields: fields,
+            uid: uid,
+            uids: uids,
+        });
+        return await user.getUsersFields(result.uids, _.uniq(result.fields));
+    }
+
+    Posts.isOwner = async function (pids, uid) {
+        uid = parseInt(uid, 10);
+        const isArray = Array.isArray(pids);
+        pids = isArray ? pids : [pids];
+        if (uid &lt;= 0) {
+            return isArray ? pids.map(() =&gt; false) : false;
+        }
+        const postData = await Posts.getPostsFields(pids, [&#039;uid&#039;]);
+        const result = postData.map(post =&gt; post &amp;&amp; post.uid === uid);
+        return isArray ? result : result[0];
+    };
+
+    Posts.isModerator = async function (pids, uid) {
+        if (parseInt(uid, 10) &lt;= 0) {
+            return pids.map(() =&gt; false);
+        }
+        const cids = await Posts.getCidsByPids(pids);
+        return await user.isModerator(uid, cids);
+    };
+
+    Posts.changeOwner = async function (pids, toUid) {
+        const exists = await user.exists(toUid);
+        if (!exists) {
+            throw new Error(&#039;[[error:no-user]]&#039;);
+        }
+        let postData = await Posts.getPostsFields(pids, [
+            &#039;pid&#039;, &#039;tid&#039;, &#039;uid&#039;, &#039;content&#039;, &#039;deleted&#039;, &#039;timestamp&#039;, &#039;upvotes&#039;, &#039;downvotes&#039;,
+        ]);
+        postData = postData.filter(p =&gt; p.pid &amp;&amp; p.uid !== parseInt(toUid, 10));
+        pids = postData.map(p =&gt; p.pid);
+
+        const cids = await Posts.getCidsByPids(pids);
+
+        const bulkRemove = [];
+        const bulkAdd = [];
+        let repChange = 0;
+        const postsByUser = {};
+        postData.forEach((post, i) =&gt; {
+            post.cid = cids[i];
+            repChange += post.votes;
+            bulkRemove.push([`uid:${post.uid}:posts`, post.pid]);
+            bulkRemove.push([`cid:${post.cid}:uid:${post.uid}:pids`, post.pid]);
+            bulkRemove.push([`cid:${post.cid}:uid:${post.uid}:pids:votes`, post.pid]);
+
+            bulkAdd.push([`uid:${toUid}:posts`, post.timestamp, post.pid]);
+            bulkAdd.push([`cid:${post.cid}:uid:${toUid}:pids`, post.timestamp, post.pid]);
+            if (post.votes &gt; 0 || post.votes &lt; 0) {
+                bulkAdd.push([`cid:${post.cid}:uid:${toUid}:pids:votes`, post.votes, post.pid]);
+            }
+            postsByUser[post.uid] = postsByUser[post.uid] || [];
+            postsByUser[post.uid].push(post);
+        });
+
+        await Promise.all([
+            db.setObjectField(pids.map(pid =&gt; `post:${pid}`), &#039;uid&#039;, toUid),
+            db.sortedSetRemoveBulk(bulkRemove),
+            db.sortedSetAddBulk(bulkAdd),
+            user.incrementUserReputationBy(toUid, repChange),
+            handleMainPidOwnerChange(postData, toUid),
+            updateTopicPosters(postData, toUid),
+        ]);
+
+        await Promise.all([
+            user.updatePostCount(toUid),
+            reduceCounters(postsByUser),
+        ]);
+
+        plugins.hooks.fire(&#039;action:post.changeOwner&#039;, {
+            posts: _.cloneDeep(postData),
+            toUid: toUid,
+        });
+        return postData;
+    };
+
+    async function reduceCounters(postsByUser) {
+        await async.eachOfSeries(postsByUser, async (posts, uid) =&gt; {
+            const repChange = posts.reduce((acc, val) =&gt; acc + val.votes, 0);
+            await Promise.all([
+                user.updatePostCount(uid),
+                user.incrementUserReputationBy(uid, -repChange),
+            ]);
+        });
+    }
+
+    async function updateTopicPosters(postData, toUid) {
+        const postsByTopic = _.groupBy(postData, p =&gt; parseInt(p.tid, 10));
+        await async.eachOf(postsByTopic, async (posts, tid) =&gt; {
+            const postsByUser = _.groupBy(posts, p =&gt; parseInt(p.uid, 10));
+            await db.sortedSetIncrBy(`tid:${tid}:posters`, posts.length, toUid);
+            await async.eachOf(postsByUser, async (posts, uid) =&gt; {
+                await db.sortedSetIncrBy(`tid:${tid}:posters`, -posts.length, uid);
+            });
+        });
+    }
+
+    async function handleMainPidOwnerChange(postData, toUid) {
+        const tids = _.uniq(postData.map(p =&gt; p.tid));
+        const topicData = await topics.getTopicsFields(tids, [
+            &#039;tid&#039;, &#039;cid&#039;, &#039;deleted&#039;, &#039;title&#039;, &#039;uid&#039;, &#039;mainPid&#039;, &#039;timestamp&#039;,
+        ]);
+        const tidToTopic = _.zipObject(tids, topicData);
+
+        const mainPosts = postData.filter(p =&gt; p.pid === tidToTopic[p.tid].mainPid);
+        if (!mainPosts.length) {
+            return;
+        }
+
+        const bulkAdd = [];
+        const bulkRemove = [];
+        const postsByUser = {};
+        mainPosts.forEach((post) =&gt; {
+            bulkRemove.push([`cid:${post.cid}:uid:${post.uid}:tids`, post.tid]);
+            bulkRemove.push([`uid:${post.uid}:topics`, post.tid]);
+
+            bulkAdd.push([`cid:${post.cid}:uid:${toUid}:tids`, tidToTopic[post.tid].timestamp, post.tid]);
+            bulkAdd.push([`uid:${toUid}:topics`, tidToTopic[post.tid].timestamp, post.tid]);
+            postsByUser[post.uid] = postsByUser[post.uid] || [];
+            postsByUser[post.uid].push(post);
+        });
+
+        await Promise.all([
+            db.setObjectField(mainPosts.map(p =&gt; `topic:${p.tid}`), &#039;uid&#039;, toUid),
+            db.sortedSetRemoveBulk(bulkRemove),
+            db.sortedSetAddBulk(bulkAdd),
+            user.incrementUserFieldBy(toUid, &#039;topiccount&#039;, mainPosts.length),
+            reduceTopicCounts(postsByUser),
+        ]);
+
+        const changedTopics = mainPosts.map(p =&gt; tidToTopic[p.tid]);
+        plugins.hooks.fire(&#039;action:topic.changeOwner&#039;, {
+            topics: _.cloneDeep(changedTopics),
+            toUid: toUid,
+        });
+    }
+
+    async function reduceTopicCounts(postsByUser) {
+        await async.eachSeries(Object.keys(postsByUser), async (uid) =&gt; {
+            const posts = postsByUser[uid];
+            const exists = await user.exists(uid);
+            if (exists) {
+                await user.incrementUserFieldBy(uid, &#039;topiccount&#039;, -posts.length);
+            }
+        });
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

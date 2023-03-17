@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/user/data.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/user/data.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">356</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">57.20</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">4.50</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+const nconf = require(&#039;nconf&#039;);
+const _ = require(&#039;lodash&#039;);
+
+const db = require(&#039;../database&#039;);
+const meta = require(&#039;../meta&#039;);
+const plugins = require(&#039;../plugins&#039;);
+const utils = require(&#039;../utils&#039;);
+
+const relative_path = nconf.get(&#039;relative_path&#039;);
+
+const intFields = [
+    &#039;uid&#039;, &#039;postcount&#039;, &#039;topiccount&#039;, &#039;reputation&#039;, &#039;profileviews&#039;,
+    &#039;banned&#039;, &#039;banned:expire&#039;, &#039;email:confirmed&#039;, &#039;joindate&#039;, &#039;lastonline&#039;,
+    &#039;lastqueuetime&#039;, &#039;lastposttime&#039;, &#039;followingCount&#039;, &#039;followerCount&#039;,
+    &#039;blocksCount&#039;, &#039;passwordExpiry&#039;, &#039;mutedUntil&#039;,
+];
+
+module.exports = function (User) {
+    const fieldWhitelist = [
+        &#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;email&#039;, &#039;email:confirmed&#039;, &#039;joindate&#039;, &#039;accounttype&#039;,
+        &#039;lastonline&#039;, &#039;picture&#039;, &#039;icon:bgColor&#039;, &#039;fullname&#039;, &#039;location&#039;, &#039;birthday&#039;, &#039;website&#039;,
+        &#039;aboutme&#039;, &#039;signature&#039;, &#039;uploadedpicture&#039;, &#039;profileviews&#039;, &#039;reputation&#039;,
+        &#039;postcount&#039;, &#039;topiccount&#039;, &#039;lastposttime&#039;, &#039;banned&#039;, &#039;banned:expire&#039;,
+        &#039;status&#039;, &#039;flags&#039;, &#039;followerCount&#039;, &#039;followingCount&#039;, &#039;cover:url&#039;,
+        &#039;cover:position&#039;, &#039;groupTitle&#039;, &#039;mutedUntil&#039;, &#039;mutedReason&#039;,
+    ];
+
+    User.guestData = {
+        uid: 0,
+        username: &#039;[[global:guest]]&#039;,
+        displayname: &#039;[[global:guest]]&#039;,
+        userslug: &#039;&#039;,
+        fullname: &#039;[[global:guest]]&#039;,
+        email: &#039;&#039;,
+        &#039;icon:text&#039;: &#039;?&#039;,
+        &#039;icon:bgColor&#039;: &#039;#aaa&#039;,
+        groupTitle: &#039;&#039;,
+        groupTitleArray: [],
+        status: &#039;offline&#039;,
+        reputation: 0,
+        &#039;email:confirmed&#039;: 0,
+    };
+
+    User.getUsersFields = async function (uids, fields) {
+        if (!Array.isArray(uids) || !uids.length) {
+            return [];
+        }
+
+        uids = uids.map(uid =&gt; (isNaN(uid) ? 0 : parseInt(uid, 10)));
+
+        const fieldsToRemove = [];
+        fields = fields.slice();
+        ensureRequiredFields(fields, fieldsToRemove);
+
+        const uniqueUids = _.uniq(uids).filter(uid =&gt; uid &gt; 0);
+
+        const results = await plugins.hooks.fire(&#039;filter:user.whitelistFields&#039;, {
+            uids: uids,
+            whitelist: fieldWhitelist.slice(),
+        });
+        if (!fields.length) {
+            fields = results.whitelist;
+        } else {
+            // Never allow password retrieval via this method
+            fields = fields.filter(value =&gt; value !== &#039;password&#039;);
+        }
+
+        const users = await db.getObjectsFields(uniqueUids.map(uid =&gt; `user:${uid}`), fields);
+        const result = await plugins.hooks.fire(&#039;filter:user.getFields&#039;, {
+            uids: uniqueUids,
+            users: users,
+            fields: fields,
+        });
+        result.users.forEach((user, index) =&gt; {
+            if (uniqueUids[index] &gt; 0 &amp;&amp; !user.uid) {
+                user.oldUid = uniqueUids[index];
+            }
+        });
+        await modifyUserData(result.users, fields, fieldsToRemove);
+        return uidsToUsers(uids, uniqueUids, result.users);
+    };
+
+    function ensureRequiredFields(fields, fieldsToRemove) {
+        function addField(field) {
+            if (!fields.includes(field)) {
+                fields.push(field);
+                fieldsToRemove.push(field);
+            }
+        }
+
+        if (fields.length &amp;&amp; !fields.includes(&#039;uid&#039;)) {
+            fields.push(&#039;uid&#039;);
+        }
+
+        if (fields.includes(&#039;picture&#039;)) {
+            addField(&#039;uploadedpicture&#039;);
+        }
+
+        if (fields.includes(&#039;status&#039;)) {
+            addField(&#039;lastonline&#039;);
+        }
+
+        if (fields.includes(&#039;banned&#039;) &amp;&amp; !fields.includes(&#039;banned:expire&#039;)) {
+            addField(&#039;banned:expire&#039;);
+        }
+
+        if (fields.includes(&#039;username&#039;) &amp;&amp; !fields.includes(&#039;fullname&#039;)) {
+            addField(&#039;fullname&#039;);
+        }
+    }
+
+    function uidsToUsers(uids, uniqueUids, usersData) {
+        const uidToUser = _.zipObject(uniqueUids, usersData);
+        const users = uids.map((uid) =&gt; {
+            const user = uidToUser[uid] || { ...User.guestData };
+            if (!parseInt(user.uid, 10)) {
+                user.username = (user.hasOwnProperty(&#039;oldUid&#039;) &amp;&amp; parseInt(user.oldUid, 10)) ? &#039;[[global:former_user]]&#039; : &#039;[[global:guest]]&#039;;
+                user.displayname = user.username;
+            }
+
+            return user;
+        });
+        return users;
+    }
+
+    User.getUserField = async function (uid, field) {
+        const user = await User.getUserFields(uid, [field]);
+        return user ? user[field] : null;
+    };
+
+    User.getUserFields = async function (uid, fields) {
+        const users = await User.getUsersFields([uid], fields);
+        return users ? users[0] : null;
+    };
+
+    User.getUserData = async function (uid) {
+        const users = await User.getUsersData([uid]);
+        return users ? users[0] : null;
+    };
+
+    User.getUsersData = async function (uids) {
+        return await User.getUsersFields(uids, []);
+    };
+
+    User.hidePrivateData = async function (users, callerUID) {
+        let single = false;
+        if (!Array.isArray(users)) {
+            users = [users];
+            single = true;
+        }
+
+        const [userSettings, isAdmin, isGlobalModerator] = await Promise.all([
+            User.getMultipleUserSettings(users.map(user =&gt; user.uid)),
+            User.isAdministrator(callerUID),
+            User.isGlobalModerator(callerUID),
+        ]);
+
+        users = await Promise.all(users.map(async (userData, idx) =&gt; {
+            const _userData = { ...userData };
+
+            const isSelf = parseInt(callerUID, 10) === parseInt(_userData.uid, 10);
+            const privilegedOrSelf = isAdmin || isGlobalModerator || isSelf;
+
+            if (!privilegedOrSelf &amp;&amp; (!userSettings[idx].showemail || meta.config.hideEmail)) {
+                _userData.email = &#039;&#039;;
+            }
+            if (!privilegedOrSelf &amp;&amp; (!userSettings[idx].showfullname || meta.config.hideFullname)) {
+                _userData.fullname = &#039;&#039;;
+            }
+            return _userData;
+        }));
+
+        return single ? users.pop() : users;
+    };
+
+    async function modifyUserData(users, requestedFields, fieldsToRemove) {
+        let uidToSettings = {};
+        if (meta.config.showFullnameAsDisplayName) {
+            const uids = users.map(user =&gt; user.uid);
+            uidToSettings = _.zipObject(uids, await db.getObjectsFields(
+                uids.map(uid =&gt; `user:${uid}:settings`),
+                [&#039;showfullname&#039;]
+            ));
+        }
+
+        await Promise.all(users.map(async (user) =&gt; {
+            if (!user) {
+                return;
+            }
+
+            db.parseIntFields(user, intFields, requestedFields);
+
+            if (user.hasOwnProperty(&#039;username&#039;)) {
+                parseDisplayName(user, uidToSettings);
+                user.username = validator.escape(user.username ? user.username.toString() : &#039;&#039;);
+            }
+
+            if (user.hasOwnProperty(&#039;email&#039;)) {
+                user.email = validator.escape(user.email ? user.email.toString() : &#039;&#039;);
+            }
+
+            if (!parseInt(user.uid, 10)) {
+                for (const [key, value] of Object.entries(User.guestData)) {
+                    user[key] = value;
+                }
+                user.picture = User.getDefaultAvatar();
+            }
+
+            if (user.hasOwnProperty(&#039;groupTitle&#039;)) {
+                parseGroupTitle(user);
+            }
+
+            if (user.picture &amp;&amp; user.picture === user.uploadedpicture) {
+                user.uploadedpicture = user.picture.startsWith(&#039;http&#039;) ? user.picture : relative_path + user.picture;
+                user.picture = user.uploadedpicture;
+            } else if (user.uploadedpicture) {
+                user.uploadedpicture = user.uploadedpicture.startsWith(&#039;http&#039;) ? user.uploadedpicture : relative_path + user.uploadedpicture;
+            }
+            if (meta.config.defaultAvatar &amp;&amp; !user.picture) {
+                user.picture = User.getDefaultAvatar();
+            }
+
+            if (user.hasOwnProperty(&#039;status&#039;) &amp;&amp; user.hasOwnProperty(&#039;lastonline&#039;)) {
+                user.status = User.getStatus(user);
+            }
+
+            for (let i = 0; i &lt; fieldsToRemove.length; i += 1) {
+                user[fieldsToRemove[i]] = undefined;
+            }
+
+            // User Icons
+            if (requestedFields.includes(&#039;picture&#039;) &amp;&amp; user.username &amp;&amp; parseInt(user.uid, 10) &amp;&amp; !meta.config.defaultAvatar) {
+                const iconBackgrounds = await User.getIconBackgrounds(user.uid);
+                let bgColor = await User.getUserField(user.uid, &#039;icon:bgColor&#039;);
+                if (!iconBackgrounds.includes(bgColor)) {
+                    bgColor = Array.prototype.reduce.call(user.username, (cur, next) =&gt; cur + next.charCodeAt(), 0);
+                    bgColor = iconBackgrounds[bgColor % iconBackgrounds.length];
+                }
+                user[&#039;icon:text&#039;] = (user.username[0] || &#039;&#039;).toUpperCase();
+                user[&#039;icon:bgColor&#039;] = bgColor;
+            }
+
+            if (user.hasOwnProperty(&#039;joindate&#039;)) {
+                user.joindateISO = utils.toISOString(user.joindate);
+            }
+
+            if (user.hasOwnProperty(&#039;lastonline&#039;)) {
+                user.lastonlineISO = utils.toISOString(user.lastonline) || user.joindateISO;
+            }
+
+            if (user.hasOwnProperty(&#039;banned&#039;) || user.hasOwnProperty(&#039;banned:expire&#039;)) {
+                const result = await User.bans.calcExpiredFromUserData(user);
+                user.banned = result.banned;
+                const unban = result.banned &amp;&amp; result.banExpired;
+                user.banned_until = unban ? 0 : user[&#039;banned:expire&#039;];
+                user.banned_until_readable = user.banned_until &amp;&amp; !unban ? utils.toISOString(user.banned_until) : &#039;Not Banned&#039;;
+                if (unban) {
+                    await User.bans.unban(user.uid);
+                    user.banned = false;
+                }
+            }
+
+            if (user.hasOwnProperty(&#039;mutedUntil&#039;)) {
+                user.muted = user.mutedUntil &gt; Date.now();
+            }
+        }));
+
+        return await plugins.hooks.fire(&#039;filter:users.get&#039;, users);
+    }
+
+    function parseDisplayName(user, uidToSettings) {
+        let showfullname = parseInt(meta.config.showfullname, 10) === 1;
+        if (uidToSettings[user.uid]) {
+            if (parseInt(uidToSettings[user.uid].showfullname, 10) === 0) {
+                showfullname = false;
+            } else if (parseInt(uidToSettings[user.uid].showfullname, 10) === 1) {
+                showfullname = true;
+            }
+        }
+
+        user.displayname = validator.escape(String(
+            meta.config.showFullnameAsDisplayName &amp;&amp; showfullname &amp;&amp; user.fullname ?
+                user.fullname :
+                user.username
+        ));
+    }
+
+    function parseGroupTitle(user) {
+        try {
+            user.groupTitleArray = JSON.parse(user.groupTitle);
+        } catch (err) {
+            if (user.groupTitle) {
+                user.groupTitleArray = [user.groupTitle];
+            } else {
+                user.groupTitle = &#039;&#039;;
+                user.groupTitleArray = [];
+            }
+        }
+        if (!Array.isArray(user.groupTitleArray)) {
+            if (user.groupTitleArray) {
+                user.groupTitleArray = [user.groupTitleArray];
+            } else {
+                user.groupTitleArray = [];
+            }
+        }
+        if (!meta.config.allowMultipleBadges &amp;&amp; user.groupTitleArray.length) {
+            user.groupTitleArray = [user.groupTitleArray[0]];
+        }
+    }
+
+    User.getIconBackgrounds = async (uid = 0) =&gt; {
+        let iconBackgrounds = [
+            &#039;#f44336&#039;, &#039;#e91e63&#039;, &#039;#9c27b0&#039;, &#039;#673ab7&#039;, &#039;#3f51b5&#039;, &#039;#2196f3&#039;,
+            &#039;#009688&#039;, &#039;#1b5e20&#039;, &#039;#33691e&#039;, &#039;#827717&#039;, &#039;#e65100&#039;, &#039;#ff5722&#039;,
+            &#039;#795548&#039;, &#039;#607d8b&#039;,
+        ];
+
+        ({ iconBackgrounds } = await plugins.hooks.fire(&#039;filter:user.iconBackgrounds&#039;, { uid, iconBackgrounds }));
+        return iconBackgrounds;
+    };
+
+    User.getDefaultAvatar = function () {
+        if (!meta.config.defaultAvatar) {
+            return &#039;&#039;;
+        }
+        return meta.config.defaultAvatar.startsWith(&#039;http&#039;) ? meta.config.defaultAvatar : relative_path + meta.config.defaultAvatar;
+    };
+
+    User.setUserField = async function (uid, field, value) {
+        await User.setUserFields(uid, { [field]: value });
+    };
+
+    User.setUserFields = async function (uid, data) {
+        await db.setObject(`user:${uid}`, data);
+        for (const [field, value] of Object.entries(data)) {
+            plugins.hooks.fire(&#039;action:user.set&#039;, { uid, field, value, type: &#039;set&#039; });
+        }
+    };
+
+    User.incrementUserFieldBy = async function (uid, field, value) {
+        return await incrDecrUserFieldBy(uid, field, value, &#039;increment&#039;);
+    };
+
+    User.decrementUserFieldBy = async function (uid, field, value) {
+        return await incrDecrUserFieldBy(uid, field, -value, &#039;decrement&#039;);
+    };
+
+    async function incrDecrUserFieldBy(uid, field, value, type) {
+        const newValue = await db.incrObjectFieldBy(`user:${uid}`, field, value);
+        plugins.hooks.fire(&#039;action:user.set&#039;, { uid: uid, field: field, value: newValue, type: type });
+        return newValue;
+    }
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

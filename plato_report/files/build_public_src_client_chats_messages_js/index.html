@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/chats/messages.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/chats/messages.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.60</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">210</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">38.24</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">2.36</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/chats/messages&#039;, [
+    &#039;components&#039;, &#039;translator&#039;, &#039;benchpress&#039;, &#039;hooks&#039;,
+    &#039;bootbox&#039;, &#039;alerts&#039;, &#039;messages&#039;, &#039;api&#039;,
+], function (components, translator, Benchpress, hooks, bootbox, alerts, messagesModule, api) {
+    const messages = {};
+
+    messages.sendMessage = async function (roomId, inputEl) {
+        let message = inputEl.val();
+        let mid = inputEl.attr(&#039;data-mid&#039;);
+
+        if (!message.trim().length) {
+            return;
+        }
+
+        inputEl.val(&#039;&#039;);
+        inputEl.removeAttr(&#039;data-mid&#039;);
+        messages.updateRemainingLength(inputEl.parent());
+        const payload = { roomId, message, mid };
+        // TODO: move this to success callback of api.post/put call?
+        hooks.fire(&#039;action:chat.sent&#039;, payload);
+        ({ roomId, message, mid } = await hooks.fire(&#039;filter:chat.send&#039;, payload));
+
+        if (!mid) {
+            api.post(`/chats/${roomId}`, { message }).catch((err) =&gt; {
+                inputEl.val(message);
+                messages.updateRemainingLength(inputEl.parent());
+                if (err.message === &#039;[[error:email-not-confirmed-chat]]&#039;) {
+                    return messagesModule.showEmailConfirmWarning(err.message);
+                }
+
+                return alerts.alert({
+                    alert_id: &#039;chat_spam_error&#039;,
+                    title: &#039;[[global:alert.error]]&#039;,
+                    message: err.message,
+                    type: &#039;danger&#039;,
+                    timeout: 10000,
+                });
+            });
+        } else {
+            api.put(`/chats/${roomId}/messages/${mid}`, { message }).catch((err) =&gt; {
+                inputEl.val(message);
+                inputEl.attr(&#039;data-mid&#039;, mid);
+                messages.updateRemainingLength(inputEl.parent());
+                return alerts.error(err);
+            });
+        }
+    };
+
+    messages.updateRemainingLength = function (parent) {
+        const element = parent.find(&#039;[component=&quot;chat/input&quot;]&#039;);
+        parent.find(&#039;[component=&quot;chat/message/length&quot;]&#039;).text(element.val().length);
+        parent.find(&#039;[component=&quot;chat/message/remaining&quot;]&#039;).text(config.maximumChatMessageLength - element.val().length);
+        hooks.fire(&#039;action:chat.updateRemainingLength&#039;, {
+            parent: parent,
+        });
+    };
+
+    messages.appendChatMessage = function (chatContentEl, data) {
+        const lastSpeaker = parseInt(chatContentEl.find(&#039;.chat-message&#039;).last().attr(&#039;data-uid&#039;), 10);
+        const lasttimestamp = parseInt(chatContentEl.find(&#039;.chat-message&#039;).last().attr(&#039;data-timestamp&#039;), 10);
+        if (!Array.isArray(data)) {
+            data.newSet = lastSpeaker !== parseInt(data.fromuid, 10) ||
+                parseInt(data.timestamp, 10) &gt; parseInt(lasttimestamp, 10) + (1000 * 60 * 3);
+        }
+
+        messages.parseMessage(data, function (html) {
+            onMessagesParsed(chatContentEl, html);
+        });
+    };
+
+    function onMessagesParsed(chatContentEl, html) {
+        const newMessage = $(html);
+        const isAtBottom = messages.isAtBottom(chatContentEl);
+        newMessage.appendTo(chatContentEl);
+        newMessage.find(&#039;.timeago&#039;).timeago();
+        newMessage.find(&#039;img:not(.not-responsive)&#039;).addClass(&#039;img-responsive&#039;);
+        if (isAtBottom) {
+            messages.scrollToBottom(chatContentEl);
+        }
+
+        hooks.fire(&#039;action:chat.received&#039;, {
+            messageEl: newMessage,
+        });
+    }
+
+
+    messages.parseMessage = function (data, callback) {
+        function done(html) {
+            translator.translate(html, callback);
+        }
+
+        if (Array.isArray(data)) {
+            Benchpress.render(&#039;partials/chats/message&#039; + (Array.isArray(data) ? &#039;s&#039; : &#039;&#039;), {
+                messages: data,
+            }).then(done);
+        } else {
+            Benchpress.render(&#039;partials/chats/&#039; + (data.system ? &#039;system-message&#039; : &#039;message&#039;), {
+                messages: data,
+            }).then(done);
+        }
+    };
+
+    messages.isAtBottom = function (containerEl, threshold) {
+        if (containerEl.length) {
+            const distanceToBottom = containerEl[0].scrollHeight - (
+                containerEl.outerHeight() + containerEl.scrollTop()
+            );
+            return distanceToBottom &lt; (threshold || 100);
+        }
+    };
+
+    messages.scrollToBottom = function (containerEl) {
+        if (containerEl &amp;&amp; containerEl.length) {
+            containerEl.scrollTop(containerEl[0].scrollHeight - containerEl.height());
+            containerEl.parent()
+                .find(&#039;[component=&quot;chat/messages/scroll-up-alert&quot;]&#039;)
+                .addClass(&#039;hidden&#039;);
+        }
+    };
+
+    messages.toggleScrollUpAlert = function (containerEl) {
+        const isAtBottom = messages.isAtBottom(containerEl, 300);
+        containerEl.parent()
+            .find(&#039;[component=&quot;chat/messages/scroll-up-alert&quot;]&#039;)
+            .toggleClass(&#039;hidden&#039;, isAtBottom);
+    };
+
+    messages.prepEdit = function (inputEl, messageId, roomId) {
+        socket.emit(&#039;modules.chats.getRaw&#039;, { mid: messageId, roomId: roomId }, function (err, raw) {
+            if (err) {
+                return alerts.error(err);
+            }
+            // Populate the input field with the raw message content
+            if (inputEl.val().length === 0) {
+                // By setting the `data-mid` attribute, I tell the chat code that I am editing a
+                // message, instead of posting a new one.
+                inputEl.attr(&#039;data-mid&#039;, messageId).addClass(&#039;editing&#039;);
+                inputEl.val(raw).focus();
+
+                hooks.fire(&#039;action:chat.prepEdit&#039;, {
+                    inputEl: inputEl,
+                    messageId: messageId,
+                    roomId: roomId,
+                });
+            }
+        });
+    };
+
+    messages.addSocketListeners = function () {
+        socket.removeListener(&#039;event:chats.edit&#039;, onChatMessageEdited);
+        socket.on(&#039;event:chats.edit&#039;, onChatMessageEdited);
+
+        socket.removeListener(&#039;event:chats.delete&#039;, onChatMessageDeleted);
+        socket.on(&#039;event:chats.delete&#039;, onChatMessageDeleted);
+
+        socket.removeListener(&#039;event:chats.restore&#039;, onChatMessageRestored);
+        socket.on(&#039;event:chats.restore&#039;, onChatMessageRestored);
+    };
+
+    function onChatMessageEdited(data) {
+        data.messages.forEach(function (message) {
+            const self = parseInt(message.fromuid, 10) === parseInt(app.user.uid, 10);
+            message.self = self ? 1 : 0;
+            messages.parseMessage(message, function (html) {
+                const body = components.get(&#039;chat/message&#039;, message.messageId);
+                if (body.length) {
+                    body.replaceWith(html);
+                    components.get(&#039;chat/message&#039;, message.messageId).find(&#039;.timeago&#039;).timeago();
+                }
+            });
+        });
+    }
+
+    function onChatMessageDeleted(messageId) {
+        components.get(&#039;chat/message&#039;, messageId)
+            .toggleClass(&#039;deleted&#039;, true)
+            .find(&#039;[component=&quot;chat/message/body&quot;]&#039;).translateHtml(&#039;[[modules:chat.message-deleted]]&#039;);
+    }
+
+    function onChatMessageRestored(message) {
+        components.get(&#039;chat/message&#039;, message.messageId)
+            .toggleClass(&#039;deleted&#039;, false)
+            .find(&#039;[component=&quot;chat/message/body&quot;]&#039;).html(message.content);
+    }
+
+    messages.delete = function (messageId, roomId) {
+        translator.translate(&#039;[[modules:chat.delete_message_confirm]]&#039;, function (translated) {
+            bootbox.confirm(translated, function (ok) {
+                if (!ok) {
+                    return;
+                }
+
+                api.delete(`/chats/${roomId}/messages/${messageId}`, {}).then(() =&gt; {
+                    components.get(&#039;chat/message&#039;, messageId).toggleClass(&#039;deleted&#039;, true);
+                }).catch(alerts.error);
+            });
+        });
+    };
+
+    messages.restore = function (messageId, roomId) {
+        api.post(`/chats/${roomId}/messages/${messageId}`, {}).then(() =&gt; {
+            components.get(&#039;chat/message&#039;, messageId).toggleClass(&#039;deleted&#039;, false);
+        }).catch(alerts.error);
+    };
+
+    return messages;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

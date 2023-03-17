@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/templates/admin/plugins/markdown.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/templates/admin/plugins/markdown.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">77.04</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">34</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">19.25</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.26</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">(function (factory) {
+  if (typeof module === &#039;object&#039; &amp;&amp; module.exports) {
+    module.exports = factory();
+  } else if (typeof define === &#039;function&#039; &amp;&amp; define.amd) {
+    define(factory);
+  }
+})(function () {
+  function compiled(helpers, context, guard, iter, helper) {
+    var __escape = helpers.__escape;
+    var value = context;
+    return &quot;&lt;div class=\&quot;row\&quot;&gt;\n\t&lt;div class=\&quot;col-sm-2 col-xs-12 settings-header\&quot;&gt;General&lt;/div&gt;\n\t&lt;div class=\&quot;col-sm-10 col-xs-12\&quot;&gt;\n\t\t&lt;form class=\&quot;form markdown-settings\&quot;&gt;\n\t\t\t&lt;div class=\&quot;panel panel-default\&quot;&gt;\n\t\t\t\t&lt;div class=\&quot;panel-heading\&quot;&gt;Markdown&lt;/div&gt;\n\t\t\t\t&lt;div class=\&quot;panel-body\&quot;&gt;\n\t\t\t\t\t&lt;div class=\&quot;row\&quot;&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;col-lg-6\&quot;&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;xhtmlOut\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;xhtmlOut\&quot; id=\&quot;xhtmlOut\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tUse &#039;/&#039; to close single tags (&lt;code&gt;&amp;lt;br /&amp;gt;&lt;/code&gt;)\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;breaks\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;breaks\&quot; id=\&quot;breaks\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tTreat newlines as single line breaks\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;typographer\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;typographer\&quot; id=\&quot;typographer\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tEnable smartypants and other sweet transforms (e.g. &lt;code&gt;(c)&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;copy;&lt;/code&gt;)\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;multimdTables\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;multimdTables\&quot; id=\&quot;multimdTables\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAllow advanced table syntax\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;col-lg-6\&quot;&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;linkify\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;linkify\&quot; id=\&quot;linkify\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAutoconvert url-like texts to links\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;externalBlank\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;externalBlank\&quot; id=\&quot;externalBlank\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tOpen external links in a new tab/window\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;nofollow\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;nofollow\&quot; id=\&quot;nofollow\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tTell web crawlers that external links are not to be followed\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;allowRTLO\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;allowRTLO\&quot; id=\&quot;allowRTLO\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAllow RTL override unicode in link content\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;checkboxes\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;checkboxes\&quot; id=\&quot;checkboxes\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tInterpret &lt;code&gt;[ ]&lt;/code&gt; and &lt;code&gt;[x]&lt;/code&gt; as checkboxes\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t&lt;/div&gt;\n\t\t\t&lt;div class=\&quot;row\&quot;&gt;\n\t\t\t\t&lt;div class=\&quot;col-sm-6\&quot;&gt;\n\t\t\t\t\t&lt;div class=\&quot;panel panel-default\&quot;&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-heading\&quot;&gt;Code Formatting&lt;/div&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-body\&quot;&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;highlight\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;highlight\&quot; id=\&quot;highlight\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAutomatically detect and highlight code blocks\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;highlightTheme\&quot;&gt;Use this theme for highlighted code blocks&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;select class=\&quot;form-control\&quot; name=\&quot;highlightTheme\&quot; id=\&quot;highlightTheme\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&quot; + 
+      compiled.blocks[&#039;themes&#039;](helpers, context, guard, iter, helper) + 
+      &quot;\n\t\t\t\t\t\t\t\t&lt;/select&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;defaultHighlightLanguage\&quot;&gt;\n\t\t\t\t\t\t\t\t\tDefault language for code blocks with no language defined\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;input class=\&quot;form-control\&quot; placeholder=\&quot;e.g. js\&quot; type=\&quot;text\&quot; name=\&quot;defaultHighlightLanguage\&quot; id=\&quot;defaultHighlightLanguage\&quot; /&gt;\n\t\t\t\t\t\t\t\t&lt;p class=\&quot;help-block\&quot;&gt;Leave blank to use auto-language detection&lt;/p&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;langPrefix\&quot;&gt;\n\t\t\t\t\t\t\t\t\tPrefix for &lt;code&gt;code&lt;/code&gt; blocks\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;input class=\&quot;form-control\&quot; placeholder=\&quot;language-\&quot; type=\&quot;text\&quot; name=\&quot;langPrefix\&quot; id=\&quot;langPrefix\&quot; /&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;highlightLinesLanguageList\&quot;&gt;\n\t\t\t\t\t\t\t\t\tEnable line numbers for the following languages\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;select class=\&quot;form-control\&quot; multiple=\&quot;true\&quot; name=\&quot;highlightLinesLanguageList\&quot; id=\&quot;highlightLinesLanguageList\&quot; size=\&quot;20\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;apache,apacheconf\&quot;&gt;Apache&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;bash,sh,zsh\&quot;&gt;Bash&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;cs,csharp\&quot;&gt;C#&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;cpp,c,cc,h,c++,h++,hpp\&quot;&gt;C++&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;css\&quot;&gt;CSS&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;coffeescript,coffee,cson,iced\&quot;&gt;CoffeeScript&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;diff,patch\&quot;&gt;Diff&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;xml,html,xhtml,rss,atom,xjb,xsd,xsl,plist\&quot;&gt;HTML&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;http,https\&quot;&gt;HTTP&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;ini,toml\&quot;&gt;Ini&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;json\&quot;&gt;JSON&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;java\&quot;&gt;Java&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;javascript,js,jsx\&quot;&gt;Javascript&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;makefile,mk,mak\&quot;&gt;Makefile&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;markdown,md,mkdown,mkd\&quot;&gt;Markdown&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;nginx,nginxconf\&quot;&gt;Nginx&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;objectivec,objc,obj-c\&quot;&gt;Objective C&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;php,php3,php4,php5,php6\&quot;&gt;PHP&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;perl,pl,pm\&quot;&gt;Perl&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;python,py,gyp\&quot;&gt;Python&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;ruby,rb,gemspec,podspec,thor,irb\&quot;&gt;Ruby&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;sql\&quot;&gt;SQL&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;shell,console\&quot;&gt;Shell&lt;/option&gt;\n\t\t\t\t\t\t\t\t&lt;/select&gt;\n\t\t\t\t\t\t\t\t&lt;p class=\&quot;help-block\&quot;&gt;\n\t\t\t\t\t\t\t\t\tYou can use &lt;code&gt;ctrl&lt;/code&gt; and &lt;code&gt;shift&lt;/code&gt; to select/deselect multiple\n\t\t\t\t\t\t\t\t\titems and select/deselect items in ranges.\n\t\t\t\t\t\t\t\t&lt;/p&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;div class=\&quot;col-sm-6\&quot;&gt;\n\t\t\t\t\t&lt;div class=\&quot;panel panel-default\&quot;&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-heading\&quot;&gt;Images&lt;/div&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-body\&quot;&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;checkbox\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;probe\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;probe\&quot; id=\&quot;probe\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAppend image sizes for externally linked images\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;probeCacheSize\&quot;&gt;Cache size (number of images)&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;input class=\&quot;form-control\&quot; type=\&quot;number\&quot; id=\&quot;probeCacheSize\&quot; name=\&quot;probeCacheSize\&quot; placeholder=\&quot;256 (Default)\&quot; /&gt;\n\t\t\t\t\t\t\t\t&lt;p class=\&quot;help-block\&quot;&gt;\n\t\t\t\t\t\t\t\t\tMarkdown automatically saves image sizes so as to not make too many unnecessary calls. It remembers this value for 24 hours, to a maximum number of images as defined here. Increase this number if your forum posts contain links to many external images.\n\t\t\t\t\t\t\t\t&lt;/p&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t&lt;div class=\&quot;panel panel-danger\&quot;&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-heading\&quot;&gt;Danger Zone&lt;/div&gt;\n\t\t\t\t\t\t&lt;div class=\&quot;panel-body\&quot;&gt;\n\t\t\t\t\t\t\t&lt;div class=\&quot;form-group\&quot;&gt;\n\t\t\t\t\t\t\t\t&lt;label for=\&quot;html\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;input type=\&quot;checkbox\&quot; name=\&quot;html\&quot; id=\&quot;html\&quot; /&gt;\n\t\t\t\t\t\t\t\t\tAllow HTML\n\t\t\t\t\t\t\t\t&lt;/label&gt;\n\t\t\t\t\t\t\t\t&lt;div class=\&quot;alert alert-warning\&quot;&gt;\n\t\t\t\t\t\t\t\t\t&lt;strong&gt;&lt;i class=\&quot;icon-warning-sign\&quot;&gt;&lt;/i&gt; Careful!&lt;/strong&gt;\n\t\t\t\t\t\t\t\t\t&lt;p&gt;\n\t\t\t\t\t\t\t\t\t\tAutomatic HTML sanitization is an important part of ensuring that\n\t\t\t\t\t\t\t\t\t\tyour users do not run arbitrary javascript or alter parts of the\n\t\t\t\t\t\t\t\t\t\tpage that were not meant to be altered. If this option is checked,\n\t\t\t\t\t\t\t\t\t\tbeware the consequences!\n\t\t\t\t\t\t\t\t\t&lt;/p&gt;\n\t\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t\t&lt;/div&gt;\n\t\t\t\t&lt;/div&gt;\n\t\t\t&lt;/div&gt;\n\t\t&lt;/form&gt;\n\t&lt;/div&gt;\n&lt;/div&gt;\n\n&lt;button id=\&quot;save\&quot; class=\&quot;floating-button mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored\&quot;&gt;\n\t&lt;i class=\&quot;material-icons\&quot;&gt;save&lt;/i&gt;\n&lt;/button&gt;\n&quot;;
+  }
+
+  compiled.blocks = {
+    &#039;themes&#039;: function themes(helpers, context, guard, iter, helper) {
+      var __escape = helpers.__escape;
+      var value = context;
+      return iter(guard((context != null) ? context[&#039;themes&#039;] : null), function each(key0, index, length, value) {
+        var key = key0;
+        return &quot;\n\t\t\t\t\t\t\t\t\t&lt;option value=\&quot;&quot; + 
+          __escape(guard(value)) + 
+          &quot;\&quot;&gt;&quot; + 
+          __escape(guard(value)) + 
+          &quot;&lt;/option&gt;\n\t\t\t\t\t\t\t\t\t&quot;;
+      }, function alt() {
+        return &quot;&quot;;
+      });
+    }
+  };
+
+  return compiled;
+})</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

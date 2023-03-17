@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/modules/topicList.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/modules/topicList.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">65.34</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">279</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">52.49</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.13</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;topicList&#039;, [
+    &#039;forum/infinitescroll&#039;,
+    &#039;handleBack&#039;,
+    &#039;topicSelect&#039;,
+    &#039;categoryFilter&#039;,
+    &#039;forum/category/tools&#039;,
+    &#039;hooks&#039;,
+], function (infinitescroll, handleBack, topicSelect, categoryFilter, categoryTools, hooks) {
+    const TopicList = {};
+    let templateName = &#039;&#039;;
+
+    let newTopicCount = 0;
+    let newPostCount = 0;
+
+    let loadTopicsCallback;
+    let topicListEl;
+
+    const scheduledTopics = [];
+
+    $(window).on(&#039;action:ajaxify.start&#039;, function () {
+        TopicList.removeListeners();
+        categoryTools.removeListeners();
+    });
+
+    TopicList.init = function (template, cb) {
+        topicListEl = findTopicListElement();
+
+        templateName = template;
+        loadTopicsCallback = cb || loadTopicsAfter;
+
+        categoryTools.init();
+
+        TopicList.watchForNewPosts();
+        const states = [&#039;watching&#039;];
+        if (ajaxify.data.selectedFilter &amp;&amp; ajaxify.data.selectedFilter.filter === &#039;watched&#039;) {
+            states.push(&#039;notwatching&#039;, &#039;ignoring&#039;);
+        } else if (template !== &#039;unread&#039;) {
+            states.push(&#039;notwatching&#039;);
+        }
+
+        categoryFilter.init($(&#039;[component=&quot;category/dropdown&quot;]&#039;), {
+            states: states,
+        });
+
+        if (!config.usePagination) {
+            infinitescroll.init(TopicList.loadMoreTopics);
+        }
+
+        handleBack.init(function (after, handleBackCallback) {
+            loadTopicsCallback(after, 1, function (data, loadCallback) {
+                onTopicsLoaded(templateName, data.topics, ajaxify.data.showSelect, 1, function () {
+                    handleBackCallback();
+                    loadCallback();
+                });
+            });
+        });
+
+        if ($(&#039;body&#039;).height() &lt;= $(window).height() &amp;&amp; topicListEl.children().length &gt;= 20) {
+            $(&#039;#load-more-btn&#039;).show();
+        }
+
+        $(&#039;#load-more-btn&#039;).on(&#039;click&#039;, function () {
+            TopicList.loadMoreTopics(1);
+        });
+
+        hooks.fire(&#039;action:topics.loaded&#039;, { topics: ajaxify.data.topics });
+    };
+
+    function findTopicListElement() {
+        return $(&#039;[component=&quot;category&quot;]&#039;).filter(function (i, e) {
+            return !$(e).parents(&#039;[widget-area],[data-widget-area]&#039;).length;
+        });
+    }
+
+    TopicList.watchForNewPosts = function () {
+        $(&#039;#new-topics-alert&#039;).on(&#039;click&#039;, function () {
+            $(this).addClass(&#039;hide&#039;);
+        });
+        newPostCount = 0;
+        newTopicCount = 0;
+        TopicList.removeListeners();
+        socket.on(&#039;event:new_topic&#039;, onNewTopic);
+        socket.on(&#039;event:new_post&#039;, onNewPost);
+    };
+
+    TopicList.removeListeners = function () {
+        socket.removeListener(&#039;event:new_topic&#039;, onNewTopic);
+        socket.removeListener(&#039;event:new_post&#039;, onNewPost);
+    };
+
+    function onNewTopic(data) {
+        const d = ajaxify.data;
+
+        const categories = d.selectedCids &amp;&amp;
+            d.selectedCids.length &amp;&amp;
+            d.selectedCids.indexOf(parseInt(data.cid, 10)) === -1;
+        const filterWatched = d.selectedFilter &amp;&amp;
+            d.selectedFilter.filter === &#039;watched&#039;;
+        const category = d.template.category &amp;&amp;
+            parseInt(d.cid, 10) !== parseInt(data.cid, 10);
+
+        const preventAlert = !!(categories || filterWatched || category || scheduledTopics.includes(data.tid));
+        hooks.fire(&#039;filter:topicList.onNewTopic&#039;, { topic: data, preventAlert }).then((result) =&gt; {
+            if (result.preventAlert) {
+                return;
+            }
+
+            if (data.scheduled &amp;&amp; data.tid) {
+                scheduledTopics.push(data.tid);
+            }
+            newTopicCount += 1;
+            updateAlertText();
+        });
+    }
+
+    function onNewPost(data) {
+        const post = data.posts[0];
+        if (!post || !post.topic || post.topic.isFollowing) {
+            return;
+        }
+
+        const d = ajaxify.data;
+
+        const isMain = parseInt(post.topic.mainPid, 10) === parseInt(post.pid, 10);
+        const categories = d.selectedCids &amp;&amp;
+            d.selectedCids.length &amp;&amp;
+            d.selectedCids.indexOf(parseInt(post.topic.cid, 10)) === -1;
+        const filterNew = d.selectedFilter &amp;&amp;
+            d.selectedFilter.filter === &#039;new&#039;;
+        const filterWatched = d.selectedFilter &amp;&amp;
+            d.selectedFilter.filter === &#039;watched&#039; &amp;&amp;
+            !post.topic.isFollowing;
+        const category = d.template.category &amp;&amp;
+            parseInt(d.cid, 10) !== parseInt(post.topic.cid, 10);
+
+        const preventAlert = !!(isMain || categories || filterNew || filterWatched || category);
+        hooks.fire(&#039;filter:topicList.onNewPost&#039;, { post, preventAlert }).then((result) =&gt; {
+            if (result.preventAlert) {
+                return;
+            }
+
+            newPostCount += 1;
+            updateAlertText();
+        });
+    }
+
+    function updateAlertText() {
+        let text = &#039;&#039;;
+
+        if (newTopicCount === 0) {
+            if (newPostCount === 1) {
+                text = &#039;[[recent:there-is-a-new-post]]&#039;;
+            } else if (newPostCount &gt; 1) {
+                text = &#039;[[recent:there-are-new-posts, &#039; + newPostCount + &#039;]]&#039;;
+            }
+        } else if (newTopicCount === 1) {
+            if (newPostCount === 0) {
+                text = &#039;[[recent:there-is-a-new-topic]]&#039;;
+            } else if (newPostCount === 1) {
+                text = &#039;[[recent:there-is-a-new-topic-and-a-new-post]]&#039;;
+            } else if (newPostCount &gt; 1) {
+                text = &#039;[[recent:there-is-a-new-topic-and-new-posts, &#039; + newPostCount + &#039;]]&#039;;
+            }
+        } else if (newTopicCount &gt; 1) {
+            if (newPostCount === 0) {
+                text = &#039;[[recent:there-are-new-topics, &#039; + newTopicCount + &#039;]]&#039;;
+            } else if (newPostCount === 1) {
+                text = &#039;[[recent:there-are-new-topics-and-a-new-post, &#039; + newTopicCount + &#039;]]&#039;;
+            } else if (newPostCount &gt; 1) {
+                text = &#039;[[recent:there-are-new-topics-and-new-posts, &#039; + newTopicCount + &#039;, &#039; + newPostCount + &#039;]]&#039;;
+            }
+        }
+
+        text += &#039; [[recent:click-here-to-reload]]&#039;;
+
+        $(&#039;#new-topics-alert&#039;).translateText(text).removeClass(&#039;hide&#039;).fadeIn(&#039;slow&#039;);
+        $(&#039;#category-no-topics&#039;).addClass(&#039;hide&#039;);
+    }
+
+    TopicList.loadMoreTopics = function (direction) {
+        if (!topicListEl.length || !topicListEl.children().length) {
+            return;
+        }
+        const topics = topicListEl.find(&#039;[component=&quot;category/topic&quot;]&#039;);
+        const afterEl = direction &gt; 0 ? topics.last() : topics.first();
+        const after = (parseInt(afterEl.attr(&#039;data-index&#039;), 10) || 0) + (direction &gt; 0 ? 1 : 0);
+
+        if (!utils.isNumber(after) || (after === 0 &amp;&amp; topicListEl.find(&#039;[component=&quot;category/topic&quot;][data-index=&quot;0&quot;]&#039;).length)) {
+            return;
+        }
+
+        loadTopicsCallback(after, direction, function (data, done) {
+            onTopicsLoaded(templateName, data.topics, ajaxify.data.showSelect, direction, done);
+        });
+    };
+
+    function calculateNextPage(after, direction) {
+        return Math.floor(after / config.topicsPerPage) + (direction &gt; 0 ? 1 : 0);
+    }
+
+    function loadTopicsAfter(after, direction, callback) {
+        callback = callback || function () {};
+        const query = utils.params();
+        query.page = calculateNextPage(after, direction);
+        infinitescroll.loadMoreXhr(query, callback);
+    }
+
+    function filterTopicsOnDom(topics) {
+        return topics.filter(function (topic) {
+            return !topicListEl.find(&#039;[component=&quot;category/topic&quot;][data-tid=&quot;&#039; + topic.tid + &#039;&quot;]&#039;).length;
+        });
+    }
+
+    function onTopicsLoaded(templateName, topics, showSelect, direction, callback) {
+        if (!topics || !topics.length) {
+            $(&#039;#load-more-btn&#039;).hide();
+            return callback();
+        }
+        topics = filterTopicsOnDom(topics);
+
+        if (!topics.length) {
+            $(&#039;#load-more-btn&#039;).hide();
+            return callback();
+        }
+
+        let after;
+        let before;
+        const topicEls = topicListEl.find(&#039;[component=&quot;category/topic&quot;]&#039;);
+
+        if (direction &gt; 0 &amp;&amp; topics.length) {
+            after = topicEls.last();
+        } else if (direction &lt; 0 &amp;&amp; topics.length) {
+            before = topicEls.first();
+        }
+
+        const tplData = {
+            topics: topics,
+            showSelect: showSelect,
+            template: {
+                name: templateName,
+            },
+        };
+        tplData.template[templateName] = true;
+
+        hooks.fire(&#039;action:topics.loading&#039;, { topics: topics, after: after, before: before });
+
+        app.parseAndTranslate(templateName, &#039;topics&#039;, tplData, function (html) {
+            topicListEl.removeClass(&#039;hidden&#039;);
+            $(&#039;#category-no-topics&#039;).remove();
+
+            if (after &amp;&amp; after.length) {
+                html.insertAfter(after);
+            } else if (before &amp;&amp; before.length) {
+                const height = $(document).height();
+                const scrollTop = $(window).scrollTop();
+
+                html.insertBefore(before);
+
+                $(window).scrollTop(scrollTop + ($(document).height() - height));
+            } else {
+                topicListEl.append(html);
+            }
+
+            if (!topicSelect.getSelectedTids().length) {
+                infinitescroll.removeExtra(topicListEl.find(&#039;[component=&quot;category/topic&quot;]&#039;), direction, Math.max(60, config.topicsPerPage * 3));
+            }
+
+            html.find(&#039;.timeago&#039;).timeago();
+            app.createUserTooltips(html);
+            utils.makeNumbersHumanReadable(html.find(&#039;.human-readable-number&#039;));
+            hooks.fire(&#039;action:topics.loaded&#039;, { topics: topics, template: templateName });
+            callback();
+        });
+    }
+
+    return TopicList;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

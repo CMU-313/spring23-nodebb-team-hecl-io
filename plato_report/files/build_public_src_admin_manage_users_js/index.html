@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/admin/manage/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/admin/manage/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">73.99</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">549</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">40.01</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">6.36</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+define(&#039;admin/manage/users&#039;, [
+    &#039;translator&#039;, &#039;benchpress&#039;, &#039;autocomplete&#039;, &#039;api&#039;, &#039;slugify&#039;, &#039;bootbox&#039;, &#039;alerts&#039;, &#039;accounts/invite&#039;,
+], function (translator, Benchpress, autocomplete, api, slugify, bootbox, alerts, AccountInvite) {
+    const Users = {};
+
+    Users.init = function () {
+        $(&#039;#results-per-page&#039;).val(ajaxify.data.resultsPerPage).on(&#039;change&#039;, function () {
+            const query = utils.params();
+            query.resultsPerPage = $(&#039;#results-per-page&#039;).val();
+            const qs = buildSearchQuery(query);
+            ajaxify.go(window.location.pathname + &#039;?&#039; + qs);
+        });
+
+        $(&#039;.export-csv&#039;).on(&#039;click&#039;, function () {
+            socket.once(&#039;event:export-users-csv&#039;, function () {
+                alerts.remove(&#039;export-users-start&#039;);
+                alerts.alert({
+                    alert_id: &#039;export-users&#039;,
+                    type: &#039;success&#039;,
+                    title: &#039;[[global:alert.success]]&#039;,
+                    message: &#039;[[admin/manage/users:export-users-completed]]&#039;,
+                    clickfn: function () {
+                        window.location.href = config.relative_path + &#039;/api/admin/users/csv&#039;;
+                    },
+                    timeout: 0,
+                });
+            });
+            socket.emit(&#039;admin.user.exportUsersCSV&#039;, {}, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                alerts.alert({
+                    alert_id: &#039;export-users-start&#039;,
+                    message: &#039;[[admin/manage/users:export-users-started]]&#039;,
+                    timeout: (ajaxify.data.userCount / 5000) * 500,
+                });
+            });
+
+            return false;
+        });
+
+        function getSelectedUids() {
+            const uids = [];
+
+            $(&#039;.users-table [component=&quot;user/select/single&quot;]&#039;).each(function () {
+                if ($(this).is(&#039;:checked&#039;)) {
+                    uids.push($(this).attr(&#039;data-uid&#039;));
+                }
+            });
+
+            return uids;
+        }
+
+        function update(className, state) {
+            $(&#039;.users-table [component=&quot;user/select/single&quot;]:checked&#039;).parents(&#039;.user-row&#039;).find(className).each(function () {
+                $(this).toggleClass(&#039;hidden&#039;, !state);
+            });
+        }
+
+        function unselectAll() {
+            $(&#039;.users-table [component=&quot;user/select/single&quot;]&#039;).prop(&#039;checked&#039;, false);
+            $(&#039;.users-table [component=&quot;user/select/all&quot;]&#039;).prop(&#039;checked&#039;, false);
+        }
+
+        function removeRow(uid) {
+            const checkboxEl = document.querySelector(`.users-table [component=&quot;user/select/single&quot;][data-uid=&quot;${uid}&quot;]`);
+            if (checkboxEl) {
+                const rowEl = checkboxEl.closest(&#039;.user-row&#039;);
+                rowEl.parentNode.removeChild(rowEl);
+            }
+        }
+
+        // use onSuccess instead
+        function done(successMessage, className, flag) {
+            return function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                alerts.success(successMessage);
+                if (className) {
+                    update(className, flag);
+                }
+                unselectAll();
+            };
+        }
+
+        function onSuccess(successMessage, className, flag) {
+            alerts.success(successMessage);
+            if (className) {
+                update(className, flag);
+            }
+            unselectAll();
+        }
+
+        $(&#039;[component=&quot;user/select/all&quot;]&#039;).on(&#039;click&#039;, function () {
+            $(&#039;.users-table [component=&quot;user/select/single&quot;]&#039;).prop(&#039;checked&#039;, $(this).is(&#039;:checked&#039;));
+        });
+
+        $(&#039;.manage-groups&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                alerts.error(&#039;[[error:no-users-selected]]&#039;);
+                return false;
+            }
+            socket.emit(&#039;admin.user.loadGroups&#039;, uids, function (err, data) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                Benchpress.render(&#039;admin/partials/manage_user_groups&#039;, data).then(function (html) {
+                    const modal = bootbox.dialog({
+                        message: html,
+                        title: &#039;[[admin/manage/users:manage-groups]]&#039;,
+                        onEscape: true,
+                    });
+                    modal.on(&#039;shown.bs.modal&#039;, function () {
+                        autocomplete.group(modal.find(&#039;.group-search&#039;), function (ev, ui) {
+                            const uid = $(ev.target).attr(&#039;data-uid&#039;);
+                            api.put(&#039;/groups/&#039; + ui.item.group.slug + &#039;/membership/&#039; + uid, undefined).then(() =&gt; {
+                                ui.item.group.nameEscaped = translator.escape(ui.item.group.displayName);
+                                app.parseAndTranslate(&#039;admin/partials/manage_user_groups&#039;, { users: [{ groups: [ui.item.group] }] }, function (html) {
+                                    $(&#039;[data-uid=&#039; + uid + &#039;] .group-area&#039;).append(html.find(&#039;.group-area&#039;).html());
+                                });
+                            }).catch(alerts.error);
+                        });
+                    });
+                    modal.on(&#039;click&#039;, &#039;.group-area a&#039;, function () {
+                        modal.modal(&#039;hide&#039;);
+                    });
+                    modal.on(&#039;click&#039;, &#039;.remove-group-icon&#039;, function () {
+                        const groupCard = $(this).parents(&#039;[data-group-name]&#039;);
+                        const groupName = groupCard.attr(&#039;data-group-name&#039;);
+                        const uid = $(this).parents(&#039;[data-uid]&#039;).attr(&#039;data-uid&#039;);
+                        api.del(&#039;/groups/&#039; + slugify(groupName) + &#039;/membership/&#039; + uid).then(() =&gt; {
+                            groupCard.remove();
+                        }).catch(alerts.error);
+                        return false;
+                    });
+                });
+            });
+        });
+
+        $(&#039;.ban-user&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                alerts.error(&#039;[[error:no-users-selected]]&#039;);
+                return false; // specifically to keep the menu open
+            }
+
+            bootbox.confirm((uids.length &gt; 1 ? &#039;[[admin/manage/users:alerts.confirm-ban-multi]]&#039; : &#039;[[admin/manage/users:alerts.confirm-ban]]&#039;), function (confirm) {
+                if (confirm) {
+                    Promise.all(uids.map(function (uid) {
+                        return api.put(&#039;/users/&#039; + uid + &#039;/ban&#039;);
+                    })).then(() =&gt; {
+                        onSuccess(&#039;[[admin/manage/users:alerts.ban-success]]&#039;, &#039;.ban&#039;, true);
+                    }).catch(alerts.error);
+                }
+            });
+        });
+
+        $(&#039;.ban-user-temporary&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                alerts.error(&#039;[[error:no-users-selected]]&#039;);
+                return false; // specifically to keep the menu open
+            }
+
+            Benchpress.render(&#039;admin/partials/temporary-ban&#039;, {}).then(function (html) {
+                bootbox.dialog({
+                    className: &#039;ban-modal&#039;,
+                    title: &#039;[[user:ban_account]]&#039;,
+                    message: html,
+                    show: true,
+                    buttons: {
+                        close: {
+                            label: &#039;[[global:close]]&#039;,
+                            className: &#039;btn-link&#039;,
+                        },
+                        submit: {
+                            label: &#039;[[admin/manage/users:alerts.button-ban-x, &#039; + uids.length + &#039;]]&#039;,
+                            callback: function () {
+                                const formData = $(&#039;.ban-modal form&#039;).serializeArray().reduce(function (data, cur) {
+                                    data[cur.name] = cur.value;
+                                    return data;
+                                }, {});
+                                const until = formData.length &gt; 0 ? (
+                                    Date.now() +
+                                    (formData.length * 1000 * 60 * 60 * (parseInt(formData.unit, 10) ? 24 : 1))
+                                ) : 0;
+
+                                Promise.all(uids.map(function (uid) {
+                                    return api.put(&#039;/users/&#039; + uid + &#039;/ban&#039;, {
+                                        until: until,
+                                        reason: formData.reason,
+                                    });
+                                })).then(() =&gt; {
+                                    onSuccess(&#039;[[admin/manage/users:alerts.ban-success]]&#039;, &#039;.ban&#039;, true);
+                                }).catch(alerts.error);
+                            },
+                        },
+                    },
+                });
+            });
+        });
+
+        $(&#039;.unban-user&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                alerts.error(&#039;[[error:no-users-selected]]&#039;);
+                return false; // specifically to keep the menu open
+            }
+
+            Promise.all(uids.map(function (uid) {
+                return api.del(&#039;/users/&#039; + uid + &#039;/ban&#039;);
+            })).then(() =&gt; {
+                onSuccess(&#039;[[admin/manage/users:alerts.unban-success]]&#039;, &#039;.ban&#039;, false);
+            });
+        });
+
+        $(&#039;.reset-lockout&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+
+            socket.emit(&#039;admin.user.resetLockouts&#039;, uids, done(&#039;[[admin/manage/users:alerts.lockout-reset-success]]&#039;));
+        });
+
+        $(&#039;.validate-email&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+
+            bootbox.confirm(&#039;[[admin/manage/users:alerts.confirm-validate-email]]&#039;, function (confirm) {
+                if (!confirm) {
+                    return;
+                }
+                socket.emit(&#039;admin.user.validateEmail&#039;, uids, function (err) {
+                    if (err) {
+                        return alerts.error(err);
+                    }
+                    alerts.success(&#039;[[admin/manage/users:alerts.validate-email-success]]&#039;);
+                    update(&#039;.notvalidated&#039;, false);
+                    update(&#039;.validated&#039;, true);
+                    unselectAll();
+                });
+            });
+        });
+
+        $(&#039;.send-validation-email&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+            socket.emit(&#039;admin.user.sendValidationEmail&#039;, uids, function (err) {
+                if (err) {
+                    return alerts.error(err);
+                }
+                alerts.success(&#039;[[notifications:email-confirm-sent]]&#039;);
+            });
+        });
+
+        $(&#039;.password-reset-email&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+
+            bootbox.confirm(&#039;[[admin/manage/users:alerts.password-reset-confirm]]&#039;, function (confirm) {
+                if (confirm) {
+                    socket.emit(&#039;admin.user.sendPasswordResetEmail&#039;, uids, done(&#039;[[admin/manage/users:alerts.password-reset-email-sent]]&#039;));
+                }
+            });
+        });
+
+        $(&#039;.force-password-reset&#039;).on(&#039;click&#039;, function () {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+
+            bootbox.confirm(&#039;[[admin/manage/users:alerts.confirm-force-password-reset]]&#039;, function (confirm) {
+                if (confirm) {
+                    socket.emit(&#039;admin.user.forcePasswordReset&#039;, uids, done(&#039;[[admin/manage/users:alerts.validate-force-password-reset-success]]&#039;));
+                }
+            });
+        });
+
+        $(&#039;.delete-user&#039;).on(&#039;click&#039;, () =&gt; {
+            handleDelete(&#039;[[admin/manage/users:alerts.confirm-delete]]&#039;, &#039;/account&#039;);
+        });
+
+        $(&#039;.delete-user-content&#039;).on(&#039;click&#039;, () =&gt; {
+            handleDelete(&#039;[[admin/manage/users:alerts.confirm-delete-content]]&#039;, &#039;/content&#039;);
+        });
+
+        $(&#039;.delete-user-and-content&#039;).on(&#039;click&#039;, () =&gt; {
+            handleDelete(&#039;[[admin/manage/users:alerts.confirm-purge]]&#039;, &#039;&#039;);
+        });
+
+        const tableEl = document.querySelector(&#039;.users-table&#039;);
+        const actionBtn = document.getElementById(&#039;action-dropdown&#039;);
+        tableEl.addEventListener(&#039;change&#039;, (e) =&gt; {
+            const subselector = e.target.closest(&#039;[component=&quot;user/select/single&quot;]&#039;) || e.target.closest(&#039;[component=&quot;user/select/all&quot;]&#039;);
+            if (subselector) {
+                const uids = getSelectedUids();
+                if (uids.length) {
+                    actionBtn.removeAttribute(&#039;disabled&#039;);
+                } else {
+                    actionBtn.setAttribute(&#039;disabled&#039;, &#039;disabled&#039;);
+                }
+            }
+        });
+
+        function handleDelete(confirmMsg, path) {
+            const uids = getSelectedUids();
+            if (!uids.length) {
+                return;
+            }
+
+            bootbox.confirm(confirmMsg, function (confirm) {
+                if (confirm) {
+                    Promise.all(
+                        uids.map(
+                            uid =&gt; api.del(`/users/${uid}${path}`, {}).then(() =&gt; {
+                                if (path !== &#039;/content&#039;) {
+                                    removeRow(uid);
+                                }
+                            })
+                        )
+                    ).then(() =&gt; {
+                        if (path !== &#039;/content&#039;) {
+                            alerts.success(&#039;[[admin/manage/users:alerts.delete-success]]&#039;);
+                        } else {
+                            alerts.success(&#039;[[admin/manage/users:alerts.delete-content-success]]&#039;);
+                        }
+                        unselectAll();
+                        if (!$(&#039;.users-table [component=&quot;user/select/single&quot;]&#039;).length) {
+                            ajaxify.refresh();
+                        }
+                    }).catch(alerts.error);
+                }
+            });
+        }
+
+        function handleUserCreate() {
+            $(&#039;[data-action=&quot;create&quot;]&#039;).on(&#039;click&#039;, function () {
+                Benchpress.render(&#039;admin/partials/create_user_modal&#039;, {}).then(function (html) {
+                    const modal = bootbox.dialog({
+                        message: html,
+                        title: &#039;[[admin/manage/users:alerts.create]]&#039;,
+                        onEscape: true,
+                        buttons: {
+                            cancel: {
+                                label: &#039;[[admin/manage/users:alerts.button-cancel]]&#039;,
+                                className: &#039;btn-link&#039;,
+                            },
+                            create: {
+                                label: &#039;[[admin/manage/users:alerts.button-create]]&#039;,
+                                className: &#039;btn-primary&#039;,
+                                callback: function () {
+                                    createUser.call(this);
+                                    return false;
+                                },
+                            },
+                        },
+                    });
+                    modal.on(&#039;shown.bs.modal&#039;, function () {
+                        modal.find(&#039;#create-user-name&#039;).focus();
+                    });
+                });
+                return false;
+            });
+        }
+
+        function createUser() {
+            const modal = this;
+            const username = document.getElementById(&#039;create-user-name&#039;).value;
+            const email = document.getElementById(&#039;create-user-email&#039;).value;
+            const password = document.getElementById(&#039;create-user-password&#039;).value;
+            const passwordAgain = document.getElementById(&#039;create-user-password-again&#039;).value;
+
+            const errorEl = $(&#039;#create-modal-error&#039;);
+
+            if (password !== passwordAgain) {
+                return errorEl.translateHtml(&#039;[[admin/manage/users:alerts.error-x, [[admin/manage/users:alerts.error-passwords-different]]]]&#039;).removeClass(&#039;hide&#039;);
+            }
+
+            const user = {
+                username: username,
+                email: email,
+                password: password,
+            };
+
+            api.post(&#039;/users&#039;, user)
+                .then(() =&gt; {
+                    modal.modal(&#039;hide&#039;);
+                    modal.on(&#039;hidden.bs.modal&#039;, function () {
+                        ajaxify.refresh();
+                    });
+                    alerts.success(&#039;[[admin/manage/users:alerts.create-success]]&#039;);
+                })
+                .catch(err =&gt; errorEl.translateHtml(&#039;[[admin/manage/users:alerts.error-x, &#039; + err.message + &#039;]]&#039;).removeClass(&#039;hidden&#039;));
+        }
+
+        handleSearch();
+        handleUserCreate();
+        handleSort();
+        handleFilter();
+        AccountInvite.handle();
+    };
+
+    function handleSearch() {
+        function doSearch() {
+            $(&#039;.fa-spinner&#039;).removeClass(&#039;hidden&#039;);
+            loadSearchPage({
+                searchBy: $(&#039;#user-search-by&#039;).val(),
+                query: $(&#039;#user-search&#039;).val(),
+                page: 1,
+            });
+        }
+        $(&#039;#user-search&#039;).on(&#039;keyup&#039;, utils.debounce(doSearch, 250));
+        $(&#039;#user-search-by&#039;).on(&#039;change&#039;, doSearch);
+    }
+
+    function loadSearchPage(query) {
+        const params = utils.params();
+        params.searchBy = query.searchBy;
+        params.query = query.query;
+        params.page = query.page;
+        params.sortBy = params.sortBy || &#039;lastonline&#039;;
+        const qs = decodeURIComponent($.param(params));
+        $.get(config.relative_path + &#039;/api/admin/manage/users?&#039; + qs, function (data) {
+            renderSearchResults(data);
+            const url = config.relative_path + &#039;/admin/manage/users?&#039; + qs;
+            if (history.pushState) {
+                history.pushState({
+                    url: url,
+                }, null, window.location.protocol + &#039;//&#039; + window.location.host + url);
+            }
+        }).fail(function (xhrErr) {
+            if (xhrErr &amp;&amp; xhrErr.responseJSON &amp;&amp; xhrErr.responseJSON.error) {
+                alerts.error(xhrErr.responseJSON.error);
+            }
+        });
+    }
+
+    function renderSearchResults(data) {
+        Benchpress.render(&#039;partials/paginator&#039;, { pagination: data.pagination }).then(function (html) {
+            $(&#039;.pagination-container&#039;).replaceWith(html);
+        });
+
+        app.parseAndTranslate(&#039;admin/manage/users&#039;, &#039;users&#039;, data, function (html) {
+            $(&#039;.users-table tbody tr&#039;).remove();
+            $(&#039;.users-table tbody&#039;).append(html);
+            html.find(&#039;.timeago&#039;).timeago();
+            $(&#039;.fa-spinner&#039;).addClass(&#039;hidden&#039;);
+            if (!$(&#039;#user-search&#039;).val()) {
+                $(&#039;#user-found-notify&#039;).addClass(&#039;hidden&#039;);
+                $(&#039;#user-notfound-notify&#039;).addClass(&#039;hidden&#039;);
+                return;
+            }
+            if (data &amp;&amp; data.users.length === 0) {
+                $(&#039;#user-notfound-notify&#039;).translateHtml(&#039;[[admin/manage/users:search.not-found]]&#039;)
+                    .removeClass(&#039;hidden&#039;);
+                $(&#039;#user-found-notify&#039;).addClass(&#039;hidden&#039;);
+            } else {
+                $(&#039;#user-found-notify&#039;).translateHtml(
+                    translator.compile(&#039;admin/manage/users:alerts.x-users-found&#039;, data.matchCount, data.timing)
+                ).removeClass(&#039;hidden&#039;);
+                $(&#039;#user-notfound-notify&#039;).addClass(&#039;hidden&#039;);
+            }
+        });
+    }
+
+    function buildSearchQuery(params) {
+        if ($(&#039;#user-search&#039;).val()) {
+            params.query = $(&#039;#user-search&#039;).val();
+            params.searchBy = $(&#039;#user-search-by&#039;).val();
+        } else {
+            delete params.query;
+            delete params.searchBy;
+        }
+
+        return decodeURIComponent($.param(params));
+    }
+
+    function handleSort() {
+        $(&#039;.users-table thead th&#039;).on(&#039;click&#039;, function () {
+            const $this = $(this);
+            const sortBy = $this.attr(&#039;data-sort&#039;);
+            if (!sortBy) {
+                return;
+            }
+            const params = utils.params();
+            params.sortBy = sortBy;
+            if (ajaxify.data.sortBy === sortBy) {
+                params.sortDirection = ajaxify.data.reverse ? &#039;asc&#039; : &#039;desc&#039;;
+            } else {
+                params.sortDirection = &#039;desc&#039;;
+            }
+
+            const qs = buildSearchQuery(params);
+            ajaxify.go(&#039;admin/manage/users?&#039; + qs);
+        });
+    }
+
+    function getFilters() {
+        const filters = [];
+        $(&#039;#filter-by&#039;).find(&#039;[data-filter-by]&#039;).each(function () {
+            if ($(this).find(&#039;.fa-check&#039;).length) {
+                filters.push($(this).attr(&#039;data-filter-by&#039;));
+            }
+        });
+        return filters;
+    }
+
+    function handleFilter() {
+        let currentFilters = getFilters();
+        $(&#039;#filter-by&#039;).on(&#039;click&#039;, &#039;li&#039;, function () {
+            const $this = $(this);
+            $this.find(&#039;i&#039;).toggleClass(&#039;fa-check&#039;, !$this.find(&#039;i&#039;).hasClass(&#039;fa-check&#039;));
+            return false;
+        });
+
+        $(&#039;#filter-by&#039;).on(&#039;hidden.bs.dropdown&#039;, function () {
+            const filters = getFilters();
+            let changed = filters.length !== currentFilters.length;
+            if (filters.length === currentFilters.length) {
+                filters.forEach(function (filter, i) {
+                    if (filter !== currentFilters[i]) {
+                        changed = true;
+                    }
+                });
+            }
+            currentFilters = getFilters();
+            if (changed) {
+                const params = utils.params();
+                params.filters = filters;
+                const qs = buildSearchQuery(params);
+                ajaxify.go(&#039;admin/manage/users?&#039; + qs);
+            }
+        });
+    }
+
+    return Users;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

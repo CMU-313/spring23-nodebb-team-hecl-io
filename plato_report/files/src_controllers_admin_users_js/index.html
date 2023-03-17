@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - src/controllers/admin/users.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>src/controllers/admin/users.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">67.86</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">280</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">47.13</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.86</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+const validator = require(&#039;validator&#039;);
+
+const user = require(&#039;../../user&#039;);
+const meta = require(&#039;../../meta&#039;);
+const db = require(&#039;../../database&#039;);
+const pagination = require(&#039;../../pagination&#039;);
+const events = require(&#039;../../events&#039;);
+const plugins = require(&#039;../../plugins&#039;);
+const privileges = require(&#039;../../privileges&#039;);
+const utils = require(&#039;../../utils&#039;);
+
+const usersController = module.exports;
+
+const userFields = [
+    &#039;uid&#039;, &#039;username&#039;, &#039;userslug&#039;, &#039;email&#039;, &#039;postcount&#039;, &#039;joindate&#039;, &#039;banned&#039;,
+    &#039;reputation&#039;, &#039;picture&#039;, &#039;flags&#039;, &#039;lastonline&#039;, &#039;email:confirmed&#039;,
+];
+
+usersController.index = async function (req, res) {
+    if (req.query.query) {
+        await usersController.search(req, res);
+    } else {
+        await getUsers(req, res);
+    }
+};
+
+async function getUsers(req, res) {
+    const sortDirection = req.query.sortDirection || &#039;desc&#039;;
+    const reverse = sortDirection === &#039;desc&#039;;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    let resultsPerPage = parseInt(req.query.resultsPerPage, 10) || 50;
+    if (![50, 100, 250, 500].includes(resultsPerPage)) {
+        resultsPerPage = 50;
+    }
+    let sortBy = validator.escape(req.query.sortBy || &#039;&#039;);
+    const filterBy = Array.isArray(req.query.filters || []) ? (req.query.filters || []) : [req.query.filters];
+    const start = Math.max(0, page - 1) * resultsPerPage;
+    const stop = start + resultsPerPage - 1;
+
+    function buildSet() {
+        const sortToSet = {
+            postcount: &#039;users:postcount&#039;,
+            reputation: &#039;users:reputation&#039;,
+            joindate: &#039;users:joindate&#039;,
+            lastonline: &#039;users:online&#039;,
+            flags: &#039;users:flags&#039;,
+        };
+
+        const set = [];
+        if (sortBy) {
+            set.push(sortToSet[sortBy]);
+        }
+        if (filterBy.includes(&#039;unverified&#039;)) {
+            set.push(&#039;group:unverified-users:members&#039;);
+        }
+        if (filterBy.includes(&#039;verified&#039;)) {
+            set.push(&#039;group:verified-users:members&#039;);
+        }
+        if (filterBy.includes(&#039;banned&#039;)) {
+            set.push(&#039;users:banned&#039;);
+        }
+        if (!set.length) {
+            set.push(&#039;users:online&#039;);
+            sortBy = &#039;lastonline&#039;;
+        }
+        return set.length &gt; 1 ? set : set[0];
+    }
+
+    async function getCount(set) {
+        if (Array.isArray(set)) {
+            return await db.sortedSetIntersectCard(set);
+        }
+        return await db.sortedSetCard(set);
+    }
+
+    async function getUids(set) {
+        let uids = [];
+        if (Array.isArray(set)) {
+            const weights = set.map((s, index) =&gt; (index ? 0 : 1));
+            uids = await db[reverse ? &#039;getSortedSetRevIntersect&#039; : &#039;getSortedSetIntersect&#039;]({
+                sets: set,
+                start: start,
+                stop: stop,
+                weights: weights,
+            });
+        } else {
+            uids = await db[reverse ? &#039;getSortedSetRevRange&#039; : &#039;getSortedSetRange&#039;](set, start, stop);
+        }
+        return uids;
+    }
+
+    const set = buildSet();
+    const uids = await getUids(set);
+    const [count, users] = await Promise.all([
+        getCount(set),
+        loadUserInfo(req.uid, uids),
+    ]);
+
+    await render(req, res, {
+        users: users.filter(user =&gt; user &amp;&amp; parseInt(user.uid, 10)),
+        page: page,
+        pageCount: Math.max(1, Math.ceil(count / resultsPerPage)),
+        resultsPerPage: resultsPerPage,
+        reverse: reverse,
+        sortBy: sortBy,
+    });
+}
+
+usersController.search = async function (req, res) {
+    const sortDirection = req.query.sortDirection || &#039;desc&#039;;
+    const reverse = sortDirection === &#039;desc&#039;;
+    const page = parseInt(req.query.page, 10) || 1;
+    let resultsPerPage = parseInt(req.query.resultsPerPage, 10) || 50;
+    if (![50, 100, 250, 500].includes(resultsPerPage)) {
+        resultsPerPage = 50;
+    }
+
+    const searchData = await user.search({
+        uid: req.uid,
+        query: req.query.query,
+        searchBy: req.query.searchBy,
+        sortBy: req.query.sortBy,
+        sortDirection: sortDirection,
+        filters: req.query.filters,
+        page: page,
+        resultsPerPage: resultsPerPage,
+        findUids: async function (query, searchBy, hardCap) {
+            if (!query || query.length &lt; 2) {
+                return [];
+            }
+            query = String(query).toLowerCase();
+            if (!query.endsWith(&#039;*&#039;)) {
+                query += &#039;*&#039;;
+            }
+
+            const data = await db.getSortedSetScan({
+                key: `${searchBy}:sorted`,
+                match: query,
+                limit: hardCap || (resultsPerPage * 10),
+            });
+            return data.map(data =&gt; data.split(&#039;:&#039;).pop());
+        },
+    });
+
+    const uids = searchData.users.map(user =&gt; user &amp;&amp; user.uid);
+    searchData.users = await loadUserInfo(req.uid, uids);
+    if (req.query.searchBy === &#039;ip&#039;) {
+        searchData.users.forEach((user) =&gt; {
+            user.ip = user.ips.find(ip =&gt; ip.includes(String(req.query.query)));
+        });
+    }
+    searchData.query = validator.escape(String(req.query.query || &#039;&#039;));
+    searchData.page = page;
+    searchData.resultsPerPage = resultsPerPage;
+    searchData.sortBy = req.query.sortBy;
+    searchData.reverse = reverse;
+    await render(req, res, searchData);
+};
+
+async function loadUserInfo(callerUid, uids) {
+    async function getIPs() {
+        return await Promise.all(uids.map(uid =&gt; db.getSortedSetRevRange(`uid:${uid}:ip`, 0, -1)));
+    }
+    const [isAdmin, userData, lastonline, ips] = await Promise.all([
+        user.isAdministrator(uids),
+        user.getUsersWithFields(uids, userFields, callerUid),
+        db.sortedSetScores(&#039;users:online&#039;, uids),
+        getIPs(),
+    ]);
+    userData.forEach((user, index) =&gt; {
+        if (user) {
+            user.administrator = isAdmin[index];
+            user.flags = userData[index].flags || 0;
+            const timestamp = lastonline[index] || user.joindate;
+            user.lastonline = timestamp;
+            user.lastonlineISO = utils.toISOString(timestamp);
+            user.ips = ips[index];
+            user.ip = ips[index] &amp;&amp; ips[index][0] ? ips[index][0] : null;
+        }
+    });
+    return userData;
+}
+
+usersController.registrationQueue = async function (req, res) {
+    const page = parseInt(req.query.page, 10) || 1;
+    const itemsPerPage = 20;
+    const start = (page - 1) * 20;
+    const stop = start + itemsPerPage - 1;
+
+    const data = await utils.promiseParallel({
+        registrationQueueCount: db.sortedSetCard(&#039;registration:queue&#039;),
+        users: user.getRegistrationQueue(start, stop),
+        customHeaders: plugins.hooks.fire(&#039;filter:admin.registrationQueue.customHeaders&#039;, { headers: [] }),
+        invites: getInvites(),
+    });
+    const pageCount = Math.max(1, Math.ceil(data.registrationQueueCount / itemsPerPage));
+    data.pagination = pagination.create(page, pageCount);
+    data.customHeaders = data.customHeaders.headers;
+    res.render(&#039;admin/manage/registration&#039;, data);
+};
+
+async function getInvites() {
+    const invitations = await user.getAllInvites();
+    const uids = invitations.map(invite =&gt; invite.uid);
+    let usernames = await user.getUsersFields(uids, [&#039;username&#039;]);
+    usernames = usernames.map(user =&gt; user.username);
+
+    invitations.forEach((invites, index) =&gt; {
+        invites.username = usernames[index];
+    });
+
+    async function getUsernamesByEmails(emails) {
+        const uids = await db.sortedSetScores(&#039;email:uid&#039;, emails.map(email =&gt; String(email).toLowerCase()));
+        const usernames = await user.getUsersFields(uids, [&#039;username&#039;]);
+        return usernames.map(user =&gt; user.username);
+    }
+
+    usernames = await Promise.all(invitations.map(invites =&gt; getUsernamesByEmails(invites.invitations)));
+
+    invitations.forEach((invites, index) =&gt; {
+        invites.invitations = invites.invitations.map((email, i) =&gt; ({
+            email: email,
+            username: usernames[index][i] === &#039;[[global:guest]]&#039; ? &#039;&#039; : usernames[index][i],
+        }));
+    });
+    return invitations;
+}
+
+async function render(req, res, data) {
+    data.pagination = pagination.create(data.page, data.pageCount, req.query);
+
+    const { registrationType } = meta.config;
+
+    data.inviteOnly = registrationType === &#039;invite-only&#039; || registrationType === &#039;admin-invite-only&#039;;
+    data.adminInviteOnly = registrationType === &#039;admin-invite-only&#039;;
+    data[`sort_${data.sortBy}`] = true;
+    if (req.query.searchBy) {
+        data[`searchBy_${validator.escape(String(req.query.searchBy))}`] = true;
+    }
+    const filterBy = Array.isArray(req.query.filters || []) ? (req.query.filters || []) : [req.query.filters];
+    filterBy.forEach((filter) =&gt; {
+        data[`filterBy_${validator.escape(String(filter))}`] = true;
+    });
+    data.userCount = parseInt(await db.getObjectField(&#039;global&#039;, &#039;userCount&#039;), 10);
+    if (data.adminInviteOnly) {
+        data.showInviteButton = await privileges.users.isAdministrator(req.uid);
+    } else {
+        data.showInviteButton = await privileges.users.hasInvitePrivilege(req.uid);
+    }
+
+    res.render(&#039;admin/manage/users&#039;, data);
+}
+
+usersController.getCSV = async function (req, res, next) {
+    await events.log({
+        type: &#039;getUsersCSV&#039;,
+        uid: req.uid,
+        ip: req.ip,
+    });
+    const path = require(&#039;path&#039;);
+    const { baseDir } = require(&#039;../../constants&#039;).paths;
+    res.sendFile(&#039;users.csv&#039;, {
+        root: path.join(baseDir, &#039;build/export&#039;),
+        headers: {
+            &#039;Content-Type&#039;: &#039;text/csv&#039;,
+            &#039;Content-Disposition&#039;: &#039;attachment; filename=users.csv&#039;,
+        },
+    }, (err) =&gt; {
+        if (err) {
+            if (err.code === &#039;ENOENT&#039;) {
+                res.locals.isAPI = false;
+                return next();
+            }
+            return next(err);
+        }
+    });
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

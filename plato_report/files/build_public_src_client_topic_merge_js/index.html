@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - build/public/src/client/topic/merge.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>build/public/src/client/topic/merge.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.27</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">144</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">24.42</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.18</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">&#039;use strict&#039;;
+
+
+define(&#039;forum/topic/merge&#039;, [&#039;search&#039;, &#039;alerts&#039;, &#039;api&#039;], function (search, alerts, api) {
+    const Merge = {};
+    let modal;
+    let mergeBtn;
+
+    let selectedTids = {};
+
+    Merge.init = function (callback) {
+        callback = callback || function () {};
+        if (modal) {
+            return;
+        }
+        app.parseAndTranslate(&#039;partials/merge_topics_modal&#039;, {}, function (html) {
+            modal = html;
+
+            $(&#039;body&#039;).append(modal);
+
+            mergeBtn = modal.find(&#039;#merge_topics_confirm&#039;);
+
+            modal.find(&#039;.close,#merge_topics_cancel&#039;).on(&#039;click&#039;, closeModal);
+
+            $(&#039;#content&#039;).on(&#039;click&#039;, &#039;[component=&quot;topic/select&quot;]&#039;, onTopicClicked);
+
+            showTopicsSelected();
+
+            mergeBtn.on(&#039;click&#039;, function () {
+                mergeTopics(mergeBtn);
+            });
+
+            search.enableQuickSearch({
+                searchElements: {
+                    inputEl: modal.find(&#039;.topic-search-input&#039;),
+                    resultEl: modal.find(&#039;.quick-search-container&#039;),
+                },
+                searchOptions: {
+                    in: &#039;titles&#039;,
+                },
+            });
+            modal.on(&#039;click&#039;, &#039;[data-tid]&#039;, function () {
+                if ($(this).attr(&#039;data-tid&#039;)) {
+                    Merge.addTopic($(this).attr(&#039;data-tid&#039;));
+                }
+                return false;
+            });
+
+            callback();
+        });
+    };
+
+    Merge.addTopic = function (tid, callback) {
+        callback = callback || function () {};
+        api.get(`/topics/${tid}`, {}).then(function (topicData) {
+            const title = topicData ? topicData.title : &#039;No title&#039;;
+            if (selectedTids[tid]) {
+                delete selectedTids[tid];
+            } else {
+                selectedTids[tid] = title;
+            }
+            checkButtonEnable();
+            showTopicsSelected();
+            callback();
+        }).catch(alerts.error);
+    };
+
+    function onTopicClicked(ev) {
+        if (!modal) {
+            return;
+        }
+        const tid = $(this).parents(&#039;[component=&quot;category/topic&quot;]&#039;).attr(&#039;data-tid&#039;);
+        Merge.addTopic(tid);
+
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
+    }
+
+    function mergeTopics(btn) {
+        btn.attr(&#039;disabled&#039;, true);
+        const tids = Object.keys(selectedTids);
+        const options = {};
+        if (modal.find(&#039;.merge-main-topic-radio&#039;).is(&#039;:checked&#039;)) {
+            options.mainTid = modal.find(&#039;.merge-main-topic-select&#039;).val();
+        } else if (modal.find(&#039;.merge-new-title-radio&#039;).is(&#039;:checked&#039;)) {
+            options.newTopicTitle = modal.find(&#039;.merge-new-title-input&#039;).val();
+        }
+
+        socket.emit(&#039;topics.merge&#039;, { tids: tids, options: options }, function (err, tid) {
+            btn.removeAttr(&#039;disabled&#039;);
+            if (err) {
+                return alerts.error(err);
+            }
+            ajaxify.go(&#039;/topic/&#039; + tid);
+            closeModal();
+        });
+    }
+
+    function showTopicsSelected() {
+        if (!modal) {
+            return;
+        }
+        const tids = Object.keys(selectedTids);
+        tids.sort(function (a, b) {
+            return a - b;
+        });
+
+        const topics = tids.map(function (tid) {
+            return { tid: tid, title: selectedTids[tid] };
+        });
+
+        if (tids.length) {
+            app.parseAndTranslate(&#039;partials/merge_topics_modal&#039;, {
+                config: config,
+                topics: topics,
+            }, function (html) {
+                modal.find(&#039;.topics-section&#039;).html(html.find(&#039;.topics-section&#039;).html());
+                modal.find(&#039;.merge-main-topic-select&#039;).html(html.find(&#039;.merge-main-topic-select&#039;).html());
+            });
+        } else {
+            modal.find(&#039;.topics-section&#039;).translateHtml(&#039;[[error:no-topics-selected]]&#039;);
+        }
+    }
+
+    function checkButtonEnable() {
+        if (Object.keys(selectedTids).length) {
+            mergeBtn.removeAttr(&#039;disabled&#039;);
+        } else {
+            mergeBtn.attr(&#039;disabled&#039;, true);
+        }
+    }
+
+    function closeModal() {
+        if (modal) {
+            modal.remove();
+            modal = null;
+        }
+        selectedTids = {};
+        $(&#039;#content&#039;).off(&#039;click&#039;, &#039;[component=&quot;topic/select&quot;]&#039;, onTopicClicked);
+    }
+
+    return Merge;
+});</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>
