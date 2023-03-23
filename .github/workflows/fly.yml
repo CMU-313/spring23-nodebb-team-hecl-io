@@ -1,34 +1,32 @@
 name: Fly Deploy
 
-on: # cases when this yml file happens
-  push: # CASE: push to main
+on:
+  push:
     branches:
       - main
-  pull_request: # CASE: PR to main
-    branches:
-      - main
+
 
 jobs:
   deploy:
     name: Deploy app
 
     permissions:
-      checks: write
-      contents: read
+      checks: write  
+      contents: read  
 
-      strategy:
-        fail-fast: false
+    strategy:
+      fail-fast: false
 
-      services:
-        redis:
-          image: 'redis:2.8.23'
-          options: >-
-            --health-cmd "redis-cli ping"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-          ports:
-            - 6379:6379
+    services:
+      redis:
+        image: 'redis:2.8.23'
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     runs-on: ubuntu-latest
     steps:
@@ -39,10 +37,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-      - name: NPM INstall
+
+      - name: NPM Install
         uses: bahmutov/npm-install@v1
         with:
           useLockFile: false
+
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Setup on Redis
@@ -69,12 +69,11 @@ jobs:
             }
         run: |
           node app --setup="${SETUP}" --ci="${CI}"
-      - name: Setup Config
+      - name: Setup config
         env:
           DB_CONFIG: ${{ secrets.DB_CONFIG }}
         run: |
           echo ${DB_CONFIG} > install/db_config.json
-     
       - run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
