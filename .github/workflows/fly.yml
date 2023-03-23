@@ -61,7 +61,7 @@ jobs:
               "redis:password": "",
               "redis:database": 0
             }
-          CI: <-
+          CI: >-
             {
               "host": "127.0.0.1",
               "database": 1,
