@@ -174,14 +174,14 @@ jobs:
         run: |
           node app --setup="${SETUP}" --ci="${CI}"
 
+      - name: Run Flow
+        run: npm run flow
+
       - name: Node tests
         run: npm test
 
       - name: Extract coverage info
         run: npm run coverage
-
-      - name: Run Flow
-        run: npm run flow
 
       - name: Test coverage
         uses: coverallsapp/github-action@1.1.3
