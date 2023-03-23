@@ -16,7 +16,7 @@ jobs:
       strategy:
         fail-fast: false
 
-      services;
+      services:
         redis:
           image: 'redis:2.8.23'
           options: >-
