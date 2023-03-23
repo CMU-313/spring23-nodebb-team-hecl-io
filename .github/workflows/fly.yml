@@ -1,7 +1,10 @@
 name: Fly Deploy
 
-on:
-  push:
+on: # cases when this yml file happens
+  push: # CASE: push to main
+    branches:
+      - main
+  pull_request: # CASE: PR to main
     branches:
       - main
 
