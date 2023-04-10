@@ -127,6 +127,7 @@
         "url": "https://github.com/NodeBB/NodeBB/"
     },
     "main": "app.js",
+
     "scripts": {
         "start": "npx tsc && node loader.js",
         "lint": "npx tsc && eslint --cache ./nodebb .",
