@@ -1,0 +1,43 @@
+post:
+  tags:
+    - register
+  summary: registers a student for the ML career feature
+  description: registers a student for the ML career feature
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            student_id:
+              type: string
+            major: 
+              type: string
+            age: 
+              type: string
+            gender:
+              type: string
+            gpa: 
+              type: string
+            extra_curricular: 
+              type: string
+            num_programming_languages: 
+              type: string
+            num_past_internships:
+              type: string
+  responses:
+    '200':
+      description: User registered successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: {}
+    '500':
+      description: Error occurred during registering
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: {}
