@@ -7,6 +7,7 @@ const db = require('../../database');
 const Career = module.exports;
 
 Career.register = async (req, res) => {
+    console.log('register');
     const userData = req.body;
     try {
         const userCareerData = {
@@ -20,7 +21,9 @@ Career.register = async (req, res) => {
             num_past_internships: userData.num_past_internships,
         };
 
-        userCareerData.prediction = Math.round(Math.random()); // TODO: Change this line to do call and retrieve actual candidate success prediction from the model instead of using a random number
+        // TODO: Change this line to do call and retrieve actual candidate
+        // success prediction from the model instead of using a random number
+        userCareerData.prediction = Math.round(Math.random());
 
         await user.setCareerData(req.uid, userCareerData);
         db.sortedSetAdd('users:career', req.uid, req.uid);
@@ -29,4 +32,5 @@ Career.register = async (req, res) => {
         console.log(err);
         helpers.noScriptErrors(req, res, err.message, 400);
     }
+    console.log('register done');
 };
