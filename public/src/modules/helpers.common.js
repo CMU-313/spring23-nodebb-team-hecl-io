@@ -348,8 +348,12 @@ module.exports = function (utils, Benchpress, relative_path) {
         }
 
     function formatPrediction(prediction) {
-        return prediction;
-    }
+        if (prediction === '1') {
+            return `Good candidate`
+          } else {
+            return `Subpar candidate`
+          }
+        }
 
     function register() {
         Object.keys(helpers).forEach(function (helperName) {
