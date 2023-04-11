@@ -341,19 +341,17 @@ module.exports = function (utils, Benchpress, relative_path) {
 
     function getPredictionColor(prediction) {
         if (prediction === '1') {
-            return `"background-color: rgb(4, 110, 17);"`
-          } else {
-            return `"background-color: rgb(255, 0, 0);"`
-          }
+            return `"background-color: rgb(4, 110, 17);"`;
         }
+        return `"background-color: rgb(255, 0, 0);"`;
+    }
 
     function formatPrediction(prediction) {
         if (prediction === '1') {
-            return `Good candidate`
-          } else {
-            return `Subpar candidate`
-          }
+            return `Good candidate`;
         }
+        return `Subpar candidate`;
+    }
 
     function register() {
         Object.keys(helpers).forEach(function (helperName) {
