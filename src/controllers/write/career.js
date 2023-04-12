@@ -8,7 +8,6 @@ const db = require('../../database');
 const Career = module.exports;
 
 Career.register = async (req, res) => {
-    console.log('register');
     const userData = req.body;
     try {
         const userCareerData = {
@@ -52,5 +51,5 @@ Career.register = async (req, res) => {
         console.log(err);
         helpers.noScriptErrors(req, res, err.message, 400);
     }
-    console.log('register done');
+    ajaxify.go('career/', null, true);
 };
