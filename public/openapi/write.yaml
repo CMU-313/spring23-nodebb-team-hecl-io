@@ -107,7 +107,7 @@ paths:
   /categories/{cid}/moderator/{uid}:
     $ref: 'write/categories/cid/moderator/uid.yaml'
   /career/register:
-    $ref: 'write/career.yaml'
+    $ref: 'write/career/register.yaml'
   /topics/:
     $ref: 'write/topics.yaml'
   /topics/{tid}:
