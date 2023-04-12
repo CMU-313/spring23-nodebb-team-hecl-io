@@ -1,0 +1,56 @@
+post:
+  tags:
+    - career
+  summary: signs a student up for careers
+  description: signs a student up for careers
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            student_id:
+              type: number
+              example: '0000'
+            major:
+              type: string
+              example: 'Computer Science'
+            age:
+              type: number
+              enum: [18, 99]
+              example: 25
+            gender: 
+              type: string
+              example: "M"
+            gpa:
+              type: number
+              enum: [0.0, 4.0]
+              example: 4.0
+            extra_curricular:
+              type: string
+              example: "Buggy"
+            num_programming_languages:
+              type: number
+              enum: [0, 20]
+              example: 5
+            num_past_internships:
+              type: number
+              enum: [0, 4]
+              example: 4
+          required:
+            - student_id
+            - major
+            - age
+            - gender
+            - gpa
+            - extra_curricular
+            - num_programming_languages
+            - num_past_internships
+  responses:
+    '200':
+      description: career post successfully created or updated
+    '404':
+      description: invalid API call
+    '400':
+      description: invalid API call

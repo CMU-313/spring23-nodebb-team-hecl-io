@@ -51,5 +51,4 @@ Career.register = async (req, res) => {
         console.log(err);
         helpers.noScriptErrors(req, res, err.message, 400);
     }
-    ajaxify.go('career/', null, true);
 };
