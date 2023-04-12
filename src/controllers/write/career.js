@@ -1,5 +1,6 @@
 'use strict';
 
+const fetch = require('node-fetch');
 const helpers = require('../helpers');
 const user = require('../../user');
 const db = require('../../database');
@@ -7,7 +8,6 @@ const db = require('../../database');
 const Career = module.exports;
 
 Career.register = async (req, res) => {
-    console.log('register');
     const userData = req.body;
     try {
         const userCareerData = {
@@ -21,9 +21,28 @@ Career.register = async (req, res) => {
             num_past_internships: userData.num_past_internships,
         };
 
-        // TODO: Change this line to do call and retrieve actual candidate
-        // success prediction from the model instead of using a random number
-        userCareerData.prediction = Math.round(Math.random());
+        const body = JSON.stringify(userCareerData);
+        const microserviceURL = 'https://career-ml-service.fly.dev/predict';
+        const errorMessage = 'The career-ml-service microservice failed to predict';
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        const requestData = {
+            method: 'POST',
+            headers: headers,
+            body: body,
+            redirect: 'follow',
+        };
+
+        try {
+            // success prediction from the model
+            const prediction = await fetch(microserviceURL, requestData).then(response => response.json());
+            userCareerData.prediction = prediction.good_employee;
+        } catch (err) {
+            // model failure
+            console.error(err);
+            return res.status(500).json({ error: errorMessage });
+        }
 
         await user.setCareerData(req.uid, userCareerData);
         db.sortedSetAdd('users:career', req.uid, req.uid);
@@ -32,5 +51,4 @@ Career.register = async (req, res) => {
         console.log(err);
         helpers.noScriptErrors(req, res, err.message, 400);
     }
-    console.log('register done');
 };
